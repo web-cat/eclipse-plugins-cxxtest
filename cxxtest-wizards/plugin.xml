@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+
+     <extension
+         point="org.eclipse.ui.newWizards">
+      <wizard
+            finalPerspective="net.sf.webcat.eclipse.perspective.cxx.VTCSCxxPerspective"
+            class="net.sf.webcat.eclipse.cxxtest.wizards.NewCxxTestProjectWizard"
+            icon="icons/newmngcc_app.gif"
+            category="org.eclipse.cdt.ui.newCCWizards"
+            project="true"
+            preferredPerspectives="net.sf.webcat.eclipse.perspective.cxx.VTCSCxxPerspective,org.eclipse.cdt.ui.CPerspective"
+            name="Managed Make C++ Project w/ CxxTest"
+            id="net.sf.webcat.eclipse.cxxtest.wizards.StdCCWizard"/>
+   </extension>
+</plugin>
