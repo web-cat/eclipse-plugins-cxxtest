@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+
+     <extension
+         id="cxxtestbuilder"
+         name="CxxTest Driver Generator"
+         point="org.eclipse.core.resources.builders">
+      <builder>
+         <run class="net.sf.webcat.eclipse.cxxtest.CxxTestDriverBuilder"/>
+      </builder>
+   </extension>
+   <extension
+         id="cxxtestrunner"
+         name="CxxTest Driver Runner"
+         point="org.eclipse.core.resources.builders">
+      <builder>
+         <run class="net.sf.webcat.eclipse.cxxtest.CxxTestDriverRunner"/>
+      </builder>
+   </extension>
+   <extension
+         id="cxxtestNature"
+         name="CxxTest Driver"
+         point="org.eclipse.core.resources.natures">
+      <runtime>
+         <run class="net.sf.webcat.eclipse.cxxtest.CxxTestNature"/>
+      </runtime>
+      <requires-nature id="org.eclipse.cdt.core.ccnature"/>
+      <builder id="net.sf.webcat.eclipse.cxxtest.cxxtestbuilder"/>
+   </extension>
+   <extension
+         id="failedTest"
+         name="CxxTest Failed Test"
+         point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+      <attribute name="assertionType"/>
+   </extension>
+   <extension
+         id="invocationProblem"
+         name="CxxTest Invocation Problem"
+         point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.problemmarker"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.annotationTypes">
+      <type
+            markerType="net.sf.webcat.eclipse.cxxtest.failedTest"
+            name="net.sf.webcat.eclipse.cxxtest.failedTestAnnotation"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.markerAnnotationSpecification">
+      <specification
+            annotationImageProvider="net.sf.webcat.eclipse.cxxtest.ui.CxxTestAnnotationImageProvider"
+            annotationType="net.sf.webcat.eclipse.cxxtest.failedTestAnnotation"
+            colorPreferenceKey="cxxTestFailedIndicationColor"
+            colorPreferenceValue="0,0,128"
+            contributesToHeader="true"
+            highlightPreferenceKey="cxxTestFailedHighlighting"
+            highlightPreferenceValue="false"
+            icon="/icons/full/obj16/assertfail.gif"
+            label="CxxTest Notifications"
+            overviewRulerPreferenceKey="cxxTestFailedIndicationInOverviewRuler"
+            overviewRulerPreferenceValue="true"
+            presentationLayer="3"
+            textPreferenceKey="cxxTestFailedIndication"
+            verticalRulerPreferenceKey="cxxTestFailedIndicationInVerticalRuler"
+            verticalRulerPreferenceValue="true"/>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+       <initializer class="net.sf.webcat.eclipse.cxxtest.preferences.CxxTestPreferenceInitializer"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="net.sf.webcat.eclipse.cxxtest.preferences.CxxTestPreferencePage"
+            name="CxxTest"
+            id="net.sf.webcat.eclipse.cxxtest.preferences"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.propertyPages">
+      <page
+            adaptable="true"
+            class="net.sf.webcat.eclipse.cxxtest.properties.CxxTestPropertyPage"
+            id="net.sf.webcat.eclipse.cxxtest.properties"
+            name="CxxTest"
+            objectClass="org.eclipse.core.resources.IProject">
+         <filter
+               name="nature"
+               value="org.eclipse.cdt.core.ccnature"/>
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            allowMultiple="false"
+            category="org.eclipse.cdt.ui.views"
+            class="net.sf.webcat.eclipse.cxxtest.ui.TestRunnerViewPart"
+            icon="icons/full/eview16/cxxtest.gif"
+            id="net.sf.webcat.eclipse.cxxtest.TestRunnerView"
+            name="CxxTest"/>
+   </extension>
+
+</plugin>
