@@ -17,6 +17,8 @@
  */
 package net.sf.webcat.eclipse.cxxtest;
 
+import net.sf.webcat.eclipse.cxxtest.framework.FrameworkPlugin;
+
 import org.eclipse.cdt.managedbuilder.core.BuildException;
 import org.eclipse.cdt.managedbuilder.core.IConfiguration;
 import org.eclipse.cdt.managedbuilder.core.IManagedBuildInfo;
@@ -149,7 +151,7 @@ public class CxxTestNature implements IProjectNature
 	private static void addIncludePath(IProject project)
 	{
 		String includePath = "\"" +
-			CxxTestPlugin.getDefault().getCxxTestInstallPath() + "\"";
+			FrameworkPlugin.getDefault().getFrameworkPath() + "\"";
 
 		IManagedBuildInfo buildInfo = ManagedBuildManager.getBuildInfo(project);
 		IManagedProject managedProject = buildInfo.getManagedProject();

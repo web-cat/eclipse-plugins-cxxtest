@@ -17,7 +17,6 @@
  */
 package net.sf.webcat.eclipse.cxxtest;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.MissingResourceException;
@@ -25,7 +24,6 @@ import java.util.ResourceBundle;
 
 import net.sf.webcat.eclipse.cxxtest.ui.TestRunnerViewPart;
 
-import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -151,30 +149,6 @@ public class CxxTestPlugin extends AbstractUIPlugin
 	{
 		IPreferenceStore store = getPreferenceStore();
 		return store.getBoolean(id);
-	}
-
-	public String getCxxTestInstallPath()
-	{
-		String path = null;
-
-		try
-		{
-			URL entry = Platform.find(getBundle(), new Path("/cxxtest"));
-			URL url = Platform.resolve(entry);
-			path = url.getFile();
-
-			// This special check is somewhat shady, but it looks like it's
-			// the only way to handle a Windows path properly, since Eclipse
-			// returns a string like "/C:/folder/...".
-			if(path.charAt(2) == ':')
-				path = path.substring(1);
-		}
-		catch(IOException e)
-		{
-			e.printStackTrace();
-		}
-
-		return path;
 	}
 
 	public MessageConsole getBuilderConsole()

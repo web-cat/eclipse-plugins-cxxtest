@@ -30,10 +30,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.URL;
 
 import org.eclipse.cdt.core.model.CModelException;
 import org.eclipse.cdt.core.model.ICProject;
 import org.eclipse.cdt.core.model.IMethodDeclaration;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
+
+import net.sf.webcat.eclipse.cxxtest.framework.FrameworkPlugin;
 
 /**
  * A helper class that encapsulates the generation of the CxxTest test runner
@@ -103,7 +108,7 @@ public class CxxTestDriverGenerator
 		abortOnFail = false;
 		longLongType = null;
 		
-		usesStandardLibrary = false;
+		usesStandardLibrary = true;
 		mainProvided = false;
 		
 		runner = "XmlStdioPrinter";
@@ -233,11 +238,11 @@ public class CxxTestDriverGenerator
 
 	private void writeMain() throws IOException
 	{
-		if(trapSignals)
-			writeSignalHandler();
-
 		if(root || !part)
 			writeRoot();
+
+		if(trapSignals)
+			writeSignalHandler();
 
 		if(!mainProvided)
 			writeMainRunner();
@@ -305,18 +310,24 @@ public class CxxTestDriverGenerator
 		writer.println();
 	}
 
-	private void writeSignalHandler() throws IOException
+	private void writeFromFrameworkStream(String path) throws IOException
 	{
-		InputStream stream = getClass().getResourceAsStream("signalHandler_fragment.c");
+		URL entry = Platform.find(FrameworkPlugin.getDefault().getBundle(),
+				new Path(path));
+		URL url = Platform.resolve(entry);
+
+		InputStream stream = url.openStream();
 		writeFromStream(stream);
 		stream.close();
+	}
+	private void writeSignalHandler() throws IOException
+	{
+		writeFromFrameworkStream("/fragments/signalHandler.c");
 	}
 
 	private void writeSignalRegistration() throws IOException
 	{
-		InputStream stream = getClass().getResourceAsStream("signalRegistration_fragment.c");
-		writeFromStream(stream);
-		stream.close();
+		writeFromFrameworkStream("/fragments/signalRegistration.c");
 	}
 
 	private void writeFromStream(InputStream stream) throws IOException

@@ -71,7 +71,7 @@ public class TestCaseVisitor implements ICElementVisitor
 	 * Keeps track of whether a "using namespace std" directive was
 	 * encountered during the traversal.
 	 */
-	private boolean usesStandardLibrary = false;
+	private boolean usesStandardLibrary = true;
 
 	/**
 	 * Keeps track of whether a main() function was encountered during
