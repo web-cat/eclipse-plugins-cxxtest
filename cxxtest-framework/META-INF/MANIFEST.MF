@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: CxxTest Framework Headers Plug-in
+Bundle-SymbolicName: net.sf.webcat.eclipse.cxxtest.framework
+Bundle-Version: 1.2.0
+Bundle-ClassPath: cxxtest-framework.jar
+Bundle-Activator: net.sf.webcat.eclipse.cxxtest.framework.FrameworkPlugin
+Bundle-Vendor: Virginia Tech Computer Science
+Bundle-Localization: plugin
+Export-Package: net.sf.webcat.eclipse.cxxtest.framework
+Require-Bundle: org.eclipse.core.runtime
+Eclipse-AutoStart: true
