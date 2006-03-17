@@ -26,7 +26,10 @@ import net.sf.webcat.eclipse.cxxtest.CxxTestPlugin;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestAssertion;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestMethod;
+import net.sf.webcat.eclipse.cxxtest.model.ICxxTestStackFrame;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuite;
+import net.sf.webcat.eclipse.cxxtest.model.IMemWatchInfo;
+import net.sf.webcat.eclipse.cxxtest.model.IMemWatchLeak;
 
 import org.eclipse.cdt.core.model.ICProject;
 import org.eclipse.cdt.debug.core.ICDTLaunchConfigurationConstants;
@@ -40,11 +43,11 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
@@ -76,51 +79,122 @@ import org.eclipse.ui.part.ViewPart;
  */
 public class TestRunnerViewPart extends ViewPart
 {
-	private class FailureDetailsContentProvider implements IStructuredContentProvider
+	private class DetailsContentProvider implements ITreeContentProvider
 	{
 		public Object[] getElements(Object inputElement)
 		{
 			if(inputElement == null)
 				return new Object[0];
+			else if(inputElement instanceof IMemWatchInfo)
+			{
+				IMemWatchInfo info = (IMemWatchInfo)inputElement;
+				String[] array = new String[5];
+				array[0] = "Max blocks in use: " + info.getMaxBlocksInUse();
+				array[1] = "Calls to new: " + info.getCallsToNew();
+				array[2] = "Calls to delete: " + info.getCallsToDelete();
+				array[3] = "Calls to new[]: " + info.getCallsToArrayNew();
+				array[4] = "Calls to delete[]: " + info.getCallsToArrayDelete();
+				return array;
+			}
 			else
-				return (ICxxTestAssertion[])inputElement;
+				return (Object[])inputElement;
 		}
 
 		public void dispose() { }
 
 		public void inputChanged(
 				Viewer viewer, Object oldInput, Object newInput) { }
+
+		public Object[] getChildren(Object parentElement)
+		{
+			if(parentElement instanceof ICxxTestAssertion)
+			{
+				ICxxTestAssertion cta = (ICxxTestAssertion)parentElement;
+				return cta.getStackTrace();
+			}
+			else if(parentElement instanceof IMemWatchLeak)
+			{
+				IMemWatchLeak mwl = (IMemWatchLeak)parentElement;
+				return mwl.getStackTrace();
+			}
+			else
+				return null;
+		}
+
+		public Object getParent(Object element)
+		{
+			return null;
+		}
+
+		public boolean hasChildren(Object element)
+		{
+			if(element instanceof ICxxTestAssertion)
+			{
+				ICxxTestAssertion cta = (ICxxTestAssertion)element;
+				return cta.getStackTrace() != null;
+			}
+			else
+				return false;
+		}
 	}
 
-	private class FailureDetailsLabelProvider extends LabelProvider
+	private class DetailsLabelProvider extends LabelProvider
 	{
 		public String getText(Object element)
 		{
-			ICxxTestAssertion assertion = (ICxxTestAssertion)element;
-			return assertion.getMessage(true);
+			if(element instanceof ICxxTestAssertion)
+			{
+				ICxxTestAssertion assertion = (ICxxTestAssertion)element;
+				return assertion.getMessage(true);
+			}
+			else if(element instanceof IMemWatchLeak)
+			{
+				IMemWatchLeak leak = (IMemWatchLeak)element;
+				if(leak.getStackTrace() != null && leak.getStackTrace().length > 0)
+					return leak.toString() + ", allocated using:";
+				else
+					return leak.toString();
+			}
+			else if(element instanceof ICxxTestStackFrame)
+			{
+				ICxxTestStackFrame ste = (ICxxTestStackFrame)element;
+				return ste.toString();
+			}
+			else
+				return element.toString();
 		}
 		
 		public Image getImage(Object element)
 		{
-			ICxxTestBase test = (ICxxTestBase)element;
-
-			switch(test.getStatus())
+			if(element instanceof ICxxTestAssertion)
 			{
-				case ICxxTestBase.STATUS_OK:
-					return assertTraceIcon;
-					
-				case ICxxTestBase.STATUS_WARNING:
-					return assertWarnIcon;
-
-				case ICxxTestBase.STATUS_FAILED:
-					return assertFailureIcon;
-					
-				case ICxxTestBase.STATUS_ERROR:
-					return assertErrorIcon;
-					
-				default:
-					return null;
+				ICxxTestBase test = (ICxxTestBase)element;
+	
+				switch(test.getStatus())
+				{
+					case ICxxTestBase.STATUS_OK:
+						return assertTraceIcon;
+						
+					case ICxxTestBase.STATUS_WARNING:
+						return assertWarnIcon;
+	
+					case ICxxTestBase.STATUS_FAILED:
+						return assertFailureIcon;
+						
+					case ICxxTestBase.STATUS_ERROR:
+						return assertErrorIcon;
+						
+					default:
+						return null;
+				}
 			}
+			else if(element instanceof ICxxTestStackFrame ||
+					element instanceof IMemWatchLeak)	
+			{
+				return stackFrameIcon;
+			}
+			else
+				return null;
 		}
 	}
 
@@ -132,6 +206,7 @@ public class TestRunnerViewPart extends ViewPart
 	private final Image assertWarnIcon= TestRunnerViewPart.createImage("obj16/assertwarn.gif");
 	private final Image assertFailureIcon= TestRunnerViewPart.createImage("obj16/assertfail.gif");
 	private final Image assertErrorIcon= TestRunnerViewPart.createImage("obj16/asserterror.gif");
+	private final Image stackFrameIcon= TestRunnerViewPart.createImage("obj16/stkfrm_obj.gif");
 
 	public static final String ID = CxxTestPlugin.PLUGIN_ID + ".TestRunnerView";
 
@@ -147,7 +222,7 @@ public class TestRunnerViewPart extends ViewPart
 
 	private SashForm sashForm;
 
-	private TableViewer failureDetails;
+	private TreeViewer detailViewer;
 
 	private int orientation = VIEW_ORIENTATION_AUTOMATIC;
 
@@ -269,23 +344,23 @@ public class TestRunnerViewPart extends ViewPart
 		
 		ViewForm bottom = new ViewForm(sashForm, SWT.NONE);
 		CLabel label = new CLabel(bottom, SWT.NONE);
-		label.setText("Failure Details"); 
+		label.setText("Details"); 
 		bottom.setTopLeft(label);
 
-		failureDetails = new TableViewer(bottom, SWT.NONE);
-		failureDetails.setContentProvider(new FailureDetailsContentProvider());
-		failureDetails.setLabelProvider(new FailureDetailsLabelProvider());
-		failureDetails.addSelectionChangedListener(new ISelectionChangedListener() {
+		detailViewer = new TreeViewer(bottom, SWT.NONE);
+		detailViewer.setContentProvider(new DetailsContentProvider());
+		detailViewer.setLabelProvider(new DetailsLabelProvider());
+		detailViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			public void selectionChanged(SelectionChangedEvent event)
 			{
 				IStructuredSelection selection =
-					(IStructuredSelection)failureDetails.getSelection();
+					(IStructuredSelection)detailViewer.getSelection();
 
 				if(selection.size() > 0)
-					showTest((ICxxTestBase)selection.getFirstElement());
+					showTest(selection.getFirstElement());
 			}
 		});
-		bottom.setContent(failureDetails.getTable()); 
+		bottom.setContent(detailViewer.getTree()); 
 		
 		sashForm.setWeights(new int[] { 50, 50 });
 		return sashForm;
@@ -358,6 +433,10 @@ public class TestRunnerViewPart extends ViewPart
 		hierarchyTab.createTabControl(tabFolder, clipboard, this);
 		testRunTabs.addElement(hierarchyTab);
 		
+		TestMemoryTab memoryTab = new TestMemoryTab();
+		memoryTab.createTabControl(tabFolder, clipboard, this);
+		testRunTabs.addElement(memoryTab);
+
 		if(tabFolder.getItemCount() > 0)
 		{
 			tabFolder.setSelection(0);				
@@ -381,7 +460,7 @@ public class TestRunnerViewPart extends ViewPart
 			TestRunTab v = (TestRunTab)e.nextElement();
 			if(((CTabFolder)event.widget).getSelection().getText() == v.getName())
 			{
-				v.setSelectedTest(activeRunTab.getSelectedTestObject());
+//				v.setSelectedTest(activeRunTab.getSelectedTestObject());
 				activeRunTab = v;
 				activeRunTab.activate();
 			}
@@ -438,7 +517,7 @@ public class TestRunnerViewPart extends ViewPart
 	{
 	}
 
-	public void showTest(ICxxTestBase test)
+	public void showTest(Object test)
 	{
 		new OpenTestAction(this, test).run();
 	}
@@ -460,22 +539,34 @@ public class TestRunnerViewPart extends ViewPart
 		stopAction.setEnabled(false);
 	}
 
-	public void handleTestSelected(ICxxTestBase testInfo)
+	public void handleObjectSelected(Object obj)
 	{
-		if(testInfo instanceof ICxxTestMethod)
-			showFailures((ICxxTestMethod)testInfo);
-		else
-			showFailures(null);
+		showDetails(obj);
 	}
 
-	private void showFailures(ICxxTestMethod test)
+	private void showDetails(Object obj)
 	{
-		if(test == null)
-			failureDetails.setInput(null);
+		if(obj == null)
+			detailViewer.setInput(null);
 		else
 		{
-			ICxxTestAssertion[] assertions = test.getFailedAssertions();
-			failureDetails.setInput(assertions);
+			if(obj instanceof ICxxTestMethod)
+			{
+				ICxxTestMethod test = (ICxxTestMethod)obj;
+				ICxxTestAssertion[] assertions = test.getFailedAssertions();
+				detailViewer.setInput(assertions);
+			}
+			else if(obj instanceof IMemWatchLeak)
+			{
+				IMemWatchLeak leak = (IMemWatchLeak)obj;
+				detailViewer.setInput(new Object[] { leak });
+			}
+			else if(obj instanceof IMemWatchInfo)
+			{
+				detailViewer.setInput(obj);
+			}
+			
+			detailViewer.expandAll();
 		}
 	}
 
@@ -497,14 +588,14 @@ public class TestRunnerViewPart extends ViewPart
 		return null;
 	}
 
-	public void startRunner(ICProject project, ILaunch launch)
+	public void testRunStarted(ICProject project, ILaunch launch)
 	{
 		launchedProject = project;
 
 		for(Enumeration e = testRunTabs.elements(); e.hasMoreElements(); )
 		{
 			TestRunTab v = (TestRunTab)e.nextElement();
-			v.setSuites(null);
+			v.testRunStarted(project, launch);
 		}
 
 		counterPanel.reset();
@@ -520,7 +611,7 @@ public class TestRunnerViewPart extends ViewPart
 		}
 		catch (CoreException e) { }
 
-		failureDetails.setInput(null);
+		detailViewer.setInput(null);
 		setContentDescription("Running " + name + "...");
 
 		stopAction.setEnabled(true);
@@ -531,7 +622,7 @@ public class TestRunnerViewPart extends ViewPart
 		return launchedProject;
 	}
 
-	public void setSuites(ICxxTestSuite[] suites)
+	public void testRunEnded()
 	{
 		currentLaunch = null;
 		stopTest();
@@ -539,9 +630,12 @@ public class TestRunnerViewPart extends ViewPart
 		for(Enumeration e = testRunTabs.elements(); e.hasMoreElements(); )
 		{
 			TestRunTab v = (TestRunTab)e.nextElement();
-			v.setSuites(suites);
+			v.testRunEnded();
 		}
-
+	}
+	
+	public void setSummary(ICxxTestSuite[] suites)
+	{
 		if(suites == null)
 			return;
 

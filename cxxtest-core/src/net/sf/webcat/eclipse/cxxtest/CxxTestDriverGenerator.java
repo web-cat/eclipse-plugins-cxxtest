@@ -64,6 +64,10 @@ public class CxxTestDriverGenerator
 	private boolean trackHeap;
 	
 	private boolean trapSignals;
+	
+	private boolean traceStack;
+	
+	private String compiledExePath;
 
 	private boolean noStaticInit;
 
@@ -80,6 +84,8 @@ public class CxxTestDriverGenerator
 	private boolean mainProvided;
 
 	private String runner;
+	
+	private String memWatchFile;
 
 	/**
 	 * Instantiates an instance of the CxxTestDriverGenerator for the
@@ -100,18 +106,21 @@ public class CxxTestDriverGenerator
 		
 		trackHeap = false;
 		trapSignals = false;
+		traceStack = false;
+		compiledExePath = null;
 		noStaticInit = true;
 		
 		root = true;
 		part = false;
 
-		abortOnFail = false;
+		abortOnFail = true;
 		longLongType = null;
 		
 		usesStandardLibrary = true;
 		mainProvided = false;
 		
 		runner = "XmlStdioPrinter";
+		memWatchFile = ".memwatchResults";
 	}
 
 	public ICProject getProject()
@@ -137,6 +146,26 @@ public class CxxTestDriverGenerator
 	public void setTrapSignals(boolean value)
 	{
 		trapSignals = value;
+	}
+
+	public boolean isTracingStack()
+	{
+		return traceStack;
+	}
+	
+	public void setTraceStack(boolean value)
+	{
+		traceStack = value;
+	}
+
+	public String getCompiledExePath()
+	{
+		return compiledExePath;
+	}
+	
+	public void setCompiledExePath(String value)
+	{
+		compiledExePath = value;
 	}
 
 	public boolean isNoStaticInit()
@@ -189,6 +218,16 @@ public class CxxTestDriverGenerator
 		longLongType = value;
 	}
 
+	public String getMemWatchFile()
+	{
+		return memWatchFile;
+	}
+	
+	public void setMemWatchFile(String value)
+	{
+		memWatchFile = value;
+	}
+
 	public void buildDriver() throws IOException
 	{
 		writer.println("/* Generated file, do not edit */");
@@ -220,6 +259,12 @@ public class CxxTestDriverGenerator
 			writer.println("#define _CXXTEST_ABORT_TEST_ON_FAIL");
 		if(longLongType != null)
 			writer.println("#define _CXXTEST_LONGLONG " + longLongType);
+
+		if(traceStack && compiledExePath != null)
+			writer.println("#define CXXTEST_STACK_TRACE_EXE \"" +
+					compiledExePath + "\"");
+
+		writer.println();
 
 		//for header in headers:
         //output.write( "#include %s\n" % header )
@@ -306,7 +351,7 @@ public class CxxTestDriverGenerator
 
 		writer.println("    }");
 		writer.println("};");
-		writer.println("CxxTestMain cxxTestMain;");
+		writer.println("CxxTestMain cxxTestMain __attribute__((init_priority(65535)));;");
 		writer.println();
 	}
 
@@ -353,7 +398,15 @@ public class CxxTestDriverGenerator
 		writer.println("#include <cxxtest/Root.cpp>");
 		
 		if(trackHeap)
+		{
+			if(traceStack)
+			{
+				writer.println("#define MW_STACK_TRACE_INITIAL_PREFIX CXXTEST_STACK_TRACE_INITIAL_PREFIX");
+				writer.println("#define MW_STACK_TRACE_OTHER_PREFIX CXXTEST_STACK_TRACE_INITIAL_PREFIX");
+			}
+			writer.println("#define MW_XML_OUTPUT_FILE \"" + memWatchFile + "\"\n");
 			writer.println("#include <cxxtest/Memwatch.cpp>");
+		}
 	}
 
 	private void writeInitialize() throws IOException

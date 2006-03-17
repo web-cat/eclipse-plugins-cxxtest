@@ -41,4 +41,13 @@ public interface ICxxTestAssertion extends ICxxTestBase
 	 * @return a String describing the assertion
 	 */
 	String getMessage(boolean includeLine);
+	
+	/**
+	 * Gets a stack trace at the point of the assertion, if
+	 * available.
+	 * 
+	 * @return an array of IStackTraceEntry objects describing the
+	 * stack trace.
+	 */
+	ICxxTestStackFrame[] getStackTrace();
 }

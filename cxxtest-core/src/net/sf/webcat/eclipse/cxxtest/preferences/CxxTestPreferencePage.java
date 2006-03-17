@@ -58,6 +58,9 @@ public class CxxTestPreferencePage extends FieldEditorPreferencePage
             "Track heap usage", getFieldEditorParent()));
         addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS,
             "Trap signals within test cases", getFieldEditorParent()));
+        addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRACE_STACK,
+            "Generate stack traces for test failures and memory leaks (changes affect only new projects)",
+            getFieldEditorParent()));
 	}
 
 	public void init(IWorkbench workbench)

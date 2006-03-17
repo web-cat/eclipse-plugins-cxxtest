@@ -45,5 +45,6 @@ public class CxxTestPreferenceInitializer extends AbstractPreferenceInitializer
 
 		store.setDefault(CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS, true);
 		store.setDefault(CxxTestPlugin.CXXTEST_PREF_TRACK_HEAP, true);
+		store.setDefault(CxxTestPlugin.CXXTEST_PREF_TRACE_STACK, true);
 	}
 }

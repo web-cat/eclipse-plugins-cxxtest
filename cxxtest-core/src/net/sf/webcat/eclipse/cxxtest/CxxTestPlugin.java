@@ -72,6 +72,9 @@ public class CxxTestPlugin extends AbstractUIPlugin
 	public static final String CXXTEST_PREF_TRAP_SIGNALS = PLUGIN_ID
 			+ ".preferences.trapSignals";
 
+	public static final String CXXTEST_PREF_TRACE_STACK = PLUGIN_ID
+			+ ".preferences.traceStack";
+
 	/**
 	 * The constructor.
 	 */

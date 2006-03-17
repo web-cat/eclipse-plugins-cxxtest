@@ -19,11 +19,16 @@ package net.sf.webcat.eclipse.cxxtest;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 
 import org.eclipse.cdt.core.CCorePlugin;
 import org.eclipse.cdt.core.model.ICProject;
+import org.eclipse.cdt.managedbuilder.core.BuildException;
+import org.eclipse.cdt.managedbuilder.core.IConfiguration;
 import org.eclipse.cdt.managedbuilder.core.IManagedBuildInfo;
+import org.eclipse.cdt.managedbuilder.core.IOption;
+import org.eclipse.cdt.managedbuilder.core.ITool;
 import org.eclipse.cdt.managedbuilder.core.ManagedBuildManager;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
@@ -57,7 +62,7 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 	{
 		IProject project = getProject();
 
-		if(kind == AUTO_BUILD || kind == INCREMENTAL_BUILD)
+//		if(kind == CLEAN_BUILD || kind == AUTO_BUILD || kind == INCREMENTAL_BUILD)
 		{
 			if(!checkForRebuild())
 			{
@@ -78,6 +83,7 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 			// Walk down the project DOM tree and find all the classes that
 			// are CxxTest test suites.
 			TestCaseVisitor visitor = new TestCaseVisitor();
+			visitor.setDriverFileName(outputFile);
 			cproject.accept(visitor);
 			monitor.worked(1);
 
@@ -90,19 +96,26 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 				// Generate the .cpp file that will run all the tests.
 				File projectDir = getProject().getLocation().toFile();
 				String fullPath = projectDir.toString() + "/" + outputFile;
-					
+
+				IPath exePath = getExecutableFile().getProjectRelativePath();
+
 				boolean trackHeap = store.getBoolean(
 							CxxTestPlugin.CXXTEST_PREF_TRACK_HEAP);
 				boolean trapSignals = store.getBoolean(
 							CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS);
+				boolean traceStack = store.getBoolean(
+						CxxTestPlugin.CXXTEST_PREF_TRACE_STACK);
 
 				CxxTestDriverGenerator generator = new CxxTestDriverGenerator(
 						cproject, fullPath, suites);
 				generator.setUsingStandardLibrary(visitor.isUsingStandardLibrary());
 				generator.setTrackHeap(trackHeap);
 				generator.setTrapSignals(trapSignals);
+				generator.setTraceStack(traceStack);
+				generator.setCompiledExePath(exePath.toString());
+				generator.setMemWatchFile(ICxxTestConstants.MEMWATCH_RESULTS_FILE);
 				generator.setMainProvided(visitor.getMainExists());
-				
+
 				generator.buildDriver();
 			}
 			catch(IOException e)
@@ -125,6 +138,26 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		return null;
 	}
 
+	private IFile getExecutableFile()
+	{
+		IProject project = getProject();
+
+		IManagedBuildInfo buildInfo =
+			ManagedBuildManager.getBuildInfo(project);
+
+		IConfiguration configuration =
+			buildInfo.getDefaultConfiguration();
+
+		String exeName = buildInfo.getBuildArtifactName();
+		String exeExtension = buildInfo.getBuildArtifactExtension();
+
+		if(exeExtension.length() > 0)
+			exeName += "." + exeExtension;
+
+		IFile file = project.getFile(configuration.getName() + "/" + exeName);
+		return file;
+	}
+
 	public boolean checkForRebuild()
 	{
 		IProject project = getProject();
@@ -135,7 +168,11 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		// If the delta is null, the documentation says to assume
 		// "unspecified changes" have occurred and do something
 		// appropriate, so we'll go ahead and do a rebuild.
-		if (delta != null)
+		if(delta == null)
+		{
+			changeRequiresRebuild = true;
+		}
+		else
 		{
 			IManagedBuildInfo buildInfo = ManagedBuildManager
 					.getBuildInfo(project);
@@ -171,11 +208,14 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 				// Finally, check for the test results XML file.
 				boolean isResultsFile = resource.getName().equals(
 					ICxxTestConstants.TEST_RESULTS_FILE);
+				boolean isMemWatchFile = resource.getName().equals(
+					ICxxTestConstants.MEMWATCH_RESULTS_FILE);
 
 				// If the child isn't in any of the configuration-based
 				// binary build directories in the project and isn't a
 				// stack dump file ...
-				if(notInConfigBuildDir && !isStackDump && !isResultsFile)
+				if(notInConfigBuildDir && !isStackDump && !isResultsFile &&
+						!isMemWatchFile)
 				{
 					changeRequiresRebuild = true;
 					break;

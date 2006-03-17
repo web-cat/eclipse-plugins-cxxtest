@@ -51,4 +51,11 @@ public interface ICxxTestConstants
 	 * student's project workspace in Eclipse.
 	 */
 	static final String TEST_RESULTS_FILE = ".cxxtestResults";
+
+	/**
+	 * The hard-coded filename of the results file that the Memwatch heap
+	 * tracker will generate. By default it is a dot-file, to prevent it from
+	 * cluttering the student's project workspace in Eclipse.
+	 */
+	static final String MEMWATCH_RESULTS_FILE = ".memwatchResults";
 }

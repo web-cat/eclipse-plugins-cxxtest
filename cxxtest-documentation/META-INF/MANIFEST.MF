@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-Name: CxxTest Documentation Plug-in
 Bundle-SymbolicName: net.sf.webcat.eclipse.cxxtest.documentation; singleton=true
-Bundle-Version: 1.2.0
+Bundle-Version: 1.2.1
 Bundle-Vendor: Virginia Tech Computer Science
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.help

@@ -17,10 +17,23 @@
  */
 package net.sf.webcat.eclipse.cxxtest.ui;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.HashMap;
+
+import net.sf.webcat.eclipse.cxxtest.CxxTestResultsHandler;
+import net.sf.webcat.eclipse.cxxtest.ICxxTestConstants;
+import net.sf.webcat.eclipse.cxxtest.model.ICxxTestAssertion;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestMethod;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuite;
 
+import org.eclipse.cdt.core.model.ICProject;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.debug.core.ILaunch;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
@@ -55,6 +68,11 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.ui.IWorkbenchActionConstants;
+import org.eclipse.ui.texteditor.MarkerUtilities;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * A tab that displays a hierarchical view of the test suites that were
@@ -71,6 +89,8 @@ public class TestHierarchyTab extends TestRunTab
 
 	private TestSuiteContentProvider viewerContent;
 
+	private ICProject project;
+	
 	private ICxxTestSuite[] suites;
 
 	private ListenerList selectionListeners= new ListenerList();
@@ -253,7 +273,7 @@ public class TestHierarchyTab extends TestRunTab
 		viewer.getTree().setMenu(menu);	
 	}
 	
-	public ICxxTestBase getSelectedTestObject()
+	public Object getSelectedObject()
 	{
 		IStructuredSelection sel =
 			(IStructuredSelection)viewer.getSelection();
@@ -261,7 +281,7 @@ public class TestHierarchyTab extends TestRunTab
 		if(sel.size() == 0)
 			return null;
 		else
-			return (ICxxTestBase)sel.getFirstElement();
+			return sel.getFirstElement();
 	}
 
 	public String getName() {
@@ -287,7 +307,7 @@ public class TestHierarchyTab extends TestRunTab
 
 	public void activate()
 	{
-		testRunnerView.handleTestSelected(getSelectedTestObject());
+		testRunnerView.handleObjectSelected(getSelectedObject());
 	}
 	
 	public void setFocus()
@@ -321,7 +341,7 @@ public class TestHierarchyTab extends TestRunTab
 	
 	private void handleDoubleClick(MouseEvent e)
 	{
-		ICxxTestBase test = getSelectedTestObject();
+		ICxxTestBase test = (ICxxTestBase)getSelectedObject();
 		
 		if(test == null)
 			return;
@@ -391,5 +411,93 @@ public class TestHierarchyTab extends TestRunTab
 			ISelectionChangedListener listener = (ISelectionChangedListener)listeners[i];
 			listener.selectionChanged(event);
 		}	
+	}
+
+	public void testRunStarted(ICProject project, ILaunch launch)
+	{
+		this.project = project;
+		
+		setSuites(null);
+	}
+
+	public void testRunEnded()
+	{
+		try
+		{
+			IFile resultsFile = project.getProject().getFile(
+					ICxxTestConstants.TEST_RESULTS_FILE);
+			File resultsPath = resultsFile.getLocation().toFile();
+	
+			// When the CxxTest results file is generated, Eclipse
+			// autodetects this change in the project contents and
+			// attempts to run the managed make process again
+			// (which has no effect because there's nothing new to
+			// make, but it does delete warning markers). But it
+			// appears setting the derived flag (which does apply
+			// here, as it's derived from the runner) will prevent
+			// managed make from doing an extraneous run.
+			try { resultsFile.setDerived(true); }
+			catch (CoreException e1) { }
+	
+			FileInputStream stream = new FileInputStream(resultsPath);
+			InputSource source = new InputSource(stream);
+			final CxxTestResultsHandler handler = new CxxTestResultsHandler();
+	
+			try
+			{
+				XMLReader reader = XMLReaderFactory.createXMLReader();
+				reader.setContentHandler(handler);
+				reader.parse(source);
+			}
+			catch (SAXException e) { }
+			catch (IOException e) { }
+	
+			stream.close();
+	
+			final ICxxTestSuite[] suiteArray = handler.getSuites();
+			setSuites(suiteArray);
+			testRunnerView.setSummary(suiteArray);
+	
+			setFailureMarkers(suiteArray);
+		}
+		catch(IOException e) { }
+	}
+
+	private void setFailureMarkers(ICxxTestSuite[] suites)
+	{
+		for(int i = 0; i < suites.length; i++)
+		{
+			ICxxTestSuite suite = suites[i];
+			
+			for(int j = 0; j < suite.getTests().length; j++)
+			{
+				ICxxTestMethod test = suite.getTests()[j];
+				IFile file = project.getProject().getFile(suite.getFile());
+
+				for(int k = 0; k < test.getFailedAssertions().length; k++)
+				{
+					ICxxTestAssertion assertion = test.getFailedAssertions()[k];
+					setAssertionMarker(file, assertion);
+				}
+			}
+		}
+	}
+	
+	private void setAssertionMarker(IFile file, ICxxTestAssertion assertion)
+	{
+		try
+		{
+			HashMap attrs = new HashMap();
+			attrs.put(IMarker.MESSAGE, assertion.getMessage(false));
+			attrs.put(IMarker.LINE_NUMBER,
+					new Integer(assertion.getLineNumber()));
+			attrs.put(IMarker.SEVERITY, new Integer(IMarker.SEVERITY_INFO));
+			attrs.put(ICxxTestConstants.ATTR_ASSERTIONTYPE,
+					new Integer(assertion.getStatus()));
+
+			MarkerUtilities.createMarker(file, attrs,
+					ICxxTestConstants.MARKER_FAILED_TEST);
+		}
+		catch(CoreException e) { }
 	}
 }

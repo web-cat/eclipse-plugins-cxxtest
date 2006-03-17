@@ -37,6 +37,7 @@ import org.eclipse.cdt.core.model.ICElementVisitor;
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 import org.eclipse.cdt.core.model.IMethodDeclaration;
 import org.eclipse.cdt.core.model.IStructure;
+import org.eclipse.cdt.core.model.ITranslationUnit;
 import org.eclipse.cdt.core.model.IUsing;
 import org.eclipse.core.runtime.CoreException;
 
@@ -87,6 +88,8 @@ public class TestCaseVisitor implements ICElementVisitor
 	 */
 	private Set generatedSuites = new HashSet();
 
+	private String driverFileName = null;
+
 	/**
 	 * Called by the runtime when each element of the C++ project is
 	 * processed.
@@ -101,13 +104,16 @@ public class TestCaseVisitor implements ICElementVisitor
 			case ICElement.C_PROJECT:
 			case ICElement.C_CCONTAINER:
 			case ICElement.C_NAMESPACE:
-			case ICElement.C_UNIT:
 				/*
 				 * Any of these container types should be unconditionally
 				 * visited for child elements.
 				 */
 				visitChildren = true;
 				currentSuite = null;
+				break;
+
+			case ICElement.C_UNIT:
+				visitChildren = shouldVisitFile((ITranslationUnit)element);
 				break;
 
 			case ICElement.C_USING:
@@ -159,7 +165,21 @@ public class TestCaseVisitor implements ICElementVisitor
 		
 		return visitChildren;
 	}
-	
+
+	public void setDriverFileName(String file)
+	{
+		driverFileName = file;
+	}
+
+	private boolean shouldVisitFile(ITranslationUnit unit)
+	{
+		String name = unit.getPath().lastSegment();
+		if(name.equals(driverFileName))
+			return false;
+		else
+			return true;
+	}
+
 	/**
 	 * Gets the test suites that were processed by visiting the project DOM.
 	 * 

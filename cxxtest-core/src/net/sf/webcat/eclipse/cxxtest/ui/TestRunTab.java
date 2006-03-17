@@ -17,8 +17,7 @@
  */
 package net.sf.webcat.eclipse.cxxtest.ui;
 
-import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
-import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuite;
+import net.sf.webcat.eclipse.cxxtest.ICxxTestRunListener;
 
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.dnd.Clipboard;
@@ -29,7 +28,7 @@ import org.eclipse.swt.dnd.Clipboard;
  * 
  * Influenced greatly by the same JUnit class.
  */
-public abstract class TestRunTab
+public abstract class TestRunTab implements ICxxTestRunListener
 {	
 	/**
 	 * Create the tab control
@@ -43,17 +42,13 @@ public abstract class TestRunTab
 	/**
 	 * Returns the name of the currently selected Test in the View
 	 */
-	public abstract ICxxTestBase getSelectedTestObject();
+	public abstract Object getSelectedObject();
 
 	/**
 	 * Activates the TestRunView
 	 */
 	public void activate()
 	{
-	}
-
-	public void setSuites(ICxxTestSuite[] suites)
-	{	
 	}
 
 	/**
@@ -67,14 +62,7 @@ public abstract class TestRunTab
 	 * Returns the name of the RunView
 	 */
 	public abstract String getName();
-	
-	/**
-	 * Sets the current Test in the View
-	 */
-	public void setSelectedTest(ICxxTestBase testObject)
-	{
-	}
-	
+
 	/**
 	 * Select next test failure.
 	 */
