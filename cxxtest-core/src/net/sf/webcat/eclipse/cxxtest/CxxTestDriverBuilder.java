@@ -19,16 +19,12 @@ package net.sf.webcat.eclipse.cxxtest;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Map;
 
 import org.eclipse.cdt.core.CCorePlugin;
 import org.eclipse.cdt.core.model.ICProject;
-import org.eclipse.cdt.managedbuilder.core.BuildException;
 import org.eclipse.cdt.managedbuilder.core.IConfiguration;
 import org.eclipse.cdt.managedbuilder.core.IManagedBuildInfo;
-import org.eclipse.cdt.managedbuilder.core.IOption;
-import org.eclipse.cdt.managedbuilder.core.ITool;
 import org.eclipse.cdt.managedbuilder.core.ManagedBuildManager;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;

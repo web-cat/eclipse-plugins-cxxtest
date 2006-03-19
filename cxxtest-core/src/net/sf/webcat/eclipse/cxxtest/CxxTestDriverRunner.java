@@ -17,16 +17,8 @@
  */
 package net.sf.webcat.eclipse.cxxtest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
-import net.sf.webcat.eclipse.cxxtest.model.ICxxTestAssertion;
-import net.sf.webcat.eclipse.cxxtest.model.ICxxTestMethod;
-import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuite;
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchLeak;
 import net.sf.webcat.eclipse.cxxtest.ui.TestRunnerViewPart;
 
 import org.eclipse.cdt.core.CCorePlugin;
@@ -52,11 +44,6 @@ import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.ui.IDebugUIConstants;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.texteditor.MarkerUtilities;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * This builder executes the generates test-case executable and adds problem
