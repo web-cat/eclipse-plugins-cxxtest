@@ -13,3 +13,4 @@
     sigaction( SIGEMT,  &act, 0 );
 #endif
     sigaction( SIGSYS,  &act, 0 );
+

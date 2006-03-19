@@ -9,6 +9,17 @@
 #  define MW_PREFIX
 #endif
 
+#if defined(CXXTEST_TRACE_STACK) && !defined(MW_STACK_WINDOW_SIZE)
+#  define MW_STACK_WINDOW_SIZE 8
+#endif
+#ifndef MW_STACK_TRACE_INITIAL_PREFIX
+#   define MW_STACK_TRACE_INITIAL_PREFIX MW_PREFIX "  allocated using: "
+#endif
+#ifndef MW_STACK_TRACE_OTHER_PREFIX
+#   define MW_STACK_TRACE_OTHER_PREFIX MW_PREFIX "  allocated using: "
+#endif
+
+
 namespace Memwatch
 {
 //*******************************************************//
@@ -107,7 +118,7 @@ bool DB_Blown = false;
 // Global variables are used because we can't change
 // the parms or return types for new & delete.
 
-int 	MaxUsed;
+int     MaxUsed;
 int     NumNewArray;
 int     NumNewNonArray;
 int     NumArrayDeletes;
@@ -130,52 +141,109 @@ bool reportGenerated = false;
 class FinalReportGenerator
 {
 public:
-    ~FinalReportGenerator() { EggSit(); }
-void EggSit(void)
+    ~FinalReportGenerator() _CXXTEST_NO_INSTR;
+};
+FinalReportGenerator::~FinalReportGenerator()
 {
     // Have to use C-style output, since the
     // standard C++ objects have already been finalized!
     bool First = true;
     reportGenerated = true;
-	InternalCall = true; // Turn off reporting
+    InternalCall = true; // Turn off reporting
 
-	// Search the database
-	for ( int i = 0; i < MaxUsed; i++ )
+#ifdef MW_XML_OUTPUT_FILE
+	FILE* xmlFile = fopen(MW_XML_OUTPUT_FILE, "w");
+	fprintf( xmlFile, "<?xml version='1.0'?>\n");
+	fprintf( xmlFile, "<memwatch>\n");
+#endif
+
+    // Search the database
+    for ( int i = 0; i < MaxUsed; i++ )
     {
         if ( DB[i].Address )
         {
-	    // We found an orphan block.
-	    if ( First )
+        // We found an orphan block.
+        if ( First )
             {
-		// At least, we think we did. The text explains all.
+        // At least, we think we did. The text explains all.
+#ifndef MW_XML_OUTPUT_FILE
                 fprintf( OUTFILE,
                          "\n" MW_PREFIX
-			 "******************* LEAKS *******************\n"
-			 MW_PREFIX
+             "******************* LEAKS *******************\n"
+             MW_PREFIX
                          "Possible memory leaks detected.\n"
-			 // MW_PREFIX
-			 //" A small number of these leaks"
+             // MW_PREFIX
+             //" A small number of these leaks"
                          // "may be due to standard library code.\n"
-			 MW_PREFIX
+             MW_PREFIX
                          "The identified leaks:\n" MW_PREFIX "\n" );
-				First = false;
-			}
+#endif
+                         
+                First = false;
+            }
 
-			// Write out everything we know about the bad block.
-			// If you put a breakpoint here and a watch on
-			// DB[i].From you can use the CPU window to find
-			// the exact statement. (Right click, Go To)
+            // Write out everything we know about the bad block.
+            // If you put a breakpoint here and a watch on
+            // DB[i].From you can use the CPU window to find
+            // the exact statement. (Right click, Go To)
+#ifdef MW_XML_OUTPUT_FILE
+			fprintf( xmlFile, "    <leak "
+				"address=\"%p\" size=\"%lu\" %s>\n",
+				DB[i].Address, (unsigned long)DB[i].Size,
+				(DB[i].isArray ? "array=\"yes\"" : ""));
+				
+#else
             fprintf( OUTFILE,
                      // "\n******************* ERROR *******************\n"
-		     MW_PREFIX
+             MW_PREFIX
                      "Memory block at %p not deleted (", DB[i].Address );
             if ( DB[i].isArray ) fprintf( OUTFILE, "array " );
             fprintf( OUTFILE, "%lu byte(s) long", (unsigned long)DB[i].Size );
-	  //if ( DB[i].Size > 500 ) fprintf( OUTFILE, "--possible STL leak?" );
+      //if ( DB[i].Size > 500 ) fprintf( OUTFILE, "--possible STL leak?" );
             fprintf( OUTFILE, ").\n" );
-		}
-	}
+#endif
 
+#ifdef CXXTEST_TRACE_STACK
+            fprintf( 
+#ifdef MW_XML_OUTPUT_FILE
+			xmlFile,
+#else            
+            OUTFILE,
+#endif
+                     getStackTrace( MW_STACK_WINDOW_SIZE,
+                                    (CxxTest::StackElem*)(
+                                        ((char*)DB[i].Address)
+                                        + DB[i].Size + hiSafetySize ),
+									MW_STACK_TRACE_INITIAL_PREFIX
+                                  ).c_str() );
+#endif
+#ifdef MW_XML_OUTPUT_FILE
+			fprintf( xmlFile, "    </leak>\n" );
+#endif
+        }
+    }
+
+#ifdef MW_XML_OUTPUT_FILE
+	fprintf( xmlFile, "    <summary "
+		"max-blocks=\"%d\" "
+		"calls-to-new=\"%d\" "
+		"calls-to-delete=\"%d\" "
+		"calls-to-new-array=\"%d\" "
+		"calls-to-delete-array=\"%d\" "
+#ifdef REPORT_NULLS
+		"calls-to-delete-null=\"%d\" "
+#endif
+		"/>\n",
+        (MaxUsed + 1),
+         NumNewNonArray,
+         NumNonArrayDeletes,
+         NumNewArray,
+         NumArrayDeletes
+#ifdef REPORT_NULLS
+		,NumNullDeletes
+#endif         
+		);
+#else
     fprintf( OUTFILE, "\n**************** SUMMARY ****************\n"
                       "Max blocks in use:            %d\n"
                       "Calls to new:                 %d\n"
@@ -187,12 +255,20 @@ void EggSit(void)
              NumNonArrayDeletes,
              NumNewArray,
              NumArrayDeletes );
+
 #ifdef REPORT_NULLS
     fprintf( OUTFILE, "Calls to delete (NULL):     %d\n", NumNullDeletes );
 #endif
-	InternalCall = false;
+
+#endif
+
+#ifdef MW_XML_OUTPUT_FILE
+	fprintf( xmlFile, "</memwatch>\n");
+	fclose( xmlFile );
+#endif
+
+    InternalCall = false;
 }
-};
 
 
 // This object declaration installs the exit function. Strictly speaking,
@@ -217,89 +293,99 @@ FinalReportGenerator reportGenerator __attribute__((init_priority(101)));
 void* operator new(size_t Size)
 {
     using namespace Memwatch;
-	// If this is the first time, do some initialization...
-	if ( !NewCalled )
+    // If this is the first time, do some initialization...
+    if ( !NewCalled )
     {
-		NewCalled = true;
-		// Initialize the stats
-		MaxUsed            = 0;
-		NumNewNonArray     = 0;
+        NewCalled = true;
+        // Initialize the stats
+        MaxUsed            = 0;
+        NumNewNonArray     = 0;
         NumNewArray        = 0;
-		NumNonArrayDeletes = 0;
+        NumNonArrayDeletes = 0;
         NumArrayDeletes    = 0;
-		NumNullDeletes     = 0;
-	}
+        NumNullDeletes     = 0;
+    }
 
-	// We don't report on ourselves
-	if ( InternalCall )
-		return malloc( Size );
+    // We don't report on ourselves
+    if ( InternalCall )
+        return malloc( Size );
 
-	// Allocate the memory + the two safety pools
-	void * RealMem = malloc( Size + loSafetySize + hiSafetySize );
+    // Allocate the memory + the two safety pools
+    void * RealMem = malloc( Size + loSafetySize + hiSafetySize
+#ifdef CXXTEST_TRACE_STACK
+                             + CxxTest::stackTraceSize( MW_STACK_WINDOW_SIZE )
+#endif
+                             );
 
-	// Did we get it
-	if ( !RealMem )
+    // Did we get it
+    if ( !RealMem )
     {
-		// No. All bets are off at this point but lets try
-		// to report it.
-		InternalCall = true;
-		// Set a breakpoint on the next statement
-		// to detect out of memory errors
-		fprintf( OUTFILE, "\n" MW_PREFIX
-			 "******************* ERROR *******************\n"
-			 MW_PREFIX "Out of memory.\n" );
-		InternalCall = false;
+        // No. All bets are off at this point but lets try
+        // to report it.
 #ifdef CXXTEST_TRAP_SIGNALS
-	memwatch_assert( "out of memory" );
+    memwatch_assert( "out of memory" );
+#else
+        InternalCall = true;
+        // Set a breakpoint on the next statement
+        // to detect out of memory errors
+        fprintf( OUTFILE, "\n" MW_PREFIX
+             "******************* ERROR *******************\n"
+             MW_PREFIX "Out of memory.\n" );
+        InternalCall = false;
 #endif
 
-		return RealMem;
-	}
+        return RealMem;
+    }
 
-	// This is the address we will tell the calling program
-	// it can use.
-	void * TheMem = (char *)RealMem + loSafetySize;
+    // This is the address we will tell the calling program
+    // it can use.
+    void * TheMem = (char *)RealMem + loSafetySize;
 
-	if ( DB_Blown )
-		return TheMem;
+    if ( DB_Blown )
+        return TheMem;
 
-	// Fill the safety areas
-	memset( (char *)RealMem, safetyChar, loSafetySize );
-	memset( ((char *)TheMem) + Size, safetyChar, hiSafetySize );
+    // Fill the safety areas
+    memset( (char *)RealMem, safetyChar, loSafetySize );
+    memset( ((char *)TheMem) + Size, safetyChar, hiSafetySize );
+#ifdef CXXTEST_TRACE_STACK
+    CxxTest::saveStackTraceWindow( (CxxTest::StackElem*)(
+                                     ((char *)TheMem) + Size + hiSafetySize ),
+                                   MW_STACK_WINDOW_SIZE );
+#endif
 
-	// Find a free database entry
+    // Find a free database entry
     int i;
-	for ( i = 0; i < numEntries && DB[i].Address; i++ );
+    for ( i = 0; i < numEntries && DB[i].Address; i++ );
 
-	if ( i == numEntries )
+    if ( i == numEntries )
     {
-		DB_Blown = true;
-		InternalCall = true;
-		// You can set a breakpoint on the next statement
-		// If it is reached increase numEntries
-		fprintf( OUTFILE, "\n" MW_PREFIX
-			 "*************** SERIOUS ERROR ***************\n"
-		 MW_PREFIX
-		 "Memory database too small - increase numEntries\n"
-		 MW_PREFIX
-	         "All following messages may be incorrect.\n" );
-		InternalCall = false;
+        DB_Blown = true;
+        InternalCall = true;
+        // You can set a breakpoint on the next statement
+        // If it is reached increase numEntries
+        fprintf( OUTFILE, "\n" MW_PREFIX
+             "*************** SERIOUS ERROR ***************\n"
+         MW_PREFIX
+         "Memory database too small - increase numEntries\n"
+         MW_PREFIX
+             "All following messages may be incorrect.\n" );
+        InternalCall = false;
 
-		return TheMem;
-	}
+        return TheMem;
+    }
 
-	// Stats
-	if ( i > MaxUsed )
-		MaxUsed = i;
-	NumNewNonArray++;
+    // Stats
+    if ( i > MaxUsed )
+        MaxUsed = i;
+    NumNewNonArray++;
 
-	// Store what we know about the memory block
-	DB[i].Address = TheMem;
-	DB[i].Size    = Size;
+    // Store what we know about the memory block
+    DB[i].Address = TheMem;
+    DB[i].Size    = Size;
     DB[i].isArray = false;
 
-	// and hand it back.
-	return TheMem;
+    // and hand it back.
+    return TheMem;
 }
 
 
@@ -332,22 +418,27 @@ void* operator new[] ( size_t Size )
         return malloc( Size );
 
     // Allocate the memory + the two safety pools
-    void * RealMem = malloc( Size + loSafetySize + hiSafetySize );
+    void * RealMem = malloc( Size + loSafetySize + hiSafetySize
+#ifdef CXXTEST_TRACE_STACK
+                             + CxxTest::stackTraceSize( MW_STACK_WINDOW_SIZE )
+#endif
+                             );
 
     // Did we get it
     if ( !RealMem )
     {
         // No. All bets are off at this point but lets try
         // to report it.
+#ifdef CXXTEST_TRAP_SIGNALS
+    memwatch_assert( "out of memory" );
+#else
         InternalCall = true;
         // Set a breakpoint on the next statement
         // to detect out of memory errors
         fprintf( OUTFILE, "\n" MW_PREFIX
-		 "******************* ERROR *******************\n"
-		 MW_PREFIX "Out of memory.\n" );
+         "******************* ERROR *******************\n"
+         MW_PREFIX "Out of memory.\n" );
         InternalCall = false;
-#ifdef CXXTEST_TRAP_SIGNALS
-	memwatch_assert( "out of memory" );
 #endif
 
         return RealMem;
@@ -363,6 +454,11 @@ void* operator new[] ( size_t Size )
     // Fill the safety areas
     memset( (char *)RealMem ,safetyChar, loSafetySize );
     memset( ((char *)TheMem) + Size, safetyChar, hiSafetySize );
+#ifdef CXXTEST_TRACE_STACK
+    CxxTest::saveStackTraceWindow( (CxxTest::StackElem*)(
+                                     ((char *)TheMem) + Size + hiSafetySize ),
+                                   MW_STACK_WINDOW_SIZE );
+#endif
 
     // Find a free database entry
     int i;
@@ -375,10 +471,10 @@ void* operator new[] ( size_t Size )
         // You can set a breakpoint on the next statement
         // If it is reached increase numEntries
         fprintf( OUTFILE, "\n" MW_PREFIX
-		 "*************** SERIOUS ERROR ***************\n"
-		 MW_PREFIX
+         "*************** SERIOUS ERROR ***************\n"
+         MW_PREFIX
                  "Memory database too small - increase numEntries\n"
-		 MW_PREFIX
+         MW_PREFIX
                  "All following messages may be incorrect.\n" );
         InternalCall = false;
 
@@ -419,146 +515,148 @@ void operator delete( void* TheMem )
     bool  UnderWrite = false;
     bool  OverWrite = false;
 
-	// Memory we allocated ourselves is not watched
-	if ( InternalCall )
+    // Memory we allocated ourselves is not watched
+    if ( InternalCall )
     {
-		if ( TheMem )
-			free( TheMem );
-		return;
-	}
+        if ( TheMem )
+            free( TheMem );
+        return;
+    }
 
-	if ( TheMem )
+    if ( TheMem )
     {
-		NumNonArrayDeletes++;
+        NumNonArrayDeletes++;
         if ( reportGenerated )
         {
             InternalCall = true;
             fprintf( OUTFILE, "\n" MW_PREFIX
-		     "****************** Wait ******************\n"
-		     MW_PREFIX
+             "****************** Wait ******************\n"
+             MW_PREFIX
                      "Caught one more deleted block (%d/%d"
-		     MW_PREFIX
+             MW_PREFIX
                      " non-array blocks freed).\n",
                      NumNonArrayDeletes, NumNewNonArray );
             InternalCall = false;
         }
     }
-	else
-		NumNullDeletes++;
+    else
+        NumNullDeletes++;
 
-	if ( !TheMem )
+    if ( !TheMem )
     {
 #ifdef REPORT_NULLS
-		InternalCall = true;
-		// It is always valid to delete a null pointer
-		// but you can set a breakpoint here to detect it.
-		fprintf( OUTFILE, "\n" MW_PREFIX
-			 "****************** WARNING ******************\n"
-			 MW_PREFIX "NULL pointer deleted.\n"
-			 MW_PREFIX "This is valid but suspicious\n" );
-		InternalCall = false;
+        InternalCall = true;
+        // It is always valid to delete a null pointer
+        // but you can set a breakpoint here to detect it.
+        fprintf( OUTFILE, "\n" MW_PREFIX
+             "****************** WARNING ******************\n"
+             MW_PREFIX "NULL pointer deleted.\n"
+             MW_PREFIX "This is valid but suspicious\n" );
+        InternalCall = false;
 #endif //REPORT_NULLS
-		return;
-	}
+        return;
+    }
 
-	if ( DB_Blown )
-		return;
+    if ( DB_Blown )
+        return;
 
-	// Is this pointer in our database?
+    // Is this pointer in our database?
     int i;
-	for ( i = 0; i < numEntries && DB[i].Address != TheMem; i++ );
+    for ( i = 0; i < numEntries && DB[i].Address != TheMem; i++ );
 
-	if ( i == numEntries )
+    if ( i == numEntries )
     {
-		// No. This is not good.
-		InternalCall = true;
-		// Set a breakpoint on the next statement
-		// If it is reached you are freeing something
-		// that was not allocated or you are freeing
-		// something twice.
-		fprintf( OUTFILE, "\n" MW_PREFIX
-			 "******************* ERROR *******************\n"
-			 MW_PREFIX
-			 "Attempt to delete unknown pointer %p.\n"
-			 MW_PREFIX
-			 "Either the pointer is corrupt or was deleted \n"
-			 MW_PREFIX
-			 "multiple times. \n",
-			 TheMem );
-		InternalCall = false;
+        // No. This is not good.
 #ifdef CXXTEST_TRAP_SIGNALS
-		memwatch_assert( "attempt to delete unknown pointer" );
+        memwatch_assert( "attempt to delete unknown pointer" );
+#else
+        InternalCall = true;
+        // Set a breakpoint on the next statement
+        // If it is reached you are freeing something
+        // that was not allocated or you are freeing
+        // something twice.
+        fprintf( OUTFILE, "\n" MW_PREFIX
+             "******************* ERROR *******************\n"
+             MW_PREFIX
+             "Attempt to delete unknown pointer %p.\n"
+             MW_PREFIX
+             "Either the pointer is corrupt or was deleted \n"
+             MW_PREFIX
+             "multiple times. \n",
+             TheMem );
+        InternalCall = false;
 #endif
 #ifdef REALLY_FREE
 #  ifdef ALLOW_CORRUPTION
-		free(RealMem);  // Don't actually corrupt the stack!
+        free(RealMem);  // Don't actually corrupt the stack!
 #  endif
 #endif
-		return;
-	}
+        return;
+    }
 
-	// Check the safety areas to see if they are the same as when
-	// we handed the memory out.
-	memset( HiTestString, safetyChar, hiSafetySize );
-	memset( LoTestString, safetyChar, loSafetySize );
+    // Check the safety areas to see if they are the same as when
+    // we handed the memory out.
+    memset( HiTestString, safetyChar, hiSafetySize );
+    memset( LoTestString, safetyChar, loSafetySize );
 
-	if ( memcmp( (char *)RealMem, LoTestString, loSafetySize ) )
-		UnderWrite = true;
+    if ( memcmp( (char *)RealMem, LoTestString, loSafetySize ) )
+        UnderWrite = true;
 
-	if ( memcmp( ((char *)TheMem) + DB[i].Size,
-		     HiTestString,
-		     hiSafetySize ) )
-		OverWrite = true;
+    if ( memcmp( ((char *)TheMem) + DB[i].Size,
+             HiTestString,
+             hiSafetySize ) )
+        OverWrite = true;
 
-	if ( OverWrite || UnderWrite )
+    if ( OverWrite || UnderWrite )
     {
-		// It's different--report the fact.
-		InternalCall = true;
-		// Set a breakpoint on the next statement
-		// If it is reached the memory block has been
-		// corrupted.
-		fprintf( OUTFILE, "\n" MW_PREFIX
-			 "****************** WARNING ******************\n"
-			 MW_PREFIX "The memory block at %p is corrupt.\n",
-			 TheMem );
-		if ( UnderWrite )
-			fprintf( OUTFILE, MW_PREFIX
-				 "The low safety area has been changed.\n" );
-		if ( OverWrite )
-			fprintf( OUTFILE, MW_PREFIX
-				 "The high safety area has been changed.\n" );
-		InternalCall = false;
-	}
+        // It's different--report the fact.
+        InternalCall = true;
+        // Set a breakpoint on the next statement
+        // If it is reached the memory block has been
+        // corrupted.
+        fprintf( OUTFILE, "\n" MW_PREFIX
+             "****************** WARNING ******************\n"
+             MW_PREFIX "The memory block at %p is corrupt.\n",
+             TheMem );
+        if ( UnderWrite )
+            fprintf( OUTFILE, MW_PREFIX
+                 "The low safety area has been changed.\n" );
+        if ( OverWrite )
+            fprintf( OUTFILE, MW_PREFIX
+                 "The high safety area has been changed.\n" );
+        InternalCall = false;
+    }
 
 #ifdef CLEAR_FREED_MEMORY
     // Zero out the memory to detect memory errors
     memset( TheMem, 0, DB[i].Size );
 #endif
 
-	// We found the pointer so remove it from the database.
-	DB[i].Address = 0;
+    // We found the pointer so remove it from the database.
+    DB[i].Address = 0;
 #ifdef CXXTEST_TRAP_SIGNALS
-	if ( OverWrite || UnderWrite )
-	    memwatch_assert( "corrupt heap-allocated memory block detected" );
+    if ( OverWrite || UnderWrite )
+        memwatch_assert( "corrupt heap-allocated memory block detected" );
 #endif
     if ( DB[i].isArray )
     {
+#ifdef CXXTEST_TRAP_SIGNALS
+    memwatch_assert( "pointer to array deleted incorrectly using "
+             "operator delete" );
+#else
         InternalCall = true;
         fprintf( OUTFILE, "\n" MW_PREFIX
-		 "******************* ERROR *******************\n"
-		 MW_PREFIX
+         "******************* ERROR *******************\n"
+         MW_PREFIX
                  "Pointer to array %p deleted using\n"
-		 MW_PREFIX
+         MW_PREFIX
                  "operator delete instead of operator delete[]. \n",
                  TheMem );
         InternalCall = false;
-#ifdef CXXTEST_TRAP_SIGNALS
-	memwatch_assert( "pointer to array deleted incorrectly using "
-			 "operator delete" );
 #endif
     }
 #ifdef REALLY_FREE
-	free( RealMem );
+    free( RealMem );
 #endif
 }
 
@@ -593,10 +691,10 @@ void operator delete[]( void* TheMem )
         {
             InternalCall = true;
             fprintf( OUTFILE, "\n" MW_PREFIX
-		     "****************** Wait ******************\n"
-		     MW_PREFIX
+             "****************** Wait ******************\n"
+             MW_PREFIX
                      "Caught one more deleted block (%d/%d"
-		     MW_PREFIX
+             MW_PREFIX
                      " array blocks freed).\n",
                      NumArrayDeletes, NumNewArray );
             InternalCall = false;
@@ -612,10 +710,10 @@ void operator delete[]( void* TheMem )
         // It is always valid to delete a null pointer
         // but you can set a breakpoint here to detect it.
         fprintf( OUTFILE, "\n" MW_PREFIX
-		 "****************** WARNING ******************\n"
-		 MW_PREFIX
+         "****************** WARNING ******************\n"
+         MW_PREFIX
                  "NULL pointer deleted.\n"
-		 MW_PREFIX
+         MW_PREFIX
                  "This is valid but suspicious\n" );
         InternalCall = false;
 #endif //REPORT_NULLS
@@ -632,23 +730,24 @@ void operator delete[]( void* TheMem )
     if ( i == numEntries )
     {
         // No. This is not good.
+#ifdef CXXTEST_TRAP_SIGNALS
+        memwatch_assert( "attempt to delete unknown pointer" );
+#else
         InternalCall = true;
         // Set a breakpoint on the next statement
         // If it is reached you are freeing something
         // that was not allocated or you are freeing
         // something twice.
         fprintf( OUTFILE, "\n" MW_PREFIX
-		 "******************* ERROR *******************\n"
-		 MW_PREFIX
+         "******************* ERROR *******************\n"
+         MW_PREFIX
                  "Attempt to delete unknown pointer %p.\n"
-		 MW_PREFIX
+         MW_PREFIX
                  "Either the pointer is corrupt or was deleted \n"
-		 MW_PREFIX
-	  "multiple times. \n",
-	  TheMem );
+         MW_PREFIX
+      "multiple times. \n",
+      TheMem );
         InternalCall = false;
-#ifdef CXXTEST_TRAP_SIGNALS
-		memwatch_assert( "attempt to delete unknown pointer" );
 #endif
 #ifdef REALLY_FREE
 #  ifdef ALLOW_CORRUPTION
@@ -676,16 +775,16 @@ void operator delete[]( void* TheMem )
         // If it is reached the memory block has been
         // corrupted.
         fprintf( OUTFILE, "\n" MW_PREFIX
-		 "****************** WARNING ******************\n"
-		 MW_PREFIX
+         "****************** WARNING ******************\n"
+         MW_PREFIX
                  "The memory block at %p is corrupt.\n",
                  TheMem );
         if ( UnderWrite )
             fprintf( OUTFILE, MW_PREFIX
-		     "The low safety area has been changed.\n" );
+             "The low safety area has been changed.\n" );
         if ( OverWrite )
             fprintf( OUTFILE, MW_PREFIX
-		     "The high safety area has been changed.\n" );
+             "The high safety area has been changed.\n" );
         InternalCall = false;
     }
 
@@ -697,23 +796,24 @@ void operator delete[]( void* TheMem )
     // We found the pointer so remove it from the database.
     DB[i].Address = 0;
 #ifdef CXXTEST_TRAP_SIGNALS
-	if ( OverWrite || UnderWrite )
-	    memwatch_assert( "corrupt heap-allocated memory block detected" );
+    if ( OverWrite || UnderWrite )
+        memwatch_assert( "corrupt heap-allocated memory block detected" );
 #endif
     if ( !DB[i].isArray )
     {
+#ifdef CXXTEST_TRAP_SIGNALS
+    memwatch_assert( "pointer to non-array deleted "
+             "incorrectly using operator delete[]" );
+#else
         InternalCall = true;
         fprintf( OUTFILE, "\n" MW_PREFIX
-		 "******************* ERROR *******************\n"
-		 MW_PREFIX
+         "******************* ERROR *******************\n"
+         MW_PREFIX
                  "Pointer to non-array %p deleted using\n"
-		 MW_PREFIX
+         MW_PREFIX
                  "operator delete[] instead of operator delete. \n",
                  TheMem );
         InternalCall = false;
-#ifdef CXXTEST_TRAP_SIGNALS
-		memwatch_assert( "pointer to non-array deleted "
-				 "incorrectly using operator delete[]" );
 #endif
     }
 #ifdef REALLY_FREE

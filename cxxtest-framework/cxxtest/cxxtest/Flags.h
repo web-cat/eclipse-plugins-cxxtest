@@ -57,6 +57,21 @@
 #   undef _CXXTEST_ABORT_TEST_ON_FAIL
 #endif // _CXXTEST_ABORT_TEST_ON_FAIL && !_CXXTEST_HAVE_EH
 
+#if defined(CXXTEST_STACK_TRACE_EXE)
+#   define CXXTEST_TRACE_STACK
+#endif // CXXTEST_STACK_TRACE_EXE
+
+#if defined(CXXTEST_TRACE_STACK) && !defined(__GNUC__)
+#undef CXXTEST_TRACE_STACK
+#endif
+
+#if defined(__GNUC__)
+// This definition is always on, even when stack tracing is disabled
+#    define _CXXTEST_NO_INSTR __attribute__ ((no_instrument_function))
+#else
+#    define _CXXTEST_NO_INSTR
+#endif
+
 //
 // Some minimal per-compiler configuration to allow us to compile
 //

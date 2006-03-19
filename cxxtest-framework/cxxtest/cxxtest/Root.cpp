@@ -22,6 +22,9 @@ namespace CxxTest
     List RealSuiteDescription::_suites = { 0, 0 };
 #ifdef CXXTEST_TRAP_SIGNALS
     sigjmp_buf __cxxtest_jmpbuf[__cxxtest_jmpmax];
+#ifdef CXXTEST_TRACE_STACK
+    unsigned int __cxxtest_stackTopBuf[__cxxtest_jmpmax];
+#endif
     volatile sig_atomic_t __cxxtest_jmppos = -1;
     std::string __cxxtest_sigmsg;
     std::string __cxxtest_assertmsg;
@@ -322,7 +325,6 @@ namespace CxxTest
 
 extern "C" {
 
-#ifdef __CYGWIN__
     void __assert( const char* file, int line, const char* failedexpr )
     {
         std::ostringstream out;
@@ -335,24 +337,8 @@ extern "C" {
         CxxTest::__cxxtest_assertmsg = out.str();
         abort();
     }
-#else
-    void __assert_fail( const char* failedexpr, const char* file,
-			unsigned int line, const char* function )
-    {
-        std::ostringstream out;
-        out << HINT_PREFIX "assertion \""
-            << failedexpr
-            << "\" failed: file \""
-            << file
-            << "\", line "
-            << line
-            << ", method "
-            << function;
-        CxxTest::__cxxtest_assertmsg = out.str();
-        abort();
-    }
-#endif
 
+    void abort() _CXXTEST_NO_INSTR;
     void abort()
     {
 #ifndef __CYGWIN__
@@ -372,8 +358,10 @@ extern "C" {
 	exit( 1 );
     }
 
+
 }
 
+    void memwatch_assert( const char* msg ) _CXXTEST_NO_INSTR;
     void memwatch_assert( const char* msg )
     {
         CxxTest::__cxxtest_assertmsg = HINT_PREFIX "heap error: ";
@@ -382,5 +370,7 @@ extern "C" {
     }
 
 #endif
+
+#include "cxxtest/Stacktrace.cpp"
 
 #endif // __CXXTEST__ROOT_CPP

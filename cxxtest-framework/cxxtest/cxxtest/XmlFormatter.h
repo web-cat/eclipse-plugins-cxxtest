@@ -7,8 +7,23 @@
 // stream in the form of an XML document.
 // Since we cannot rely ou the standard
 // iostreams, this header defines a base class
-// analogout to std::ostream.
+// analogous to std::ostream.
 //
+
+// The following definitions are used if stack trace support is enabled,
+// to give the traces an easily-parsable XML format.  If stack tracing is
+// not enabled, then these definitions will be ignored.
+#define CXXTEST_STACK_TRACE_ESCAPE_AS_XML
+#define CXXTEST_STACK_TRACE_NO_ESCAPE_FILELINE_AFFIXES
+
+#define CXXTEST_STACK_TRACE_INITIAL_PREFIX "<stack-frame function=\""
+#define CXXTEST_STACK_TRACE_INITIAL_SUFFIX "\"/>\n"
+#define CXXTEST_STACK_TRACE_OTHER_PREFIX CXXTEST_STACK_TRACE_INITIAL_PREFIX
+#define CXXTEST_STACK_TRACE_OTHER_SUFFIX CXXTEST_STACK_TRACE_INITIAL_SUFFIX
+#define CXXTEST_STACK_TRACE_ELLIDED_MESSAGE ""
+#define CXXTEST_STACK_TRACE_FILELINE_PREFIX "\" location=\""
+#define CXXTEST_STACK_TRACE_FILELINE_SUFFIX ""
+
 
 #include <cxxtest/TestRunner.h>
 #include <cxxtest/TestListener.h>
@@ -110,9 +125,15 @@ namespace CxxTest
 
         void failedTest( const char *file, unsigned line, const char *expression )
         {
-            startTag( "failed-test", file, line );
-            attribute( "message", expression );
-            endTag();
+//            startTag( "failed-test", file, line );
+//            attribute( "message", expression );
+//            endTag();
+
+            (*_o) << "            <failed-test line=\"" << line << "\">" << endl;
+            (*_o) << expression;
+            (*_o) << "            </failed-test>" << endl;
+            _o->flush();
+
         }
 
         void failedAssert( const char *file, unsigned line, const char *expression )
