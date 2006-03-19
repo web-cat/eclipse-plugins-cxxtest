@@ -17,8 +17,6 @@
  */
 package net.sf.webcat.eclipse.cxxtest.wizards;
 
-import java.util.ArrayList;
-
 import net.sf.webcat.eclipse.cxxtest.CxxTestNature;
 import net.sf.webcat.eclipse.cxxtest.CxxTestPlugin;
 
@@ -81,7 +79,7 @@ public class NewCxxTestProjectWizard extends NewManagedCCProjectWizard
 		return newArray;
 	}
 	
-	private String[] removeFromArray(String[] array, String[] remEntries)
+/*	private String[] removeFromArray(String[] array, String[] remEntries)
 	{
 		ArrayList list = new ArrayList();
 		for(int i = 0; i < array.length; i++)
@@ -96,7 +94,7 @@ public class NewCxxTestProjectWizard extends NewManagedCCProjectWizard
 		String[] newArray = new String[list.size()];
 		list.toArray(newArray);
 		return newArray;
-	}
+	}*/
 
 	private void addStackTraceOptions(IProject project)
 	{
