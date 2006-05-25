@@ -84,7 +84,11 @@ public class CxxTestResultsHandler extends DefaultHandler
 	public void characters(char[] chars, int start, int length)
 	{
 		if(insideTestChild)
-			textContents.append(chars, start, length);
+		{
+			for(int i = start; i < start + length; i++)
+				if(chars[i] != '\r' && chars[i] != '\n')
+					textContents.append(chars[i]);
+		}
 	}
 
 	private void startStackFrame(Attributes attributes)
@@ -119,7 +123,7 @@ public class CxxTestResultsHandler extends DefaultHandler
 			StackTraceAssertion sta =
 				(StackTraceAssertion)lastTestChild;
 			
-			sta.setMessage(textContents.toString());
+			sta.setMessage(textContents.toString().trim());
 		}
 
 		insideTestChild = false;
