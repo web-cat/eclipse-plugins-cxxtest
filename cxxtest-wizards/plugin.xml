@@ -14,4 +14,15 @@
             name="Managed Make C++ Project w/ CxxTest"
             id="net.sf.webcat.eclipse.cxxtest.wizards.StdCCWizard"/>
    </extension>
+     <extension
+           point="org.eclipse.ui.newWizards">
+        <wizard
+              category="org.eclipse.cdt.ui.newCCWizards"
+              class="net.sf.webcat.eclipse.cxxtest.wizards.NewCxxTestSuiteWizard"
+              hasPages="true"
+              icon="icons/new_testcase.gif"
+              id="net.sf.webcat.eclipse.cxxtest.wizards.NewCxxTestSuiteWizard"
+              name="CxxTest Suite"
+              project="false"/>
+     </extension>
 </plugin>

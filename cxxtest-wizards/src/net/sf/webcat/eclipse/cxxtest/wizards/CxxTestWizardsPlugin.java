@@ -27,7 +27,11 @@ import org.osgi.framework.BundleContext;
 /**
  * The main plugin class to be used in the desktop.
  */
-public class CxxTestWizardsPlugin extends AbstractUIPlugin {
+public class CxxTestWizardsPlugin extends AbstractUIPlugin
+{
+	public static final String PLUGIN_ID =
+		"net.sf.webcat.eclipse.cxxtest.wizards";
+
 	//The shared instance.
 	private static CxxTestWizardsPlugin plugin;
 	//Resource bundle.

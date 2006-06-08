@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CxxTest Wizards Plug-in
 Bundle-SymbolicName: net.sf.webcat.eclipse.cxxtest.wizards; singleton:=true
-Bundle-Version: 1.2.1
+Bundle-Version: 1.2.2
 Bundle-ClassPath: cxxtest-wizards.jar
 Bundle-Activator: net.sf.webcat.eclipse.cxxtest.wizards.CxxTestWizardsPlugin
 Bundle-Vendor: Virginia Tech Computer Science
@@ -16,6 +16,7 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.cdt.ui,
  org.eclipse.cdt.make.ui,
  org.eclipse.ui.ide,
- net.sf.webcat.eclipse.cxxtest
+ net.sf.webcat.eclipse.cxxtest,
+ org.eclipse.jface.text
 Eclipse-AutoStart: true
 Export-Package: net.sf.webcat.eclipse.cxxtest.wizards
