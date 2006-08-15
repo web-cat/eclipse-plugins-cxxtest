@@ -58,78 +58,74 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 	{
 		IProject project = getProject();
 
-//		if(kind == CLEAN_BUILD || kind == AUTO_BUILD || kind == INCREMENTAL_BUILD)
+		if(!checkForRebuild())
 		{
-			if(!checkForRebuild())
-			{
-				// We don't need to rebuild the test case runner, so bail out.
-				monitor.done();
-				return null;
-			}
-
-			ICProject cproject = CCorePlugin.getDefault().getCoreModel().create(project);
-
-			monitor.beginTask("Generating CxxTest Driver", 3);
-
-			// Delete the existing test runner source file.
-			String outputFile = getDriverFileName();
-			IFile outputFileRsrc = project.getFile(outputFile);
-			outputFileRsrc.delete(true, monitor);
-			
-			// Walk down the project DOM tree and find all the classes that
-			// are CxxTest test suites.
-			TestCaseVisitor visitor = new TestCaseVisitor();
-			visitor.setDriverFileName(outputFile);
-			cproject.accept(visitor);
-			monitor.worked(1);
-
-			CxxTestSuiteInfo[] suites = visitor.getTestSuites();
-
-			IPreferenceStore store = CxxTestPlugin.getDefault().getPreferenceStore();
-
-			try
-			{
-				// Generate the .cpp file that will run all the tests.
-				File projectDir = getProject().getLocation().toFile();
-				String fullPath = projectDir.toString() + "/" + outputFile;
-
-				IPath exePath = getExecutableFile().getProjectRelativePath();
-
-				boolean trackHeap = store.getBoolean(
-							CxxTestPlugin.CXXTEST_PREF_TRACK_HEAP);
-				boolean trapSignals = store.getBoolean(
-							CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS);
-				boolean traceStack = store.getBoolean(
-						CxxTestPlugin.CXXTEST_PREF_TRACE_STACK);
-
-				CxxTestDriverGenerator generator = new CxxTestDriverGenerator(
-						cproject, fullPath, suites);
-				generator.setUsingStandardLibrary(visitor.isUsingStandardLibrary());
-				generator.setTrackHeap(trackHeap);
-				generator.setTrapSignals(trapSignals);
-				generator.setTraceStack(traceStack);
-				generator.setCompiledExePath(exePath.toString());
-				generator.setMemWatchFile(ICxxTestConstants.MEMWATCH_RESULTS_FILE);
-				generator.setMainProvided(visitor.getMainExists());
-
-				generator.buildDriver();
-			}
-			catch(IOException e)
-			{
-				setProblemMarker(ICxxTestConstants.MARKER_INVOCATION_PROBLEM,
-						"An error occurred when generating the test runner " +
-						"source file: " + e.getMessage());
-			}
-
-			monitor.worked(1);
-
-			// Refresh the project so it recognizes the new source file and
-			// rebuilds appropriately.
-			outputFileRsrc.refreshLocal(IResource.DEPTH_ZERO,
-					new SubProgressMonitor(monitor, 1));
-			
+			// We don't need to rebuild the test case runner, so bail out.
 			monitor.done();
+			return null;
 		}
+
+		ICProject cproject = CCorePlugin.getDefault().getCoreModel().create(project);
+
+		monitor.beginTask("Generating CxxTest Driver", 3);
+
+		// Delete the existing test runner source file.
+		String outputFile = getDriverFileName();
+		IFile outputFileRsrc = project.getFile(outputFile);
+		outputFileRsrc.delete(true, monitor);
+		
+		// Walk down the project DOM tree and find all the classes that
+		// are CxxTest test suites.
+		TestCaseVisitor visitor = new TestCaseVisitor(outputFile);
+		cproject.accept(visitor);
+		monitor.worked(1);
+
+		CxxTestSuiteInfo[] suites = visitor.getTestSuites();
+
+		IPreferenceStore store = CxxTestPlugin.getDefault().getPreferenceStore();
+
+		try
+		{
+			// Generate the .cpp file that will run all the tests.
+			File projectDir = getProject().getLocation().toFile();
+			String fullPath = projectDir.toString() + "/" + outputFile;
+
+			IPath exePath = getExecutableFile().getProjectRelativePath();
+
+			boolean trackHeap = store.getBoolean(
+						CxxTestPlugin.CXXTEST_PREF_TRACK_HEAP);
+			boolean trapSignals = store.getBoolean(
+						CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS);
+			boolean traceStack = store.getBoolean(
+					CxxTestPlugin.CXXTEST_PREF_TRACE_STACK);
+
+			CxxTestDriverGenerator generator = new CxxTestDriverGenerator(
+					cproject, fullPath, suites);
+			generator.setUsingStandardLibrary(visitor.isUsingStandardLibrary());
+			generator.setTrackHeap(trackHeap);
+			generator.setTrapSignals(trapSignals);
+			generator.setTraceStack(traceStack);
+			generator.setCompiledExePath(exePath.toString());
+			generator.setMemWatchFile(ICxxTestConstants.MEMWATCH_RESULTS_FILE);
+			generator.setMainProvided(visitor.getMainExists());
+
+			generator.buildDriver();
+		}
+		catch(IOException e)
+		{
+			setProblemMarker(ICxxTestConstants.MARKER_INVOCATION_PROBLEM,
+					"An error occurred when generating the test runner " +
+					"source file: " + e.getMessage());
+		}
+
+		monitor.worked(1);
+
+		// Refresh the project so it recognizes the new source file and
+		// rebuilds appropriately.
+		outputFileRsrc.refreshLocal(IResource.DEPTH_ZERO,
+				new SubProgressMonitor(monitor, 1));
+		
+		monitor.done();
 		
 		return null;
 	}
@@ -201,18 +197,15 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 								.getName().startsWith("core"));
 				boolean notInConfigBuildDir = j == configurations.length;
 
-				// Finally, check for the test results XML file.
-				boolean isResultsFile = resource.getName().equals(
-					ICxxTestConstants.TEST_RESULTS_FILE);
-				boolean isMemWatchFile = resource.getName().equals(
-					ICxxTestConstants.MEMWATCH_RESULTS_FILE);
+				// Finally, ignore dot-files.
+				boolean isDotFile = resource.getName().startsWith(".");
 
 				// If the child isn't in any of the configuration-based
 				// binary build directories in the project and isn't a
 				// stack dump file ...
-				if(notInConfigBuildDir && !isStackDump && !isResultsFile &&
-						!isMemWatchFile)
+				if(notInConfigBuildDir && !isStackDump && !isDotFile)
 				{
+//					System.out.println("Resource changed = " + resource.toString());
 					changeRequiresRebuild = true;
 					break;
 				}

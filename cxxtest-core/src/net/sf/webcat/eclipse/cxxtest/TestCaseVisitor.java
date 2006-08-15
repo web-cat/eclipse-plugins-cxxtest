@@ -90,6 +90,11 @@ public class TestCaseVisitor implements ICElementVisitor
 
 	private String driverFileName = null;
 
+	public TestCaseVisitor(String file)
+	{
+		driverFileName = file;
+	}
+
 	/**
 	 * Called by the runtime when each element of the C++ project is
 	 * processed.
@@ -164,11 +169,6 @@ public class TestCaseVisitor implements ICElementVisitor
 		}
 		
 		return visitChildren;
-	}
-
-	public void setDriverFileName(String file)
-	{
-		driverFileName = file;
 	}
 
 	private boolean shouldVisitFile(ITranslationUnit unit)

@@ -55,7 +55,7 @@ public class CxxTestPreferencePage extends FieldEditorPreferencePage
 				"Generated &driver file name:", getFieldEditorParent()));
 
 		addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRACK_HEAP,
-            "Track heap usage", getFieldEditorParent()));
+            "Enable basic heap error checking", getFieldEditorParent()));
         addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS,
             "Trap signals within test cases", getFieldEditorParent()));
         addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRACE_STACK,

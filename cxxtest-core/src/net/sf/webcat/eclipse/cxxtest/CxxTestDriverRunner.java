@@ -31,6 +31,8 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceDelta;
+import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
@@ -127,6 +129,29 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 		}
 	}
 
+	private class ExecutableChangedVisitor implements IResourceDeltaVisitor
+	{
+		private boolean exeChanged;
+
+		public ExecutableChangedVisitor()
+		{
+			exeChanged = false;
+		}
+
+		public boolean visit(IResourceDelta delta) throws CoreException
+		{
+			if(delta.getResource().equals(getExecutableFile()))
+				exeChanged = true;
+
+			return true;
+		}
+		
+		public boolean isExecutableChanged()
+		{
+			return exeChanged;
+		}
+	}
+
 	private IFile getExecutableFile()
 	{
 		IProject project = getProject();
@@ -146,8 +171,6 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 		return file;
 	}
 
-	private long lastModifiedStamp = 0;
-
 	/* (non-Javadoc)
 	 * @see org.eclipse.core.internal.events.InternalBuilder#build(int, java.util.Map, org.eclipse.core.runtime.IProgressMonitor)
 	 */
@@ -156,9 +179,17 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 	{
 		IProject project = getProject();
 
-   		long currModifiedStamp = getExecutableFile().getModificationStamp();
-       	if(currModifiedStamp == lastModifiedStamp)
-		{
+		// Since the test runner generates files in the project directory,
+		// this will cause Eclipse to try to rebuild the project, and this
+		// builder will execute again. To prevent an infinite loop, we only
+		// run the test runner when the executable has changed (and so is
+		// found in the resource delta).
+		IResourceDelta delta = getDelta(project);
+		ExecutableChangedVisitor visitor = new ExecutableChangedVisitor();
+		delta.accept(visitor);
+
+		if(!visitor.isExecutableChanged())
+       	{
 			// We don't need to rebuild the test case runner, so bail out.
 			monitor.done();
 			return null;
@@ -191,11 +222,6 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 
 		monitor.done();
 		
-		// Cache the last modified timestamp of the test runner executable.
-		// Next time this builder is invoked, we won't execute the
-		// auto-runner if the executable hasn't changed.
-		lastModifiedStamp = getExecutableFile().getModificationStamp();
-
 		return null;
 	}
 
@@ -203,7 +229,6 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 	{
 		super.clean(monitor);
 		
-		lastModifiedStamp = 0;
 		deleteMarkers();
 	}
 

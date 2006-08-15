@@ -17,21 +17,23 @@
  */
 package net.sf.webcat.eclipse.cxxtest;
 
-import net.sf.webcat.eclipse.cxxtest.framework.FrameworkPlugin;
+import java.util.ArrayList;
 
-import org.eclipse.cdt.managedbuilder.core.BuildException;
+import net.sf.webcat.eclipse.cxxtest.options.IExtraProjectOptions;
+
 import org.eclipse.cdt.managedbuilder.core.IConfiguration;
 import org.eclipse.cdt.managedbuilder.core.IManagedBuildInfo;
-import org.eclipse.cdt.managedbuilder.core.IManagedProject;
-import org.eclipse.cdt.managedbuilder.core.IOption;
-import org.eclipse.cdt.managedbuilder.core.ITool;
 import org.eclipse.cdt.managedbuilder.core.ManagedBuildManager;
 import org.eclipse.core.resources.ICommand;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IProjectNature;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IConfigurationElement;
+import org.eclipse.core.runtime.IExtensionPoint;
+import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.Platform;
 
 /**
  * The project nature attached to CxxTest projects.
@@ -143,68 +145,58 @@ public class CxxTestNature implements IProjectNature
 			throw ex;
 		}
 
-		addIncludePath(project);
+		addProjectOptions(project);
 
 		return index == -1;
 	}
 
-	private static void addIncludePath(IProject project)
+	private static IExtraProjectOptions[] getExtraOptionsHandlers()
 	{
-		String includePath = "\"" +
-			FrameworkPlugin.getDefault().getFrameworkPath() + "\"";
+		IExtensionRegistry registry = Platform.getExtensionRegistry();
+		IExtensionPoint extensionPoint = registry.getExtensionPoint(
+				CxxTestPlugin.PLUGIN_ID + ".extraProjectOptions");
 
-		IManagedBuildInfo buildInfo = ManagedBuildManager.getBuildInfo(project);
-		IManagedProject managedProject = buildInfo.getManagedProject();
-
-		IConfiguration[] configs = managedProject.getConfigurations();
-		for(int confIndex = 0; confIndex < configs.length; confIndex++)
+		IConfigurationElement[] elements =
+			extensionPoint.getConfigurationElements();
+		ArrayList list = new ArrayList();
+		
+		for(int i = 0; i < elements.length; i++)
 		{
-			ITool[] tools = configs[confIndex].getTools();
+			IConfigurationElement element = elements[i];
 
-			for(int toolIndex = 0; toolIndex < tools.length; toolIndex++)
+			try
 			{
-				ITool tool = tools[toolIndex];
-				if(tool.getId().startsWith("cdt.managedbuild.tool.gnu.cpp.compiler"))
-				{
-					IOption includesOption = tool
-						.getOptionById("gnu.cpp.compiler.option.include.paths");
+				Object options = element.createExecutableExtension("class");
 
-					try
-					{
-						String[] includes = includesOption.getIncludePaths();
-
-						// Don't do anything if the path is already in the
-						// include path list.
-						boolean includeFound = false;
-						for(int incIndex = 0; incIndex < includes.length; incIndex++)
-						{
-							if(includes[incIndex].equals(includePath))
-							{
-								includeFound = true;
-								break;
-							}
-						}
-
-						if(!includeFound)
-						{
-							String[] newIncludes = new String[includes.length + 1];
-							System.arraycopy(includes, 0, newIncludes, 0,
-									includes.length);
-							newIncludes[includes.length] = includePath;
-	
-							ManagedBuildManager.setOption(configs[confIndex],
-									tool, includesOption, newIncludes);
-	
-							ManagedBuildManager.saveBuildInfo(project, true);
-						}
-					}
-					catch(BuildException e)
-					{
-						e.printStackTrace();
-					}							
-				}
+				if(options instanceof IExtraProjectOptions)
+					list.add(options);
 			}
+			catch(CoreException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		
+		IExtraProjectOptions[] handlers = new IExtraProjectOptions[list.size()];
+		return (IExtraProjectOptions[])list.toArray(handlers);
+	}
+
+	private static void addProjectOptions(IProject project)
+	{
+		IManagedBuildInfo buildInfo = ManagedBuildManager.getBuildInfo(project);
+
+		IExtraProjectOptions[] optionsHandlers = getExtraOptionsHandlers();
+
+		IConfiguration[] configs = buildInfo.getManagedProject().getConfigurations();
+		for(int j = 0; j < configs.length; j++)
+		{
+			IConfiguration config = configs[j];
+
+			for(int i = 0; i < optionsHandlers.length; i++)
+				optionsHandlers[i].addOptions(project, config);
 		}		
+
+		ManagedBuildManager.saveBuildInfo(project, true);
 	}
 
 	public static void addBuilders(IProject project) throws CoreException

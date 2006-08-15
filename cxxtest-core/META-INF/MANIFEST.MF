@@ -1,15 +1,15 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: CxxTest Driver Plug-in
+Bundle-Name: CxxTest Core Driver and View
 Bundle-SymbolicName: net.sf.webcat.eclipse.cxxtest; singleton:=true
-Bundle-Version: 1.2.2
+Bundle-Version: 1.3.0
 Bundle-ClassPath: cxxtest.jar
 Bundle-Activator: net.sf.webcat.eclipse.cxxtest.CxxTestPlugin
 Bundle-Vendor: Virginia Tech Computer Science
 Bundle-Localization: plugin
 Export-Package: net.sf.webcat.eclipse.cxxtest,
- net.sf.webcat.eclipse.cxxtest.internal.model;x-internal:=true,
  net.sf.webcat.eclipse.cxxtest.model,
+ net.sf.webcat.eclipse.cxxtest.options,
  net.sf.webcat.eclipse.cxxtest.preferences,
  net.sf.webcat.eclipse.cxxtest.properties,
  net.sf.webcat.eclipse.cxxtest.ui
@@ -27,4 +27,4 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.text,
  org.eclipse.ui.workbench.texteditor,
  net.sf.webcat.eclipse.cxxtest.framework
-Eclipse-AutoStart: true
+Eclipse-LazyStart: true

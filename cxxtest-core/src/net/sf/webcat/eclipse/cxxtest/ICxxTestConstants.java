@@ -58,4 +58,6 @@ public interface ICxxTestConstants
 	 * cluttering the student's project workspace in Eclipse.
 	 */
 	static final String MEMWATCH_RESULTS_FILE = ".memwatchResults";
+
+	static final String BINARY_LOG_FILE = ".testResultLog";
 }

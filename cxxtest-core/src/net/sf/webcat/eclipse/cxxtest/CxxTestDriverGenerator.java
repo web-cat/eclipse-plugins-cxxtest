@@ -32,13 +32,13 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 
+import net.sf.webcat.eclipse.cxxtest.framework.FrameworkPlugin;
+
 import org.eclipse.cdt.core.model.CModelException;
 import org.eclipse.cdt.core.model.ICProject;
 import org.eclipse.cdt.core.model.IMethodDeclaration;
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Platform;
-
-import net.sf.webcat.eclipse.cxxtest.framework.FrameworkPlugin;
 
 /**
  * A helper class that encapsulates the generation of the CxxTest test runner
@@ -86,6 +86,8 @@ public class CxxTestDriverGenerator
 	private String runner;
 	
 	private String memWatchFile;
+	
+	private boolean createBinaryLog;
 
 	/**
 	 * Instantiates an instance of the CxxTestDriverGenerator for the
@@ -120,9 +122,12 @@ public class CxxTestDriverGenerator
 		mainProvided = false;
 		
 		runner = "XmlStdioPrinter";
-		memWatchFile = ".memwatchResults";
-	}
+		memWatchFile = ICxxTestConstants.MEMWATCH_RESULTS_FILE;
 
+		createBinaryLog = CxxTestPlugin.getDefault().getConfigurationBoolean(
+				CxxTestPlugin.CXXTEST_CPREF_LOG_EXECUTION);
+	}
+	
 	public ICProject getProject()
 	{
 		return project;
@@ -273,9 +278,24 @@ public class CxxTestDriverGenerator
 		writer.println("#include <cxxtest/TestTracker.h>");
 		writer.println("#include <cxxtest/TestRunner.h>");
 		writer.println("#include <cxxtest/RealDescriptions.h>");
-		
+
+		if(createBinaryLog)
+		{
+			writer.println("#define CXXTEST_CREATE_BINARY_LOG");
+			writer.println("#include <cxxtest/ExecutionLog.h>");
+			writer.println("ExecutionLog executionLog;");
+			writer.println();
+		}
+
 		writer.println("#include <cxxtest/" + runner + ".h>");
 	    writer.println();
+
+		writer.println("#ifdef CXXTEST_TRACE_STACK");
+		writer.println("#include <symreader.h>");
+		writer.println("#endif");
+	    
+	    writer.println("#include <chkptr.h>");
+
 	    writer.println("typedef const CxxTest::SuiteDescription *SuiteDescriptionPtr;");
 	    writer.println("typedef const CxxTest::TestDescription *TestDescriptionPtr;");
 	    writer.println();
@@ -289,6 +309,9 @@ public class CxxTestDriverGenerator
 		if(trapSignals)
 			writeSignalHandler();
 
+		writeCheckedPointerHandler();
+		writeCheckedPointerReporter();
+
 		if(!mainProvided)
 			writeMainRunner();
 		else
@@ -297,6 +320,17 @@ public class CxxTestDriverGenerator
 
 	private void writeTestRunStatement(boolean inCtor) throws IOException
 	{
+		writer.println("#ifdef CXXTEST_TRACE_STACK");
+		writer.println(" symreader_initialize(CXXTEST_STACK_TRACE_EXE, SYMFLAGS_DEMANGLE);");
+		writer.println("#endif");
+		
+		writer.println(" ChkPtr::__manager.setReportAtEnd(true);");
+		writer.println(" ChkPtr::__manager.setErrorHandler(" +
+				"&CxxTest::__cxxtest_chkptr_error_handler);");
+		writer.println(" ChkPtr::__manager.setReporter(" +
+				"new CxxTest::xml_chkptr_reporter(\"" +
+				memWatchFile + "\"), true);");
+
 		if("XmlStdioPrinter".equals(runner))
 		{
 			writer.println(" FILE* resultsFile = fopen(\"" +
@@ -307,6 +341,15 @@ public class CxxTestDriverGenerator
 			
 			writer.println(" CxxTest::" + runner + "(resultsFile).run();");
 			writer.println(" fclose(resultsFile);");
+
+			if(createBinaryLog)
+			{
+				writer.println();
+				writer.println("#ifdef CXXTEST_CREATE_BINARY_LOG");
+				writer.println(" executionLog.appendToFile(\"" +
+						ICxxTestConstants.BINARY_LOG_FILE + "\");");
+				writer.println("#endif");
+			}
 			
 			if(!inCtor)
 				writer.println(" return exitCode;");
@@ -357,14 +400,16 @@ public class CxxTestDriverGenerator
 
 	private void writeFromFrameworkStream(String path) throws IOException
 	{
-		URL entry = Platform.find(FrameworkPlugin.getDefault().getBundle(),
-				new Path(path));
-		URL url = Platform.resolve(entry);
+		URL entry = FileLocator.find(
+				FrameworkPlugin.getDefault().getBundle(),
+				new Path(path), null);
+		URL url = FileLocator.resolve(entry);
 
 		InputStream stream = url.openStream();
 		writeFromStream(stream);
 		stream.close();
 	}
+
 	private void writeSignalHandler() throws IOException
 	{
 		writeFromFrameworkStream("/fragments/signalHandler.c");
@@ -373,6 +418,16 @@ public class CxxTestDriverGenerator
 	private void writeSignalRegistration() throws IOException
 	{
 		writeFromFrameworkStream("/fragments/signalRegistration.c");
+	}
+
+	private void writeCheckedPointerHandler() throws IOException
+	{
+		writeFromFrameworkStream("/fragments/chkptrErrorHandler.c");
+	}
+
+	private void writeCheckedPointerReporter() throws IOException
+	{
+		writeFromFrameworkStream("/fragments/chkptrReporter.cpp");
 	}
 
 	private void writeFromStream(InputStream stream) throws IOException
@@ -395,6 +450,12 @@ public class CxxTestDriverGenerator
 
 	private void writeRoot() throws IOException
 	{
+		if(trackHeap)
+		{
+			writer.println("#define CHKPTR_BASIC_HEAP_CHECK");
+			writer.println();
+		}
+
 		writer.println("#include <cxxtest/Root.cpp>");
 		
 		if(trackHeap)
@@ -404,8 +465,8 @@ public class CxxTestDriverGenerator
 				writer.println("#define MW_STACK_TRACE_INITIAL_PREFIX CXXTEST_STACK_TRACE_INITIAL_PREFIX");
 				writer.println("#define MW_STACK_TRACE_OTHER_PREFIX CXXTEST_STACK_TRACE_INITIAL_PREFIX");
 			}
-			writer.println("#define MW_XML_OUTPUT_FILE \"" + memWatchFile + "\"\n");
-			writer.println("#include <cxxtest/Memwatch.cpp>");
+//			writer.println("#define MW_XML_OUTPUT_FILE \"" + memWatchFile + "\"\n");
+//			writer.println("#include <cxxtest/Memwatch.cpp>");
 		}
 	}
 

@@ -88,12 +88,9 @@ public class TestRunnerViewPart extends ViewPart
 			else if(inputElement instanceof IMemWatchInfo)
 			{
 				IMemWatchInfo info = (IMemWatchInfo)inputElement;
-				String[] array = new String[5];
-				array[0] = "Max blocks in use: " + info.getMaxBlocksInUse();
-				array[1] = "Calls to new: " + info.getCallsToNew();
-				array[2] = "Calls to delete: " + info.getCallsToDelete();
-				array[3] = "Calls to new[]: " + info.getCallsToArrayNew();
-				array[4] = "Calls to delete[]: " + info.getCallsToArrayDelete();
+				String[] array = new String[2];
+				array[0] = "Total bytes allocated: " + info.getTotalBytesAllocated();
+				array[1] = "Maximum bytes in use: " + info.getMaxBytesInUse();
 				return array;
 			}
 			else

@@ -25,6 +25,7 @@ import java.util.ResourceBundle;
 import net.sf.webcat.eclipse.cxxtest.ui.TestRunnerViewPart;
 
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.preferences.ConfigurationScope;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.IWorkbench;
@@ -36,6 +37,7 @@ import org.eclipse.ui.console.IConsole;
 import org.eclipse.ui.console.IConsoleManager;
 import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.preferences.ScopedPreferenceStore;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -74,6 +76,8 @@ public class CxxTestPlugin extends AbstractUIPlugin
 
 	public static final String CXXTEST_PREF_TRACE_STACK = PLUGIN_ID
 			+ ".preferences.traceStack";
+
+	public static final String CXXTEST_CPREF_LOG_EXECUTION = "BINARY_EXECUTION_LOG";
 
 	/**
 	 * The constructor.
@@ -151,6 +155,13 @@ public class CxxTestPlugin extends AbstractUIPlugin
 	public boolean getBoolean(String id)
 	{
 		IPreferenceStore store = getPreferenceStore();
+		return store.getBoolean(id);
+	}
+
+	public boolean getConfigurationBoolean(String id)
+	{
+		IPreferenceStore store = new ScopedPreferenceStore(
+				new ConfigurationScope(), PLUGIN_ID);
 		return store.getBoolean(id);
 	}
 
