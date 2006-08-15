@@ -325,7 +325,11 @@ namespace CxxTest
 
 extern "C" {
 
-    void __assert( const char* file, int line, const char* failedexpr )
+#ifdef __CYGWIN__
+    void __assert(const char* file, int line, const char* failedexpr)
+#else
+	void __eprintf(const char* fmt, const char* file, unsigned line, const char* failedexpr)
+#endif
     {
         std::ostringstream out;
         out << HINT_PREFIX "assertion \""
@@ -361,16 +365,18 @@ extern "C" {
 
 }
 
-    void memwatch_assert( const char* msg ) _CXXTEST_NO_INSTR;
+/*    void memwatch_assert( const char* msg ) _CXXTEST_NO_INSTR;
     void memwatch_assert( const char* msg )
     {
         CxxTest::__cxxtest_assertmsg = HINT_PREFIX "heap error: ";
         CxxTest::__cxxtest_assertmsg += msg;
         abort();
-    }
+    }*/
 
 #endif
 
 #include "cxxtest/Stacktrace.cpp"
+
+#include "chkptr_table.cpp"
 
 #endif // __CXXTEST__ROOT_CPP

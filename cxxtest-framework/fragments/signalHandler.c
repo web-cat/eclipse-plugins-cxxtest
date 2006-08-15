@@ -4,7 +4,7 @@
 
 void __cxxtest_sig_handler( int, siginfo_t*, void* ) _CXXTEST_NO_INSTR;
 
-void __cxxtest_sig_handler( int signum, siginfo_t* /*info*/, void* /*arg*/ )
+void __cxxtest_sig_handler( int signum, siginfo_t* info, void* /*arg*/ )
 {
     const char* msg = "run-time exception";
     switch ( signum )
@@ -41,6 +41,11 @@ void __cxxtest_sig_handler( int signum, siginfo_t* /*info*/, void* /*arg*/ )
 		"(failed assertion, corrupted heap, or other problem?)";
             break;
     }
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+	executionLog.setLastResult(signum, CxxTest::__cxxtest_assertmsg);
+#endif
+
     if ( !CxxTest::__cxxtest_assertmsg.empty() )
     {
 	CxxTest::__cxxtest_sigmsg = CxxTest::__cxxtest_assertmsg;

@@ -101,6 +101,10 @@ namespace CxxTest
         {
         		(*_o) << "        </test>" << endl;
         		_o->flush();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        		executionLog.commitLastResult();
+#endif
         }
 
         void leaveWorld( const WorldDescription &desc )
@@ -134,6 +138,10 @@ namespace CxxTest
             (*_o) << "            </failed-test>" << endl;
             _o->flush();
 
+#ifdef CXXTEST_CREATE_BINARY_LOG
+			if(!executionLog.isLastResultSet())
+        		executionLog.setLastResult(LOG_TEST_FAILED_TEST, expression);
+#endif
         }
 
         void failedAssert( const char *file, unsigned line, const char *expression )
@@ -141,6 +149,10 @@ namespace CxxTest
             startTag( "failed-assert", file, line );
             attribute( "expression", expression );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
         void failedAssertEquals( const char *file, unsigned line,
@@ -153,6 +165,10 @@ namespace CxxTest
             attribute( "rhs-desc", yStr );
             attribute( "rhs-value", y );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
         void failedAssertSameData( const char *file, unsigned line,
@@ -168,6 +184,10 @@ namespace CxxTest
             attribute( "size-desc", sizeStr );
             attribute( "size-value", size );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
         void failedAssertDelta( const char *file, unsigned line,
@@ -182,6 +202,10 @@ namespace CxxTest
             attribute( "delta-desc", dStr );
             attribute( "delta-value", d );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
         void failedAssertDiffers( const char *file, unsigned line,
@@ -193,6 +217,10 @@ namespace CxxTest
             attribute( "rhs-desc", yStr );
             attribute( "value", value );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
         void failedAssertLessThan( const char *file, unsigned line,
@@ -205,6 +233,10 @@ namespace CxxTest
             attribute( "rhs-desc", yStr );
             attribute( "rhs-value", y );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
         void failedAssertLessThanEquals( const char *file, unsigned line,
@@ -217,6 +249,10 @@ namespace CxxTest
             attribute( "rhs-desc", yStr );
             attribute( "rhs-value", y );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
         void failedAssertRelation( const char *file, unsigned line,
@@ -230,6 +266,10 @@ namespace CxxTest
             attribute( "rhs-desc", yStr );
             attribute( "rhs-value", y );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
         void failedAssertPredicate( const char *file, unsigned line,
@@ -240,6 +280,10 @@ namespace CxxTest
             attribute( "arg-desc", xStr );
             attribute( "arg-value", x );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
         void failedAssertThrows( const char *file, unsigned line,
@@ -251,6 +295,10 @@ namespace CxxTest
             attribute( "type", type );
             attribute( "threw", otherThrown ? "other" : "none" );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
         void failedAssertThrowsNot( const char *file, unsigned line, const char *expression )
@@ -258,6 +306,10 @@ namespace CxxTest
             startTag( "failed-assert-nothrow", file, line );
             attribute( "expression", expression );
             endTag();
+
+#ifdef CXXTEST_CREATE_BINARY_LOG
+        	executionLog.setLastResult(LOG_TEST_FAILED_ASSERT);
+#endif
         }
 
     protected:
