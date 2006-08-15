@@ -1,0 +1,5 @@
+*** INSTALLATION INSTRUCTIONS
+
+This fragment requires the "vmutils.framework" from the MacOS X SDK,
+which is not redistributable. Before running CxxTest projects, please
+copy this framework from the SDK into this folder.
