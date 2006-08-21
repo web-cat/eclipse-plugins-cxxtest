@@ -15,6 +15,16 @@
  *	along with Web-CAT; if not, write to the Free Software
  *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+ 
+/*
+ * ACKNOWLEDGEMENTS: 
+ * This code is based on and extends the work done by Scott M. Pike and
+ * Bruce W. Weide at The Ohio State University and Joseph E. Hollingsworth of
+ * Indiana University SE in "Checkmate: Cornering C++ Dynamic Memory Errors
+ * With Checked Pointers", Proc. of the 31st SIGCSE Technical Symposium on
+ * CSE, ACM Press, March 2000.  
+ */
+ 
 #ifndef __CHKPTR_TABLE_H__
 #define __CHKPTR_TABLE_H__
 
