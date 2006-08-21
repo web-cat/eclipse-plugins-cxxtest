@@ -17,7 +17,7 @@
  */
 
 /*
- * ACKNOWLEDGEMENTS: 
+ * ACKNOWLEDGMENTS: 
  * This code is based on and extends the work done by Scott M. Pike and
  * Bruce W. Weide at The Ohio State University and Joseph E. Hollingsworth of
  * Indiana University SE in "Checkmate: Cornering C++ Dynamic Memory Errors
