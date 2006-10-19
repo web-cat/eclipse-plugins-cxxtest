@@ -23,10 +23,23 @@ import org.eclipse.cdt.managedbuilder.core.BuildException;
 import org.eclipse.cdt.managedbuilder.core.IConfiguration;
 import org.eclipse.cdt.managedbuilder.core.IOption;
 import org.eclipse.cdt.managedbuilder.core.ITool;
-import org.eclipse.cdt.managedbuilder.core.ManagedBuildManager;
 
+/**
+ * This class contains a set of helper methods that ease access to project
+ * properties.
+ * 
+ * @author Tony Allowatt (Virginia Tech Computer Science)
+ */
 public class ProjectOptionsUtil
 {
+	/**
+	 * Returns the union of the two arrays specified. There will be no
+	 * duplicates in the resultant array.
+	 * 
+	 * @param array the first array.
+	 * @param newEntries the second array.
+	 * @return the union of the two arrays specified.
+	 */
 	public static String[] mergeArrays(String[] array, String[] newEntries)
 	{
 		ArrayList list = new ArrayList();
@@ -41,6 +54,15 @@ public class ProjectOptionsUtil
 		return (String[])list.toArray(newArray);
 	}
 
+	/**
+	 * Treats a string as an array of elements that are separated by spaces,
+	 * and returns the union of these two "arrays" as a space-separated
+	 * string.
+	 * 
+	 * @param string the String that contains the original options.
+	 * @param newParts an array of new options to be added to the string.
+	 * @return a String with the merged options.
+	 */
 	public static String mergeStrings(String string, String[] newParts)
 	{
 		for(int i = 0; i < newParts.length; i++)
@@ -69,35 +91,89 @@ public class ProjectOptionsUtil
 		return newArray;
 	}*/
 
+	/**
+	 * Adds an array of string options to the specified compiler option.
+	 * 
+	 * @param configuration no longer used
+	 * @param tool the tool whose option will be modified
+	 * @param optionId the identifier of the option to be modified
+	 * @param newEntries the new options to be added to the tool's option
+	 */
 	public static void addToString(IConfiguration configuration, ITool tool,
 			String optionId, String[] newEntries) throws BuildException
 	{
 		IOption option = tool.getOptionById(optionId);
+		option = tool.getOptionToSet(option, false);
 		String other = mergeStrings(option.getStringValue(), newEntries);
-		ManagedBuildManager.setOption(configuration, tool, option, other);
+		option.setValue(other);
 	}
 
+	/**
+	 * Adds an array of paths to an Includes-type compiler option.
+	 * 
+	 * @param configuration no longer used
+	 * @param tool the tool whose option will be modified
+	 * @param optionId the identifier of the option to be modified
+	 * @param newEntries the new options to be added to the tool's option
+	 */
 	public static void addToIncludes(IConfiguration configuration, ITool tool,
 			String optionId, String[] newEntries) throws BuildException
 	{
 		IOption option = tool.getOptionById(optionId);
+		option = tool.getOptionToSet(option, false);
 		String[] array = mergeArrays(option.getIncludePaths(), newEntries);
-		ManagedBuildManager.setOption(configuration, tool, option, array);
+		option.setValue(array);
 	}
 
+	/**
+	 * Adds an array of library names to a Libraries-type compiler option.
+	 * 
+	 * @param configuration no longer used
+	 * @param tool the tool whose option will be modified
+	 * @param optionId the identifier of the option to be modified
+	 * @param newEntries the new options to be added to the tool's option
+	 */
 	public static void addToLibraries(IConfiguration configuration, ITool tool,
 			String optionId, String[] newEntries) throws BuildException
 	{
 		IOption option = tool.getOptionById(optionId);
+		option = tool.getOptionToSet(option, false);
 		String[] array = mergeArrays(option.getLibraries(), newEntries);
-		ManagedBuildManager.setOption(configuration, tool, option, array);
+		option.setValue(array);
 	}
 
+	/**
+	 * Adds an array of preprocessor symbols to a DefinedSymbols-type
+	 * compiler option.
+	 * 
+	 * @param configuration no longer used
+	 * @param tool the tool whose option will be modified
+	 * @param optionId the identifier of the option to be modified
+	 * @param newEntries the new options to be added to the tool's option
+	 */
+	public static void addToDefinedSymbols(IConfiguration configuration, ITool tool,
+			String optionId, String[] newEntries) throws BuildException
+	{
+		IOption option = tool.getOptionById(optionId);
+		option = tool.getOptionToSet(option, false);
+		String[] array = mergeArrays(option.getDefinedSymbols(), newEntries);
+		option.setValue(array);
+	}
+
+	/**
+	 * Adds an array of strings to a StringList-type compiler option.
+	 * 
+	 * @param configuration no longer used
+	 * @param tool the tool whose option will be modified
+	 * @param optionId the identifier of the option to be modified
+	 * @param newEntries the new options to be added to the tool's option
+	 */
 	public static void addToStringList(IConfiguration configuration, ITool tool,
 			String optionId, String[] newEntries) throws BuildException
 	{
 		IOption option = tool.getOptionById(optionId);
+		option = tool.getOptionToSet(option, false);
 		String[] array = mergeArrays(option.getStringListValue(), newEntries);
-		ManagedBuildManager.setOption(configuration, tool, option, array);
+		option.setValue(array);
 	}
 }

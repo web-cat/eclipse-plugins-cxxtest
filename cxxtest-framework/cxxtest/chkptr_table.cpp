@@ -15,16 +15,6 @@
  *	along with Web-CAT; if not, write to the Free Software
  *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
- 
-/*
- * ACKNOWLEDGMENTS: 
- * This code is based on and extends the work done by Scott M. Pike and
- * Bruce W. Weide at The Ohio State University and Joseph E. Hollingsworth of
- * Indiana University SE in "Checkmate: Cornering C++ Dynamic Memory Errors
- * With Checked Pointers", Proc. of the 31st SIGCSE Technical Symposium on
- * CSE, ACM Press, March 2000.  
- */
-
 #include <chkptr.h>
 #include <stdarg.h>
 
@@ -57,14 +47,13 @@ static const char* __error_messages[] = {
 	"Comparison with a dead pointer may result in unpredictable behavior",
 	"Indexed a non-array pointer",
 	"Invalid array index (%d); valid indices are [0..%lu]",
-	"Deleted pointer that was not dynamically allocated",
+	"Attempted to delete memory at %p that was not dynamically allocated or was already freed",
 	"Memory %s block was corrupted; likely invalid array indexing or pointer arithmetic",
 };
 
 __checked_pointer_table __manager __attribute__((init_priority(101)));
 
-void __stderr_error_handler(const char* msg,
-	const char* filename, int line);
+void __stderr_error_handler(bool fatal, const char* msg);
 
 #define HASH(address) \
 	(reinterpret_cast<unsigned long>(address) % CHECKED_HASHTABLE_SIZE)
@@ -75,6 +64,7 @@ void __stderr_error_handler(const char* msg,
 #define HASH_PROXY(address) \
 	(reinterpret_cast<unsigned long>(address) % PROXY_HASHTABLE_SIZE)
 
+// ------------------------------------------------------------------
 __checked_pointer_table::__checked_pointer_table()
 {
 	reportAtEnd = false;
@@ -99,6 +89,7 @@ __checked_pointer_table::__checked_pointer_table()
 	setReporter(&__stderr_reporter_obj, false);
 }
 
+// ------------------------------------------------------------------
 __checked_pointer_table::~__checked_pointer_table()
 {
 	if(reportAtEnd)
@@ -108,11 +99,13 @@ __checked_pointer_table::~__checked_pointer_table()
 		delete reporter;
 }
 
+// ------------------------------------------------------------------
 unsigned long __checked_pointer_table::getTag()
 {
 	return nextTag++;
 }
 
+// ------------------------------------------------------------------
 unsigned long __checked_pointer_table::moveToChecked(void* address)
 {
 	int index = HASH_UNCHECKED(address);
@@ -145,6 +138,7 @@ unsigned long __checked_pointer_table::moveToChecked(void* address)
 	return node->tag;	
 }
 
+// ------------------------------------------------------------------
 void __checked_pointer_table::addUnchecked(void* address, bool isArray,
 	size_t size, unsigned long tag, const char* filename, int line)
 {
@@ -164,6 +158,7 @@ void __checked_pointer_table::addUnchecked(void* address, bool isArray,
 	numUnchecked++;
 }
 
+// ------------------------------------------------------------------
 void __checked_pointer_table::remove(void* address)
 {
 	int index = HASH(address);
@@ -190,6 +185,7 @@ void __checked_pointer_table::remove(void* address)
 	numEntries--;
 }
 
+// ------------------------------------------------------------------
 void __checked_pointer_table::removeUnchecked(void* address)
 {
 	int index = HASH_UNCHECKED(address);
@@ -216,6 +212,7 @@ void __checked_pointer_table::removeUnchecked(void* address)
 	numUnchecked--;
 }
 
+// ------------------------------------------------------------------
 bool __checked_pointer_table::contains(void* address, unsigned long tag)
 {
 	int index = HASH(address);
@@ -230,7 +227,8 @@ bool __checked_pointer_table::contains(void* address, unsigned long tag)
 		return (node->tag == tag);
 }
 
-bool __checked_pointer_table::containsUnchecked(void* address)
+// ------------------------------------------------------------------
+find_address_results __checked_pointer_table::findAddress(void* address, unsigned long& tag)
 {
 	int index = HASH_UNCHECKED(address);
 	__node* node = uncheckedTable[index];
@@ -238,9 +236,26 @@ bool __checked_pointer_table::containsUnchecked(void* address)
 	while((node != 0) && (node->address != address))
 		node = node->next;
 	
-	return (node != 0);
+	if(node != 0)
+		return address_found_unchecked;
+		
+	index = HASH(address);
+	node = table[index];
+	
+	while((node != 0) && (node->address != address))
+		node = node->next;
+	
+	if(node != 0)
+	{
+		tag = node->tag;
+		return address_found_checked;
+	}
+
+	return address_not_found;
+	
 }
 
+// ------------------------------------------------------------------
 void __checked_pointer_table::retain(void* address)
 {
 	int index = HASH(address);
@@ -252,6 +267,7 @@ void __checked_pointer_table::retain(void* address)
 	node->refCount++;
 }
 
+// ------------------------------------------------------------------
 void __checked_pointer_table::release(void* address)
 {
 	int index = HASH(address);
@@ -263,6 +279,7 @@ void __checked_pointer_table::release(void* address)
 	node->refCount--;
 }
 
+// ------------------------------------------------------------------
 unsigned long __checked_pointer_table::getRefCount(void* address)
 {
 	int index = HASH(address);
@@ -274,36 +291,31 @@ unsigned long __checked_pointer_table::getRefCount(void* address)
 	return node->refCount;
 }
 
+// ------------------------------------------------------------------
 size_t __checked_pointer_table::getSize(void* address)
 {
-	if(containsUnchecked(address))
-	{
-		int index = HASH_UNCHECKED(address);
-		__node* node = uncheckedTable[index];
-	
-		while((node != 0) && (node->address != address))
-			node = node->next;
-		
-		if(node != 0)
-			return node->size;
-		else
-			return (size_t)-1;
-	}
-	else
-	{
-		int index = HASH(address);
-		__node* node = table[index];
-	
-		while((node != 0) && (node->address != address))
-			node = node->next;
+	int index = HASH_UNCHECKED(address);
+	__node* node = uncheckedTable[index];
 
-		if(node != 0)		
-			return node->size;
-		else
-			return (size_t)-1;
-	}
+	while((node != 0) && (node->address != address))
+		node = node->next;
+
+	if(node != 0)
+		return node->size;
+
+	index = HASH(address);
+	node = table[index];
+
+	while((node != 0) && (node->address != address))
+		node = node->next;
+
+	if(node != 0)		
+		return node->size;
+
+	return (size_t)-1;
 }
 
+// ------------------------------------------------------------------
 bool __checked_pointer_table::isArray(void* address)
 {
 	int index = HASH(address);
@@ -311,29 +323,32 @@ bool __checked_pointer_table::isArray(void* address)
 	
 	while(node->address != address)
 		node = node->next;
-		
+
 	return node->isArray;
 }
 
-void __checked_pointer_table::logError(int code, ...)
+// ------------------------------------------------------------------
+void __checked_pointer_table::logError(bool fatal, int code, ...)
 {
-	char msg[512] = { 0 };
+	char* msg = 0;
 
 	va_list args;
 	va_start(args, code);
-	vsprintf(msg, __error_messages[code], args);	
+	vasprintf(&msg, __error_messages[code], args);	
 	va_end(args);
 
-	(*errorHandler)(msg, "", 0);
+	(*errorHandler)(fatal, msg);
 	free(msg);
 }
 
+// ------------------------------------------------------------------
 void __checked_pointer_table::setErrorHandler(
-	void (*handler)(const char*, const char*, int))
+	void (*handler)(bool, const char*))
 {
 	errorHandler = handler;
 }
 
+// ------------------------------------------------------------------
 void __checked_pointer_table::reportAllocations()
 {
 	reporter->beginReport(numEntries + numUnchecked,
@@ -356,17 +371,20 @@ void __checked_pointer_table::reportAllocations()
 	reporter->endReport();
 }
 
+// ------------------------------------------------------------------
 void __checked_pointer_table::setReporter(chkptr_reporter* r, bool own)
 {
 	reporter = r;
 	ownReporter = own;
 }
 
+// ------------------------------------------------------------------
 void __checked_pointer_table::setReportAtEnd(bool value)
 {
 	reportAtEnd = value;
 }
 
+// ------------------------------------------------------------------
 void __checked_pointer_table::getStatistics(int& totalBytes, int& maxBytes,
 	int& numNew, int& numArrayNew, int& numDelete, int& numArrayDelete) const
 {
@@ -378,17 +396,17 @@ void __checked_pointer_table::getStatistics(int& totalBytes, int& maxBytes,
 	numArrayDelete = numCallsToArrayDelete;
 }
 
-void __stderr_error_handler(const char* msg, const char* filename, int line)
+// ------------------------------------------------------------------
+void __stderr_error_handler(bool fatal, const char* msg)
 {
-	if(line != 0)
-		fprintf(stderr, "Pointer error in %s:%d: %s\n", filename, line, msg);
-	else
-		fprintf(stderr, "Pointer error: %s\n", msg);
+	fprintf(stdout, "Pointer %s: %s\n",
+		fatal? "error" : "warning", msg);
 }
 
 } // namespace ChkPtr
 
 
+// ------------------------------------------------------------------
 void* operator new(size_t size)
 {
 	ChkPtr::__manager.currentBytesAllocated += size;
@@ -423,6 +441,7 @@ void* operator new(size_t size)
 	return ptr;
 }
 
+// ------------------------------------------------------------------
 void* operator new[](size_t size)
 {
 	ChkPtr::__manager.currentBytesAllocated += size;
@@ -457,6 +476,7 @@ void* operator new[](size_t size)
 	return ptr;
 }
 
+// ------------------------------------------------------------------
 void operator delete(void* address)
 {
 	if(address != 0)
@@ -465,21 +485,18 @@ void operator delete(void* address)
 #ifdef CHKPTR_BASIC_HEAP_CHECK
 		if(size == (size_t)-1)
 		{
-			fprintf(stderr,
-				"*** MEMORY ERROR:\n"
-				"Attempt to delete memory at address %p\n"
-				"which was not dynamically allocated with\n"
-				"\"new\" or \"new[]\".\n\n",
-				address);
-				
-			CHKPTR_ERROR(ChkPtr::PTRERR_DELETE_NOT_DYNAMIC);
+			ChkPtr::__manager.logError(false, ChkPtr::PTRERR_DELETE_NOT_DYNAMIC, address);
+			return;
 		}
-		else
+		else		
 #endif
 		{
 			ChkPtr::__manager.currentBytesAllocated -= size;
 
-			if(ChkPtr::__manager.containsUnchecked(address))
+			unsigned long dummy;
+			ChkPtr::find_address_results found = ChkPtr::__manager.findAddress(address, dummy);
+			
+			if(found == ChkPtr::address_found_unchecked)
 				ChkPtr::__manager.removeUnchecked(address);
 
 			void* realAddr = (char*)address - SAFETY_SIZE;
@@ -507,22 +524,21 @@ void operator delete(void* address)
 				else
 					damageStr = "after";
 
-				fprintf(stderr,
-					"*** MEMORY ERROR:\n"
-					"The memory block at address %p is corrupt;\n"
-					"the memory %s the block has been\n"
-					"overwritten. This was likely caused by improper\n"
-					"array indexing or faulty pointer arithmetic.\n\n",
-					address, damageStr);
-					
-				CHKPTR_ERROR(ChkPtr::PTRERR_MEMORY_CORRUPTION, damageStr);
+				ChkPtr::__manager.logError(false, ChkPtr::PTRERR_MEMORY_CORRUPTION, damageStr);
 			}
 #endif
+			// Zero out the memory before freeing it. This is useful if a
+			// dangling pointer to an object with a vtable has a method
+			// called on it; in this case, a null pointer dereference
+			// will result.
+			bzero(realAddr, size);
+
 			free(realAddr);
 		}
 	}
 }
 
+// ------------------------------------------------------------------
 void operator delete[](void* address)
 {
 	if(address != 0)
@@ -531,21 +547,18 @@ void operator delete[](void* address)
 #ifdef CHKPTR_BASIC_HEAP_CHECK
 		if(size == (size_t)-1)
 		{
-			fprintf(stderr,
-				"*** MEMORY ERROR:\n"
-				"Attempt to delete memory at address %p\n"
-				"which was not dynamically allocated with\n"
-				"\"new\" or \"new[]\".\n\n",
-				address);
-				
-			CHKPTR_ERROR(ChkPtr::PTRERR_DELETE_NOT_DYNAMIC);
+			ChkPtr::__manager.logError(false, ChkPtr::PTRERR_DELETE_NOT_DYNAMIC);
+			return;
 		}
 		else
 #endif
 		{
 			ChkPtr::__manager.currentBytesAllocated -= size;
 
-			if(ChkPtr::__manager.containsUnchecked(address))
+			unsigned long dummy;
+			ChkPtr::find_address_results found = ChkPtr::__manager.findAddress(address, dummy);
+			
+			if(found == ChkPtr::address_found_unchecked)
 				ChkPtr::__manager.removeUnchecked(address);
 		
 			void* realAddr = (char*)address - SAFETY_SIZE;
@@ -573,19 +586,16 @@ void operator delete[](void* address)
 				else
 					damageStr = "after";
 
-				fprintf(stderr,
-					"*** MEMORY ERROR:\n"
-					"The memory block at address %p is corrupt;\n"
-					"the memory %s the block has been\n"
-					"overwritten. This was likely caused by improper\n"
-					"array indexing or faulty pointer arithmetic.\n\n",
-					address, damageStr);
-					
-				CHKPTR_ERROR(ChkPtr::PTRERR_MEMORY_CORRUPTION, damageStr);
+				ChkPtr::__manager.logError(false, ChkPtr::PTRERR_MEMORY_CORRUPTION, damageStr);
 			}
 #endif
+			// Zero out the memory before freeing it. This is useful if a
+			// dangling pointer to an object with a vtable has a method
+			// called on it; in this case, a null pointer dereference
+			// will result.
+			bzero(realAddr, size);
+
 			free(realAddr);
 		}
 	}
 }
-

@@ -101,5 +101,9 @@
             id="net.sf.webcat.eclipse.cxxtest.TestRunnerView"
             name="CxxTest"/>
    </extension>
+   <extension
+         point="net.sf.webcat.eclipse.cxxtest.extraProjectOptions">
+      <extraProjectOptions class="net.sf.webcat.eclipse.cxxtest.internal.options.FrameworkProjectOptions"/>
+   </extension>
 
 </plugin>

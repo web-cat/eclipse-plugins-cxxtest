@@ -1,3 +1,4 @@
+
 namespace CxxTest
 {
 	
@@ -30,12 +31,9 @@ public:
 		fprintf(xmlFile, "    <leak address=\"%p\" size=\"%lu\">\n",
 			address, (unsigned long)size);
 
-#ifdef CXXTEST_TRACE_STACK
 		fprintf(xmlFile,
-			getStackTrace(CHKPTR_STACK_WINDOW_SIZE,
-				(CxxTest::StackElem*)(((char*)address) + size),
-				"<stack-frame function=\"").c_str() );
-#endif
+			getStackTrace(false, CHKPTR_STACK_WINDOW_SIZE,
+				(CxxTest::StackElem*)(((char*)address) + size)).c_str() );
 
 		fprintf(xmlFile, "    </leak>\n");
 	}

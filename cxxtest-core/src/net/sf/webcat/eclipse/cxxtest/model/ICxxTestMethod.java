@@ -22,7 +22,7 @@ package net.sf.webcat.eclipse.cxxtest.model;
  * 
  * @author Tony Allowatt (Virginia Tech Computer Science)
  */
-public interface ICxxTestMethod extends ICxxTestBase
+public interface ICxxTestMethod extends ICxxTestSuiteChild
 {
 	/**
 	 * Gets the local name of the method.
@@ -30,13 +30,6 @@ public interface ICxxTestMethod extends ICxxTestBase
 	 * @return a String containing the name of the method.
 	 */
 	String getName();
-
-	/**
-	 * Gets the line number at which this method starts.
-	 * 
-	 * @return the line number at which this method starts.
-	 */
-	int getLineNumber();
 
 	/**
 	 * Gets a list of failed assertions, if any, that occurred in this method.

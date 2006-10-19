@@ -63,6 +63,7 @@ namespace CxxTest
         virtual void leaveTest( const TestDescription & /*desc*/ ) {}
         virtual void leaveSuite( const SuiteDescription & /*desc*/ ) {}
         virtual void leaveWorld( const WorldDescription & /*desc*/ ) {}
+        virtual void suiteInitError( const char * /*file*/, unsigned /*line*/, const char * /* expression */ ) {}
     };
 }
 

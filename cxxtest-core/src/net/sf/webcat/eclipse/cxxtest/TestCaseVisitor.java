@@ -68,6 +68,9 @@ public class TestCaseVisitor implements ICElementVisitor
 	private Pattern superclassPattern =
 		Pattern.compile("((::)?\\s*CxxTest\\s*::\\s*)?TestSuite");
 
+	private Pattern includePattern =
+		Pattern.compile("\\s*#\\s*include\\s+<cxxtest/TestSuite.h>");
+
 	/**
 	 * Keeps track of whether a "using namespace std" directive was
 	 * encountered during the traversal.
@@ -87,6 +90,8 @@ public class TestCaseVisitor implements ICElementVisitor
 	 * may have to do with resource deltas?)
 	 */
 	private Set generatedSuites = new HashSet();
+
+	private Set possibleTestFiles = new HashSet();
 
 	private String driverFileName = null;
 
@@ -170,14 +175,34 @@ public class TestCaseVisitor implements ICElementVisitor
 		
 		return visitChildren;
 	}
-
+	
 	private boolean shouldVisitFile(ITranslationUnit unit)
 	{
 		String name = unit.getPath().lastSegment();
 		if(name.equals(driverFileName))
 			return false;
 		else
+		{
+			if(containsCxxTestIncludeDirective(unit))
+			{
+				possibleTestFiles.add(unit);
+			}
+
 			return true;
+		}
+	}
+
+	private boolean containsCxxTestIncludeDirective(ITranslationUnit unit)
+	{
+		String contents = String.valueOf(unit.getContents());
+		
+		Matcher matcher = includePattern.matcher(contents);
+		if(matcher.find())
+		{
+			return true;
+		}
+		else
+			return false;
 	}
 
 	/**
@@ -190,6 +215,12 @@ public class TestCaseVisitor implements ICElementVisitor
 	{
 		return (CxxTestSuiteInfo[])testSuites.toArray(
 				new CxxTestSuiteInfo[testSuites.size()]);
+	}
+
+	public ITranslationUnit[] getPossibleTestFiles()
+	{
+		return (ITranslationUnit[])possibleTestFiles.toArray(
+				new ITranslationUnit[possibleTestFiles.size()]);
 	}
 
 	/**
@@ -248,6 +279,11 @@ public class TestCaseVisitor implements ICElementVisitor
 
 				currentSuite = new CxxTestSuiteInfo(element);
 				testSuites.add(currentSuite);
+
+				ITranslationUnit containingUnit = element.getTranslationUnit();
+				if(containingUnit != null)
+					possibleTestFiles.remove(containingUnit);
+
 				return true;
 			}
 		}

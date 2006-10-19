@@ -28,6 +28,8 @@ import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestMethod;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestStackFrame;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuite;
+import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuiteChild;
+import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuiteError;
 import net.sf.webcat.eclipse.cxxtest.model.IMemWatchInfo;
 import net.sf.webcat.eclipse.cxxtest.model.IMemWatchLeak;
 
@@ -109,6 +111,11 @@ public class TestRunnerViewPart extends ViewPart
 				ICxxTestAssertion cta = (ICxxTestAssertion)parentElement;
 				return cta.getStackTrace();
 			}
+			else if(parentElement instanceof ICxxTestSuiteError)
+			{
+				ICxxTestSuiteError cta = (ICxxTestSuiteError)parentElement;
+				return cta.getStackTrace();
+			}
 			else if(parentElement instanceof IMemWatchLeak)
 			{
 				IMemWatchLeak mwl = (IMemWatchLeak)parentElement;
@@ -130,6 +137,11 @@ public class TestRunnerViewPart extends ViewPart
 				ICxxTestAssertion cta = (ICxxTestAssertion)element;
 				return cta.getStackTrace() != null;
 			}
+			else if(element instanceof ICxxTestSuiteError)
+			{
+				ICxxTestSuiteError cta = (ICxxTestSuiteError)element;
+				return cta.getStackTrace() != null;
+			}
 			else
 				return false;
 		}
@@ -143,6 +155,11 @@ public class TestRunnerViewPart extends ViewPart
 			{
 				ICxxTestAssertion assertion = (ICxxTestAssertion)element;
 				return assertion.getMessage(true);
+			}
+			else if(element instanceof ICxxTestSuiteError)
+			{
+				ICxxTestSuiteError assertion = (ICxxTestSuiteError)element;
+				return assertion.getMessage();
 			}
 			else if(element instanceof IMemWatchLeak)
 			{
@@ -163,7 +180,8 @@ public class TestRunnerViewPart extends ViewPart
 		
 		public Image getImage(Object element)
 		{
-			if(element instanceof ICxxTestAssertion)
+			if(element instanceof ICxxTestAssertion ||
+				element instanceof ICxxTestSuiteError)
 			{
 				ICxxTestBase test = (ICxxTestBase)element;
 	
@@ -553,6 +571,11 @@ public class TestRunnerViewPart extends ViewPart
 				ICxxTestAssertion[] assertions = test.getFailedAssertions();
 				detailViewer.setInput(assertions);
 			}
+			else if(obj instanceof ICxxTestSuiteError)
+			{
+				ICxxTestSuiteError test = (ICxxTestSuiteError)obj;
+				detailViewer.setInput(new Object[] { test });
+			}
 			else if(obj instanceof IMemWatchLeak)
 			{
 				IMemWatchLeak leak = (IMemWatchLeak)obj;
@@ -643,8 +666,7 @@ public class TestRunnerViewPart extends ViewPart
 
 		for(int i = 0; i < suites.length; i++)
 		{
-			ICxxTestMethod[] tests = suites[i].getTests();
-			
+			ICxxTestSuiteChild[] tests = suites[i].getChildren(true);			
 			totalTests += tests.length;
 			
 			for(int j = 0; j < tests.length; j++)

@@ -24,6 +24,7 @@ sub usage() {
   print STDERR "  --no-static-init     Don't rely on static initialization\n";
   print STDERR "  --track-heap         Track heap usage\n";
   print STDERR "  --trap-signals       Trap SIGSEGV and other signals\n";
+  print STDERR "  --trace-stack        Include stack traces in error messages\n";
   exit -1;
 }
 
@@ -41,31 +42,32 @@ sub main {
 
 my ($output, $runner, $gui, $template, $abortOnFail, $haveStd, $haveEh, $noEh);
 my ($root, $part, $noStaticInit, $longlong, $factor, $forceMain, $trackHeap);
-my ($trapSignals, $errorPrinterFile);
+my ($trapSignals, $traceStack, $errorPrinterFile);
 my @headers = ();
 
 sub parseCommandline() {
   @ARGV = expandWildcards(@ARGV);
   GetOptions( 'version'        => \&printVersion,
-	      'output=s'       => \$output,
-	      'template=s'     => \$template,
-	      'runner=s'       => \$runner,
-	      'gui=s',         => \$gui,
-	      'error-printer'  => sub { $runner = 'ErrorPrinter'; $haveStd = 1; },
-	      'ErrorPrinterFile=s'       => \$errorPrinterFile,
-	      'abort-on-fail'  => \$abortOnFail,
-	      'have-eh'        => \$haveEh,
-	      'no-eh'          => \$noEh,
-	      'include=s'      => \@headers,
-	      'root'           => \$root,
-	      'part'           => \$part,
-	      'no-static-init' => \$noStaticInit,
-	      'track-heap'     => \$trackHeap,
-	      'trap-signals'   => \$trapSignals,
-	      'factor'         => \$factor,
-	      'force-main'     => \$forceMain,
-	      'longlong:s'     => \$longlong
-	    ) or usage();
+              'output=s'       => \$output,
+              'template=s'     => \$template,
+              'runner=s'       => \$runner,
+              'gui=s',         => \$gui,
+              'error-printer'  => sub { $runner = 'ErrorPrinter'; $haveStd = 1; },
+              'ErrorPrinterFile=s'       => \$errorPrinterFile,
+              'abort-on-fail'  => \$abortOnFail,
+              'have-eh'        => \$haveEh,
+              'no-eh'          => \$noEh,
+              'include=s'      => \@headers,
+              'root'           => \$root,
+              'part'           => \$part,
+              'no-static-init' => \$noStaticInit,
+              'track-heap'     => \$trackHeap,
+              'trap-signals'   => \$trapSignals,
+              'trace-stack'    => \$traceStack,
+              'factor'         => \$factor,
+              'force-main'     => \$forceMain,
+              'longlong:s'     => \$longlong
+            ) or usage();
   scalar @ARGV or $root or usage();
 
   if ( defined($noStaticInit) && (defined($root) || defined($part)) ) {
@@ -126,16 +128,16 @@ sub scanInputFile($) {
     # Just in case the superclass starts on the next line ...
     my $lineNo = $.;
     if ( $line =~ m/\bclass\s+(\w+)\s*:\s*(\/\/.*)?$/ ) {
-	chomp( $line );
-	$line .= <FILE>;
+        chomp( $line );
+        $line .= <FILE>;
     }
     scanLineForSuiteStart( $file, $lineNo, $line );
 
     if ( $suite ) {
       if ( lineBelongsToSuite( $suite, $., $line ) ) {
-	scanLineForTest( $., $line );
-	scanLineForCreate( $., $line );
-	scanLineForDestroy( $., $line );
+        scanLineForTest( $., $line );
+        scanLineForCreate( $., $line );
+        scanLineForDestroy( $., $line );
       }
     }
   }
@@ -187,13 +189,13 @@ sub startSuite($$$$) {
   my ($name, $file, $line, $generated) = @_;
   closeSuite();
   $suite = { 'name' => $name,
-	     'file' => $file,
-	     'line' => $line,
-	     'generated' => $generated,
-	     'create' => 0,
-	     'destroy' => 0,
-	     'tests' => [],
-	     'lines' => [] };
+             'file' => $file,
+             'line' => $line,
+             'generated' => $generated,
+             'create' => 0,
+             'destroy' => 0,
+             'tests' => [],
+             'lines' => [] };
 }
 
 sub lineStartsBlock($) {
@@ -211,7 +213,7 @@ sub scanLineForTest($$) {
 sub addTest($$$) {
   my ($name, $line) = @_;
   $test = { 'name' => $name,
-	    'line' => $line };
+            'line' => $line };
   push @{suiteTests()}, $test;
 }
 
@@ -314,10 +316,6 @@ sub startOutputFile() {
     select OUTPUT_FILE;
   }
   print "/* Generated file, do not edit */\n\n";
-  if ( $trapSignals )
-  {
-      print "#define CXXTEST_TRAP_SIGNALS\n";
-  }
 }
 
 sub standardOutput() {
@@ -375,6 +373,15 @@ sub writePreamble() {
   }
   if ( $factor ) {
     print "#define _CXXTEST_FACTOR\n";
+  }
+  if ( $trapSignals )
+  {
+      print "#define CXXTEST_TRAP_SIGNALS\n";
+  }
+  if ( defined $traceStack )
+  {
+      print "#define CXXTEST_TRACE_STACK\n";
+	  print "#include <symreader.c>\n";
   }
   foreach my $header (@headers) {
     print "#include $header\n";
@@ -516,7 +523,7 @@ sub writeDynamicDescription() {
   if ( !$noStaticInit ) {
     printf "( %s, %s, \"%s\", %s, %s, %s, %s )",
       fileString(), $suite->{'line'}, suiteName(), testList(),
-	suiteObject(), suiteCreateLine(), suiteDestroyLine();
+        suiteObject(), suiteCreateLine(), suiteDestroyLine();
   }
   print ";\n\n";
 }
@@ -544,89 +551,126 @@ sub writeInitialize() {
     if ( dynamicSuite() ) {
       printf "  %s = 0;\n", suiteObject();
       printf "  %s.initialize( %s, %s, \"%s\", %s, %s, %s, %s );\n",
-	suiteDescription(), fileString(), $suite->{'line'}, suiteName(), testList(),
-	  suiteObject(), suiteCreateLine(), suiteDestroyLine();
+        suiteDescription(), fileString(), $suite->{'line'}, suiteName(), testList(),
+          suiteObject(), suiteCreateLine(), suiteDestroyLine();
     } else {
       printf "  %s.initialize( %s, %s, \"%s\", %s, %s );\n",
-	suiteDescription(), fileString(), $suite->{'line'}, suiteName(), suiteObject(), testList();
+        suiteDescription(), fileString(), $suite->{'line'}, suiteName(), suiteObject(), testList();
     }
 
     foreach (@{suiteTests()}) {
       $test = $_;
       printf "  testDescription_%s_%s.initialize( %s, %s, %s, \"%s\" );\n",
-	suiteName(), testName(), testList(), suiteDescription(), testLine(), testName();
+        suiteName(), testName(), testList(), suiteDescription(), testLine(), testName();
     }
   }
   print " }\n";
   print "}\n";
 }
 
+sub writeChkPtrErrorHandler()
+{
+    print <<EOF;
+void __cxxtest_chkptr_error_handler(const char* msg, const char* filename, int line)
+{
+	char text[256];
+	
+	if(line != 0)
+	{
+		sprintf(text, "Pointer error in %s:%d: %s", filename, line, msg);
+	}
+	else
+	{
+		sprintf(text, "Pointer error: %s", msg);
+	}
+	
+	CxxTest::__cxxtest_assertmsg = text;
+	abort();
+}
+
+EOF
+}
+
+
 sub writeSigHandler()
 {
     if ( !$trapSignals ) { return; }
     print <<EOF;
-#include <signal.h>	// for siginfo_t and signal constants
-#include <setjmp.h>	// for siglongjmp()
-#include <stdlib.h>	// for exit()
+#include <signal.h>     // for siginfo_t and signal constants
+#include <setjmp.h>     // for siglongjmp()
+#include <stdlib.h>     // for exit()
+void __cxxtest_sig_handler( int, siginfo_t*, void* ) _CXXTEST_NO_INSTR;
 void __cxxtest_sig_handler( int signum, siginfo_t* /*info*/, void* /*arg*/ )
 {
     const char* msg = "run-time exception";
     switch ( signum )
     {
         case SIGFPE:
-	    msg = "SIGFPE: floating point exception (div by zero?)";
-	    // Currently, can't get cygwin g++ to pass in info,
+            msg = "SIGFPE: floating point exception (div by zero?)";
+            // Currently, can't get cygwin g++ to pass in info,
             // so we can't be more specific.
-	    break;
+            break;
         case SIGSEGV:
             msg = "SIGSEGV: segmentation fault (null pointer dereference?)";
             break;
         case SIGILL:
             msg = "SIGILL: illegal instruction "
-		"(dereference uninitialized or deleted pointer?)";
+                "(dereference uninitialized or deleted pointer?)";
             break;
         case SIGTRAP:
             msg = "SIGTRAP: trace trap";
             break;
+#ifdef SIGEMT
         case SIGEMT:
             msg = "SIGEMT: EMT instruction";
             break;
+#endif
         case SIGBUS:
             msg = "SIGBUS: bus error "
-		"(dereference uninitialized or deleted pointer?)";
+                "(dereference uninitialized or deleted pointer?)";
             break;
         case SIGSYS:
             msg = "SIGSYS: bad argument to system call";
             break;
         case SIGABRT:
             msg = "SIGABRT: execution aborted "
-		"(failed assertion, corrupted heap, or other problem?)";
+                "(failed assertion, corrupted heap, or other problem?)";
             break;
     }
     if ( !CxxTest::__cxxtest_assertmsg.empty() )
     {
-	CxxTest::__cxxtest_sigmsg = CxxTest::__cxxtest_assertmsg;
-	CxxTest::__cxxtest_assertmsg = "";
+        CxxTest::__cxxtest_sigmsg = CxxTest::__cxxtest_assertmsg;
+        CxxTest::__cxxtest_assertmsg = "";
     }
     else if ( CxxTest::__cxxtest_sigmsg.empty() )
     {
-	CxxTest::__cxxtest_sigmsg = msg;
+        CxxTest::__cxxtest_sigmsg = msg;
     }
     else
     {
-	CxxTest::__cxxtest_sigmsg = std::string(msg)
-	    + ", maybe related to " + CxxTest::__cxxtest_sigmsg;
+        CxxTest::__cxxtest_sigmsg = std::string(msg)
+            + ", maybe related to " + CxxTest::__cxxtest_sigmsg;
     }
+#ifdef CXXTEST_TRACE_STACK
+    {
+        std::string trace = CxxTest::getStackTrace();
+        if ( trace.length() )
+        {
+            CxxTest::__cxxtest_sigmsg += "\\n";
+            CxxTest::__cxxtest_sigmsg += trace;
+        }
+    }
+#endif
     if ( CxxTest::__cxxtest_jmppos >= 0 )
     {
-	siglongjmp( CxxTest::__cxxtest_jmpbuf[CxxTest::__cxxtest_jmppos], 1 );
+        siglongjmp( CxxTest::__cxxtest_jmpbuf[CxxTest::__cxxtest_jmppos], 1 );
     }
     else
     {
         std::cout << "\\nError: untrapped signal:\\n"
-	    << CxxTest::__cxxtest_sigmsg
+            << CxxTest::__cxxtest_sigmsg
             << "\\n"; // std::endl;
-	exit(1);
+        exit(1);
     }
 }
 
@@ -648,7 +692,9 @@ sub writeSigRegistration()
     sigaction( SIGBUS,  &act, 0 );
     sigaction( SIGABRT, &act, 0 );
     sigaction( SIGTRAP, &act, 0 );
+#ifdef SIGEMT
     sigaction( SIGEMT,  &act, 0 );
+#endif
     sigaction( SIGSYS,  &act, 0 );
 EOF
 #    for ( int sig = 1; sig < NSIG; sig++ )
@@ -668,6 +714,9 @@ sub writeMain() {
   {
       print "#include <fstream>\n";
   }
+
+  writeChkPtrErrorHandler();
+
   if ( $gui ) {
     print "int main( int argc, char *argv[] ) {\n";
     writeSigRegistration();
@@ -678,8 +727,8 @@ sub writeMain() {
   }
   elsif ( $runner ) {
     if (  !$forceMain &&
-	  ( -f "main.cpp" || -f "Main.cpp" || -f "MAIN.cpp"
-	    || -f "main.CPP" || -f "Main.CPP" || -f "MAIN.CPP" ) )
+          ( -f "main.cpp" || -f "Main.cpp" || -f "MAIN.cpp"
+            || -f "main.CPP" || -f "Main.CPP" || -f "MAIN.CPP" ) )
     {
       print "class CxxTestMain {\npublic:\n    CxxTestMain() {\n";
       writeSigRegistration();
@@ -687,38 +736,46 @@ sub writeMain() {
       print "\"Running all tests before main() ...\\n\"\n";
       print "\"----------------------------------------\\n\";\n";
       $noStaticInit &&
-	print "      CxxTest::initialize();\n";
+        print "      CxxTest::initialize();\n";
+
+      print " ChkPtr::__manager.setErrorHandler(&__cxxtest_chkptr_error_handler);\n";
+      print " ChkPtr::__manager.setReportAtEnd(true);\n";
+
       if ( defined $errorPrinterFile )
       {
-	  print " std::ofstream resultFile(\"$errorPrinterFile\");\n";
-	  print " int result = CxxTest::$runner(resultFile).run();\n";
-	  print " resultFile.close();\n";
-	  print " return result;\n";
+          print " std::ofstream resultFile(\"$errorPrinterFile\");\n";
+          print " int result = CxxTest::$runner(resultFile).run();\n";
+          print " resultFile.close();\n";
+          print " return result;\n";
       }
       else
       {
-	  print " return CxxTest::$runner().run();\n";
+          print " return CxxTest::$runner().run();\n";
       }
       print "      std::cout << \"\\n... now starting main()\\n\"\n";
       print "\"----------------------------------------\\n\";\n";
-      print "    }\n};CxxTestMain cxxTestMain;\n";
+      print "    }\n};CxxTestMain cxxTestMain __attribute__((init_priority(65535)));\n";
     }
     else
     {
       print "int main() {\n";
       writeSigRegistration();
       $noStaticInit &&
-	print " CxxTest::initialize();\n";
+        print " CxxTest::initialize();\n";
+
+      print " ChkPtr::__manager.setErrorHandler(&__cxxtest_chkptr_error_handler);\n";
+      print " ChkPtr::__manager.setReportAtEnd(true);\n";
+
       if ( defined $errorPrinterFile )
       {
-	  print " std::ofstream resultFile(\"$errorPrinterFile\");\n";
-	  print " int result = CxxTest::$runner(resultFile).run();\n";
-	  print " resultFile.close();\n";
-	  print " return result;\n";
+          print " std::ofstream resultFile(\"$errorPrinterFile\");\n";
+          print " int result = CxxTest::$runner(resultFile).run();\n";
+          print " resultFile.close();\n";
+          print " return result;\n";
       }
       else
       {
-	  print " return CxxTest::$runner().run();\n";
+          print " return CxxTest::$runner().run();\n";
       }
       print "}\n";
     }

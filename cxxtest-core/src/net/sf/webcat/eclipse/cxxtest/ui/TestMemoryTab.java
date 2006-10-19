@@ -22,16 +22,21 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 import net.sf.webcat.eclipse.cxxtest.ICxxTestConstants;
-import net.sf.webcat.eclipse.cxxtest.MemWatchResultsHandler;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
 import net.sf.webcat.eclipse.cxxtest.model.IMemWatchInfo;
 import net.sf.webcat.eclipse.cxxtest.model.IMemWatchLeak;
+import net.sf.webcat.eclipse.cxxtest.xml.ContextualSAXHandler;
+import net.sf.webcat.eclipse.cxxtest.xml.memstats.DocumentContext;
 
+import org.eclipse.cdt.core.model.CModelException;
 import org.eclipse.cdt.core.model.ICProject;
+import org.eclipse.cdt.internal.ui.util.EditorUtility;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.debug.core.ILaunch;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.util.OpenStrategy;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -46,6 +51,7 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
@@ -53,10 +59,16 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.forms.events.HyperlinkAdapter;
+import org.eclipse.ui.forms.events.HyperlinkEvent;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.ScrolledFormText;
+import org.eclipse.ui.texteditor.ITextEditor;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
@@ -84,6 +96,12 @@ public class TestMemoryTab extends TestRunTab
 	private final Image leakNoArrayIcon = TestRunnerViewPart.createImage("obj16/leak_noarray.gif");
 	private final Image leakArrayIcon = TestRunnerViewPart.createImage("obj16/leak_array.gif");
 	private final Image memoryTabIcon = TestRunnerViewPart.createImage("obj16/memory.gif");
+
+	private StackLayout stackLayout;
+
+	private FormToolkit toolkit;
+
+	private ScrolledFormText errorMsgField;
 
 	private class MemWatchInfoInput
 	{
@@ -182,10 +200,8 @@ public class TestMemoryTab extends TestRunTab
 		memoryTab.setImage(memoryTabIcon);
 		
 		Composite testTreePanel= new Composite(tabFolder, SWT.NONE);
-		GridLayout gridLayout= new GridLayout();
-		gridLayout.marginHeight= 0;
-		gridLayout.marginWidth= 0;
-		testTreePanel.setLayout(gridLayout);
+		stackLayout = new StackLayout();
+		testTreePanel.setLayout(stackLayout);
 		
 		GridData gridData= new GridData(
 				GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
@@ -210,7 +226,60 @@ public class TestMemoryTab extends TestRunTab
 			}
 		});
 
+		Display display = tabFolder.getDisplay();
+
+		toolkit = new FormToolkit(display);
+		errorMsgField = new ScrolledFormText(testTreePanel, true);
+		errorMsgField.setBackground(toolkit.getColors().getBackground());
+		errorMsgField.getFormText().setColor("error",
+				toolkit.getColors().createColor("error", 255, 0, 0));
+
+		errorMsgField.getFormText().addHyperlinkListener(new HyperlinkAdapter()
+		{
+			public void linkActivated(HyperlinkEvent e)
+			{
+				String link = e.getHref().toString();
+				openLink(link);
+			}
+		});
+
+		stackLayout.topControl = viewer.getControl();
+
 		addListeners();
+	}
+
+	private void openLink(String link)
+	{
+		if(link.startsWith("memusage.log"))
+		{
+			String[] parts = link.split(":");
+			int lineNumber = 1;
+
+			if(parts.length == 2)
+				lineNumber = Integer.parseInt(parts[1]);
+			
+			ICProject project = testRunnerView.getLaunchedProject();
+			IFile file = project.getProject().getFile(ICxxTestConstants.MEMWATCH_RESULTS_FILE);
+			
+			try
+			{
+				ITextEditor editor =
+					(ITextEditor)EditorUtility.openInEditor(file, true);
+
+				try
+				{
+					IDocument document= editor.getDocumentProvider().
+						getDocument(editor.getEditorInput());
+
+					editor.selectAndReveal(
+							document.getLineOffset(lineNumber - 1),
+							document.getLineLength(lineNumber - 1));
+				}
+				catch(BadLocationException ex) { }
+			}
+			catch (PartInitException ex) { }
+			catch (CModelException ex) { }
+		}
 	}
 
 	private void disposeIcons()
@@ -219,6 +288,8 @@ public class TestMemoryTab extends TestRunTab
 		leakArrayIcon.dispose();
 
 		memoryTabIcon.dispose();
+		
+		toolkit.dispose();
 	}
 	
 	public Object getSelectedObject()
@@ -272,6 +343,10 @@ public class TestMemoryTab extends TestRunTab
 
 		viewer.setInput(new MemWatchInfoInput(mwInfo));
 		viewer.expandAll();
+
+		errorMsgField.setText("");
+		stackLayout.topControl = viewer.getControl();
+		viewer.getControl().getParent().layout();
 	}
 	
 	protected void expandAll()
@@ -310,6 +385,63 @@ public class TestMemoryTab extends TestRunTab
 		}	
 	}
 
+	private String escapeXMLString(String str)
+	{
+		StringBuffer buf = new StringBuffer();
+		
+		for(int i = 0; i < str.length(); i++)
+		{
+			char ch = str.charAt(i);
+			
+			switch(ch)
+			{
+				case '&':  buf.append("&amp;"); break; 
+				case '\'': buf.append("&apos;"); break; 
+				case '"':  buf.append("&quot;"); break; 
+				case '<':  buf.append("&lt;"); break; 
+				case '>':  buf.append("&gt;"); break;
+				default:   buf.append(ch); break;
+			}
+		}
+		
+		return buf.toString();
+	}
+
+	private void setParseError(Exception e)
+	{
+		StringBuffer msg = new StringBuffer();
+		msg.append("<form>");
+
+		msg.append("<p><b>Error:</b></p>");
+
+		if(e instanceof SAXParseException)
+		{
+			SAXParseException spe = (SAXParseException)e;
+			msg.append("<p>An unexpected error occurred while processing the ");
+			msg.append("<a href=\"memusage.log:" + spe.getLineNumber() +
+					"\">memory usage log</a>");
+			msg.append(", line " + spe.getLineNumber() + ".</p>");
+			msg.append("<p><span color=\"error\">");
+			msg.append(escapeXMLString(e.getMessage()));
+			msg.append("</span></p>");
+		}
+		else
+		{
+			msg.append("<p>An unexpected error occurred while processing the ");
+			msg.append("<a href=\"memusage.log\">memory usage log</a>.</p>");
+			msg.append("<p><span color=\"error\">");
+			msg.append(escapeXMLString(e.getMessage()));
+			msg.append("</span></p>");
+		}
+
+		msg.append("</form>");
+
+		errorMsgField.setText(msg.toString());
+
+		stackLayout.topControl = errorMsgField;
+		errorMsgField.getParent().layout();
+	}
+
 	public void testRunStarted(ICProject project, ILaunch launch)
 	{
 		this.project = project;
@@ -338,7 +470,9 @@ public class TestMemoryTab extends TestRunTab
 	
 			FileInputStream stream = new FileInputStream(resultsPath);
 			InputSource source = new InputSource(stream);
-			final MemWatchResultsHandler handler = new MemWatchResultsHandler();
+
+			DocumentContext docContext = new DocumentContext();
+			final ContextualSAXHandler handler = new ContextualSAXHandler(docContext);
 	
 			try
 			{
@@ -346,12 +480,17 @@ public class TestMemoryTab extends TestRunTab
 				reader.setContentHandler(handler);
 				reader.parse(source);
 			}
-			catch (SAXException e) { }
-			catch (IOException e) { }
+			catch (Exception e)
+			{
+				setParseError(e);
+				return;
+			}
+			finally
+			{
+				stream.close();
+			}
 	
-			stream.close();
-	
-			IMemWatchInfo mwInfo = handler.getInfo();
+			IMemWatchInfo mwInfo = docContext.getSummary();
 			setMemWatchInfo(mwInfo);
 		}
 		catch(IOException e) { }

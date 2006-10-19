@@ -91,8 +91,6 @@ public class CxxTestAssertionFactory
 
 	private static final String MSG_TRACE = "Trace{0}: {1}";
 
-	private static final String MSG_WARNING = "Warning{0}: {1}";
-
 	private static final String MSG_FAILED_ASSERT =
 		"Failed assertion{0}: expected {1} == true, but found false";
 
@@ -185,9 +183,8 @@ public class CxxTestAssertionFactory
 
 	private static ICxxTestAssertion createWarning(CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] { "line", "message" });
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_WARNING, MSG_WARNING, values);
+		return new StackTraceAssertion(parent, line, ICxxTestBase.STATUS_WARNING);
 	}
 
 	private static ICxxTestAssertion createFailedTest(CxxTestMethod parent, Attributes node)

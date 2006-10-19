@@ -19,7 +19,7 @@ namespace CxxTest
         RealTestDescription()
         {
         }
-        
+
         RealTestDescription( List &argList, SuiteDescription &argSuite, unsigned argLine, const char *argTestName )
         {
             initialize( argList, argSuite, argLine, argTestName );
@@ -32,7 +32,7 @@ namespace CxxTest
             _testName = argTestName;
             attach( argList );
         }
-        
+
         const char *file() const { return _suite->file(); }
         unsigned line() const { return _line; }
         const char *testName() const { return _testName; }
@@ -45,30 +45,30 @@ namespace CxxTest
 
         void run()
         {
-            _TS_TRY
+	    _TS_TRY_WITH_SIGNAL_PROTECTION
 	    {
-	        _TS_TRY_WITH_SIGNAL_PROTECTION
-		{
+                _TS_TRY
+	        {
 		  runTest();
-		}
-		_TS_CATCH_SIGNAL({
-		  (CxxTest::tracker()).failedTest(
-			file(), line(), __cxxtest_sigmsg.c_str() );
-		});
+	        }
+                _TS_CATCH_ABORT( {} )
+                ___TSM_CATCH( file(), line(), "Exception thrown from test" );
 	    }
-            _TS_CATCH_ABORT( {} )
-            ___TSM_CATCH( file(), line(), "Exception thrown from test" );
+	    _TS_CATCH_SIGNAL({
+	        tracker().failedTest(
+	      	    file(), line(), __cxxtest_sigmsg.c_str() );
+	    });
         }
-        
+
         bool setUp();
         bool tearDown();
-        
+
     private:
         RealTestDescription( const RealTestDescription & );
         RealTestDescription &operator=( const RealTestDescription & );
 
         virtual void runTest() = 0;
-        
+
         SuiteDescription *_suite;
         unsigned _line;
         const char *_testName;
@@ -89,7 +89,7 @@ namespace CxxTest
             _line = argLine;
             _suiteName = argSuiteName;
             _tests = &argTests;
-            
+
             attach( _suites );
         }
 
@@ -101,7 +101,7 @@ namespace CxxTest
         const TestDescription *firstTest() const { return (const RealTestDescription *)_tests->head(); }
         SuiteDescription *next() { return (RealSuiteDescription *)Link::next(); }
         const SuiteDescription *next() const { return (const RealSuiteDescription *)Link::next(); }
-        
+
         unsigned numTests() const { return _tests->size(); }
         const TestDescription &testDescription( unsigned i ) const { return *(RealTestDescription *)_tests->nth( i ); }
 
@@ -109,7 +109,7 @@ namespace CxxTest
         {
             _tests->activateAll();
         }
-        
+
         bool leaveOnly( const char *testName )
         {
             for ( TestDescription *td = firstTest(); td != 0; td = td->next() ) {
@@ -120,11 +120,11 @@ namespace CxxTest
             }
             return false;        
         }
-        
+
     private:
         RealSuiteDescription( const RealSuiteDescription & );
         RealSuiteDescription &operator=( const RealSuiteDescription & );
-        
+
         const char *_file;
         unsigned _line;
         const char *_suiteName;
@@ -153,7 +153,7 @@ namespace CxxTest
             RealSuiteDescription::initialize( argFile, argLine, argSuiteName, argTests );
             initializeStatic( argSuite );
         }
-        
+
         void initializeStatic( TestSuite &argSuite )
         {
             _suite = &argSuite;
@@ -166,11 +166,11 @@ namespace CxxTest
 
         bool setUp() { return true; }
         bool tearDown() { return true; }
-        
+
     private:
         StaticSuiteDescription( const StaticSuiteDescription & );
         StaticSuiteDescription &operator=( const StaticSuiteDescription & );
-        
+
         TestSuite *_suite;
     };
 
@@ -211,7 +211,7 @@ namespace CxxTest
 
         bool setUp();
         bool tearDown();
-        
+
     private:
         S *realSuite() const { return *_suite; }
         void setSuite( S *s ) { *_suite = s; }
@@ -220,7 +220,7 @@ namespace CxxTest
         {
             setSuite( S::createSuite() );
         }
-        
+
         void destroySuite()
         {
             S *s = realSuite();
@@ -235,15 +235,18 @@ namespace CxxTest
     template<class S>
     bool DynamicSuiteDescription<S>::setUp()
     {
-        _TS_TRY {
-	    _TS_TRY_WITH_SIGNAL_PROTECTION
-	    {
-                _TSM_ASSERT_THROWS_NOTHING( file(), _createLine, "Exception thrown from createSuite()", createSuite() );
-	    }
-	    _TS_CATCH_SIGNAL({ setSuite( 0 ); });
-            _TSM_ASSERT( file(), _createLine, "createSuite() failed", suite() != 0 );
-        }
-        _TS_CATCH_ABORT( { return false; } );
+	_TS_TRY_WITH_SIGNAL_PROTECTION
+	{
+            _TS_TRY {
+                _TSM_ASSERT_THROWS_NOTHING( file(), _createLine,
+		    "Exception thrown from createSuite()", createSuite() );
+            }
+            _TS_CATCH_ABORT( { setSuite( 0 ); } );
+	}
+	_TS_CATCH_SIGNAL({
+	    setSuite( 0 );
+            tracker().failedTest( file(), _createLine, __cxxtest_sigmsg );
+	});
 
         return (suite() != 0);
     }
@@ -253,19 +256,24 @@ namespace CxxTest
     {
         if ( !_suite )
             return true;
-            
-        _TS_TRY {
-	    _TS_TRY_WITH_SIGNAL_PROTECTION
-	    {
-                _TSM_ASSERT_THROWS_NOTHING( file(), _destroyLine, "destroySuite() failed", destroySuite() );
-	    }
-	    _TS_CATCH_SIGNAL({ _TS_SIGNAL_CLEANUP; return false; });
-        }
-        _TS_CATCH_ABORT( { return false; } );
 
-        return true;
+	bool result = true;
+	_TS_TRY_WITH_SIGNAL_PROTECTION
+	{
+            _TS_TRY {
+                _TSM_ASSERT_THROWS_NOTHING( file(), _destroyLine,
+		    "destroySuite() failed", destroySuite() );
+	    }
+            _TS_CATCH_ABORT( { result = false; } );
+        }
+	_TS_CATCH_SIGNAL({
+	    result = false;
+            tracker().failedTest( file(), _destroyLine, __cxxtest_sigmsg );
+	});
+
+        return result;
     }
-        
+
     class RealWorldDescription : public WorldDescription
     {
     public:
@@ -273,20 +281,21 @@ namespace CxxTest
         {
             return RealSuiteDescription::_suites;
         }
-        
+
         unsigned numSuites( void ) const
         {
             return suites().size();
         }
-        
+
         unsigned numTotalTests( void ) const
         {
             unsigned count = 0;
-            for ( const SuiteDescription *sd = firstSuite(); sd != 0; sd = sd->next() )
+            for ( const SuiteDescription *sd = firstSuite();
+		  sd != 0; sd = sd->next() )
                 count += sd->numTests();
             return count;
         }
-        
+
         SuiteDescription *firstSuite()
         {
             return (RealSuiteDescription *)suites().head();
@@ -305,7 +314,8 @@ namespace CxxTest
         void activateAllTests()
         {
             suites().activateAll();
-            for ( SuiteDescription *sd = firstSuite(); sd != 0; sd = sd->next() )
+            for ( SuiteDescription *sd = firstSuite();
+		  sd != 0; sd = sd->next() )
                 sd->activateAllTests();
         }
 
@@ -322,7 +332,7 @@ namespace CxxTest
             }
             return false;
         }
-        
+
         bool setUp();
         bool tearDown();
     };
@@ -339,4 +349,3 @@ namespace CxxTest
 }
 
 #endif // __CXXTEST__REAL_DESCRIPTIONS_H
-

@@ -12,6 +12,8 @@ import net.sf.webcat.eclipse.cxxtest.model.ICxxTestStackFrame;
 
 public class StackTraceAssertion implements ICxxTestAssertion
 {
+	private static final String MSG_WARNING = "Warning{0}: {1}";
+
 	private static final String MSG_FAILED_TEST = "Failed test{0}: {1}";
 
 	private CxxTestMethod parent;
@@ -41,12 +43,15 @@ public class StackTraceAssertion implements ICxxTestAssertion
 		realArgs[0] = Integer.toString(lineNumber);
 		realArgs[1] = message;
 
-		if(includeLine)
+		if(includeLine && lineNumber > 0)
 			realArgs[0] = " (line " + realArgs[0] + ")";
 		else
 			realArgs[0] = "";
-
-		return MessageFormat.format(MSG_FAILED_TEST, realArgs);
+		
+		if(status == ICxxTestBase.STATUS_WARNING)
+			return MessageFormat.format(MSG_WARNING, realArgs);
+		else
+			return MessageFormat.format(MSG_FAILED_TEST, realArgs);
 	}
 
 	public void setMessage(String msg)

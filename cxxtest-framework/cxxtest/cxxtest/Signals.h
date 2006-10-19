@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <string>
+#include <signal.h>
 #include <setjmp.h>
 
 // This file holds the declarations for the support
@@ -34,6 +35,8 @@ namespace CxxTest
     extern std::string           __cxxtest_sigmsg;
     extern std::string           __cxxtest_assertmsg;
 
+extern std::string myGetStackTrace();
+
 #define _TS_TRY_WITH_SIGNAL_PROTECTION					\
     if ( ++CxxTest::__cxxtest_jmppos >= CxxTest::__cxxtest_jmpmax ) {	\
 	std::cout << "Too many nested signal handler levels.\n";	\
@@ -43,11 +46,11 @@ namespace CxxTest
 #define _TS_SIGNAL_CLEANUP \
     { CxxTest::__cxxtest_jmppos--; __cxxtest_sigmsg = ""; }
 #define _TS_CATCH_SIGNAL( action )					\
-    else { action; _TS_RESTORE_TRACE_STACK; } _TS_SIGNAL_CLEANUP
-    
+    else { _TS_RESTORE_TRACE_STACK; action; } _TS_SIGNAL_CLEANUP
+
 #define _TS_THROWS_NO_SIGNAL( msg, action )          	   		\
     _TS_TRY_WITH_SIGNAL_PROTECTION action				\
-    _TS_CATCH_SIGNAL( { CxxTest::doFailTest( __FILE__, __LINE__, msg ); } )
+    _TS_CATCH_SIGNAL( { tracker().failedTest( __FILE__, __LINE__, msg ); } )
 #define TS_MESSAGE_FOR_SIGNAL( msg ) ( CxxTest::__cxxtest_sigmsg = msg )
 }
 

@@ -181,7 +181,12 @@ namespace CxxTest
             countFailure();
             _l->failedAssertThrowsNot( file, line, expression );
         }
-        
+
+        void suiteInitError(const char *file, unsigned line, const char *expression)
+        {
+        	_l->suiteInitError(file, line, expression);
+        }
+
     private:
         TestTracker( const TestTracker & );
         TestTracker &operator=( const TestTracker & );

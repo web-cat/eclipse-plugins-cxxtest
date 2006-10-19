@@ -33,6 +33,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
@@ -78,7 +79,7 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 				ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
 				ILaunchConfigurationType type = launchManager.getLaunchConfigurationType(
 						ICDTLaunchConfigurationConstants.ID_LAUNCH_C_APP);
-				ILaunchConfigurationWorkingCopy config = type.newInstance(null, "CxxTestRunner");
+				final ILaunchConfigurationWorkingCopy config = type.newInstance(null, "CxxTestRunner");
 	
 				config.setAttribute(IDebugUIConstants.ATTR_PRIVATE, true);
 				config.setAttribute(IDebugUIConstants.ATTR_LAUNCH_IN_BACKGROUND, false);
@@ -87,31 +88,37 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 						project.getName());
 				config.setAttribute(ICDTLaunchConfigurationConstants.ATTR_PROGRAM_NAME,
 						exePath.toString());
-	
-				final ILaunch launch = config.launch(ILaunchManager.RUN_MODE, null);
-	
-				Display.getDefault().syncExec(new Runnable() {
-					public void run()
-					{
-						TestRunnerViewPart runnerPart =
-							CxxTestPlugin.getDefault().getTestRunnerView();
-						runnerPart.testRunStarted(cproject, launch);
-					}
-				});
 
-				// Wait for the launched process to complete.
-				waitForProcess(launch);
+				IWorkspaceRunnable runnable = new IWorkspaceRunnable() {
+					public void run(IProgressMonitor monitor) throws CoreException {
+						final ILaunch launch = config.launch(ILaunchManager.RUN_MODE, null);
+						
+						Display.getDefault().syncExec(new Runnable() {
+							public void run()
+							{
+								TestRunnerViewPart runnerPart =
+									CxxTestPlugin.getDefault().getTestRunnerView();
+								runnerPart.testRunStarted(cproject, launch);
+							}
+						});
 
-				// Parse the CxxTest results file and enter the results in the
-				// CxxTest view.
-				Display.getDefault().syncExec(new Runnable() {
-					public void run()
-					{
-						TestRunnerViewPart runnerPart =
-							CxxTestPlugin.getDefault().getTestRunnerView();
-						runnerPart.testRunEnded();
+						// Wait for the launched process to complete.
+						waitForProcess(launch);
+
+						// Parse the CxxTest results file and enter the results in the
+						// CxxTest view.
+						Display.getDefault().syncExec(new Runnable() {
+							public void run()
+							{
+								TestRunnerViewPart runnerPart =
+									CxxTestPlugin.getDefault().getTestRunnerView();
+								runnerPart.testRunEnded();
+							}
+						});				
 					}
-				});				
+				};
+				
+				project.getWorkspace().run(runnable, project, IWorkspace.AVOID_UPDATE, null);
 			}
 			catch(CoreException e)
 			{
@@ -222,6 +229,8 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 
 		monitor.done();
 		
+		forgetLastBuiltState();
+
 		return null;
 	}
 

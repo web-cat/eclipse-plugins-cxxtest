@@ -108,6 +108,7 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 			generator.setCompiledExePath(exePath.toString());
 			generator.setMemWatchFile(ICxxTestConstants.MEMWATCH_RESULTS_FILE);
 			generator.setMainProvided(visitor.getMainExists());
+			generator.setPossibleTestFiles(visitor.getPossibleTestFiles());
 
 			generator.buildDriver();
 		}
@@ -170,10 +171,6 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 					.getBuildInfo(project);
 			String[] configurations = buildInfo.getConfigurationNames();
 
-			// We don't want to rebuild the test-case runner if the
-			// changes to the project were isolated to one of the
-			// configuration binary directories, or we might get stuck
-			// in an infinite loop.
 			IResourceDelta[] children = delta.getAffectedChildren();
 
 			for(int i = 0; i < children.length; i++)
@@ -205,7 +202,6 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 				// stack dump file ...
 				if(notInConfigBuildDir && !isStackDump && !isDotFile)
 				{
-//					System.out.println("Resource changed = " + resource.toString());
 					changeRequiresRebuild = true;
 					break;
 				}

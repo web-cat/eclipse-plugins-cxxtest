@@ -77,6 +77,8 @@ public class FrameworkPlugin extends Plugin {
 			// returns a string like "/C:/folder/...".
 			if(path.charAt(2) == ':')
 				path = path.substring(1);
+			
+			path = new Path(path).toOSString();
 		}
 		catch(IOException e)
 		{

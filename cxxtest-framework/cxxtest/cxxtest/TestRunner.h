@@ -11,9 +11,13 @@
 #include <cxxtest/RealDescriptions.h>
 #include <cxxtest/TestSuite.h>
 #include <cxxtest/TestTracker.h>
+#include <string>
 
 namespace CxxTest 
 {
+	void addSuiteToFailures(const std::string&, const std::string&);
+	bool didSuiteFailInitialization(const std::string&, std::string&);
+
     class TestRunner
     {
     public:
@@ -55,6 +59,21 @@ namespace CxxTest
             StateGuard sg;
             
             tracker().enterSuite( sd );
+
+        	// 2006-10-05 (aallowat): The signal handler keeps track of all
+        	// test suites that fail at static initialization time (i.e., a
+			// field constructor raises a signal). If this suite is one of
+			// those that failed, bail out, but dump a message to the
+			// listener that notifies the user.
+			std::string reason;
+			bool failed = didSuiteFailInitialization(sd.suiteName(), reason);
+			if(failed)
+			{
+				tracker().suiteInitError(sd.file(), sd.line(), reason.c_str());
+	            tracker().leaveSuite( sd );
+				return;
+			}
+
             if ( sd.setUp() ) {
                 for ( TestDescription *td = sd.firstTest(); td; td = td->next() )
                     if ( td->active() )

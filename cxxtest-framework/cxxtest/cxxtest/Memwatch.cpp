@@ -151,12 +151,6 @@ FinalReportGenerator::~FinalReportGenerator()
     reportGenerated = true;
     InternalCall = true; // Turn off reporting
 
-#ifdef MW_XML_OUTPUT_FILE
-	FILE* xmlFile = fopen(MW_XML_OUTPUT_FILE, "w");
-	fprintf( xmlFile, "<?xml version='1.0'?>\n");
-	fprintf( xmlFile, "<memwatch>\n");
-#endif
-
     // Search the database
     for ( int i = 0; i < MaxUsed; i++ )
     {
@@ -166,7 +160,6 @@ FinalReportGenerator::~FinalReportGenerator()
         if ( First )
             {
         // At least, we think we did. The text explains all.
-#ifndef MW_XML_OUTPUT_FILE
                 fprintf( OUTFILE,
                          "\n" MW_PREFIX
              "******************* LEAKS *******************\n"
@@ -177,8 +170,6 @@ FinalReportGenerator::~FinalReportGenerator()
                          // "may be due to standard library code.\n"
              MW_PREFIX
                          "The identified leaks:\n" MW_PREFIX "\n" );
-#endif
-                         
                 First = false;
             }
 
@@ -186,13 +177,6 @@ FinalReportGenerator::~FinalReportGenerator()
             // If you put a breakpoint here and a watch on
             // DB[i].From you can use the CPU window to find
             // the exact statement. (Right click, Go To)
-#ifdef MW_XML_OUTPUT_FILE
-			fprintf( xmlFile, "    <leak "
-				"address=\"%p\" size=\"%lu\" %s>\n",
-				DB[i].Address, (unsigned long)DB[i].Size,
-				(DB[i].isArray ? "array=\"yes\"" : ""));
-				
-#else
             fprintf( OUTFILE,
                      // "\n******************* ERROR *******************\n"
              MW_PREFIX
@@ -201,15 +185,8 @@ FinalReportGenerator::~FinalReportGenerator()
             fprintf( OUTFILE, "%lu byte(s) long", (unsigned long)DB[i].Size );
       //if ( DB[i].Size > 500 ) fprintf( OUTFILE, "--possible STL leak?" );
             fprintf( OUTFILE, ").\n" );
-#endif
-
 #ifdef CXXTEST_TRACE_STACK
-            fprintf( 
-#ifdef MW_XML_OUTPUT_FILE
-			xmlFile,
-#else            
-            OUTFILE,
-#endif
+            fprintf( OUTFILE,
                      getStackTrace( MW_STACK_WINDOW_SIZE,
                                     (CxxTest::StackElem*)(
                                         ((char*)DB[i].Address)
@@ -217,33 +194,9 @@ FinalReportGenerator::~FinalReportGenerator()
 									MW_STACK_TRACE_INITIAL_PREFIX
                                   ).c_str() );
 #endif
-#ifdef MW_XML_OUTPUT_FILE
-			fprintf( xmlFile, "    </leak>\n" );
-#endif
         }
     }
 
-#ifdef MW_XML_OUTPUT_FILE
-	fprintf( xmlFile, "    <summary "
-		"max-blocks=\"%d\" "
-		"calls-to-new=\"%d\" "
-		"calls-to-delete=\"%d\" "
-		"calls-to-new-array=\"%d\" "
-		"calls-to-delete-array=\"%d\" "
-#ifdef REPORT_NULLS
-		"calls-to-delete-null=\"%d\" "
-#endif
-		"/>\n",
-        (MaxUsed + 1),
-         NumNewNonArray,
-         NumNonArrayDeletes,
-         NumNewArray,
-         NumArrayDeletes
-#ifdef REPORT_NULLS
-		,NumNullDeletes
-#endif         
-		);
-#else
     fprintf( OUTFILE, "\n**************** SUMMARY ****************\n"
                       "Max blocks in use:            %d\n"
                       "Calls to new:                 %d\n"
@@ -255,18 +208,9 @@ FinalReportGenerator::~FinalReportGenerator()
              NumNonArrayDeletes,
              NumNewArray,
              NumArrayDeletes );
-
 #ifdef REPORT_NULLS
     fprintf( OUTFILE, "Calls to delete (NULL):     %d\n", NumNullDeletes );
 #endif
-
-#endif
-
-#ifdef MW_XML_OUTPUT_FILE
-	fprintf( xmlFile, "</memwatch>\n");
-	fclose( xmlFile );
-#endif
-
     InternalCall = false;
 }
 

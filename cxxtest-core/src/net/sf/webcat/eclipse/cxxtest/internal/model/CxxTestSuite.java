@@ -22,12 +22,13 @@ import java.util.Vector;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestMethod;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuite;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
+import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuiteChild;
 
 import org.xml.sax.Attributes;
 
 public class CxxTestSuite implements ICxxTestSuite
 {
-	private Vector tests;
+	private Vector children;
 
 	private String name;
 	
@@ -37,7 +38,7 @@ public class CxxTestSuite implements ICxxTestSuite
 
 	public CxxTestSuite(Attributes attributes)
 	{
-		tests = new Vector();
+		children = new Vector();
 
 		name = attributes.getValue("name");
 		file = attributes.getValue("file");
@@ -61,14 +62,30 @@ public class CxxTestSuite implements ICxxTestSuite
 		return line;
 	}
 
-	public ICxxTestMethod[] getTests()
+	public ICxxTestSuiteChild[] getChildren(boolean onlyTests)
 	{
-		return (ICxxTestMethod[])tests.toArray(new ICxxTestMethod[tests.size()]);
+		if(!onlyTests)
+		{
+			return (ICxxTestSuiteChild[])children.toArray(
+					new ICxxTestSuiteChild[children.size()]);
+		}
+		else
+		{
+			Vector vec = new Vector();
+			for(int i = 0; i < children.size(); i++)
+			{
+				if(children.get(i) instanceof ICxxTestMethod)
+					vec.add(children.get(i));
+			}
+			
+			return (ICxxTestSuiteChild[])vec.toArray(
+					new ICxxTestSuiteChild[vec.size()]);
+		}
 	}
 	
-	public void addTest(ICxxTestMethod test)
+	public void addChild(ICxxTestSuiteChild child)
 	{
-		tests.add(test);
+		children.add(child);
 	}
 
 	public ICxxTestBase getParent()
@@ -80,11 +97,11 @@ public class CxxTestSuite implements ICxxTestSuite
 	{
 		int maxStatus = STATUS_OK;
 
-		for(int i = 0; i < tests.size(); i++)
+		for(int i = 0; i < children.size(); i++)
 		{
-			ICxxTestMethod test = (ICxxTestMethod)tests.get(i);
-			if(test.getStatus() > maxStatus)
-				maxStatus = test.getStatus();
+			ICxxTestSuiteChild child = (ICxxTestSuiteChild)children.get(i);
+			if(child.getStatus() > maxStatus)
+				maxStatus = child.getStatus();
 		}
 		
 		return maxStatus;

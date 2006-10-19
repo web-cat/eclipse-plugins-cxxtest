@@ -1,4 +1,3 @@
-#include <signal.h>    // for siginfo_t and signal constants
 #include <setjmp.h>	   // for siglongjmp()
 #include <stdlib.h>	   // for exit()
 
@@ -60,10 +59,10 @@ void __cxxtest_sig_handler( int signum, siginfo_t* info, void* /*arg*/ )
 	CxxTest::__cxxtest_sigmsg = std::string(msg)
 	    + ", maybe related to " + CxxTest::__cxxtest_sigmsg;
     }
-    
+
 #ifdef CXXTEST_TRACE_STACK
     {
-        std::string trace = CxxTest::getStackTrace();
+        std::string trace = CxxTest::getStackTrace(CxxTest::__cxxtest_jmppos < 0);
         if ( trace.length() )
         {
             CxxTest::__cxxtest_sigmsg += "\n";
@@ -73,13 +72,13 @@ void __cxxtest_sig_handler( int signum, siginfo_t* info, void* /*arg*/ )
 #endif
     if ( CxxTest::__cxxtest_jmppos >= 0 )
     {
-	siglongjmp( CxxTest::__cxxtest_jmpbuf[CxxTest::__cxxtest_jmppos], 1 );
+		siglongjmp( CxxTest::__cxxtest_jmpbuf[CxxTest::__cxxtest_jmppos], 1 );
     }
     else
     {
         std::cout << "\nError: untrapped signal:\n"
-	    << CxxTest::__cxxtest_sigmsg
+	        << CxxTest::__cxxtest_sigmsg
             << "\n"; // std::endl;
-	exit(1);
+		exit(1);
     }
 }

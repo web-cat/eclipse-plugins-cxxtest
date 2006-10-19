@@ -15,24 +15,25 @@
  *	along with Web-CAT; if not, write to the Free Software
  *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
- 
-/*
- * ACKNOWLEDGMENTS: 
- * This code is based on and extends the work done by Scott M. Pike and
- * Bruce W. Weide at The Ohio State University and Joseph E. Hollingsworth of
- * Indiana University SE in "Checkmate: Cornering C++ Dynamic Memory Errors
- * With Checked Pointers", Proc. of the 31st SIGCSE Technical Symposium on
- * CSE, ACM Press, March 2000.  
- */
- 
 #ifndef __CHKPTR_TABLE_H__
 #define __CHKPTR_TABLE_H__
 
-#define CHKPTR_ERROR ChkPtr::__manager.logError
+#include <cstdio>
+
+#if defined(__GNUC__)
+// This definition is always on, even when stack tracing is disabled
+#    define _CHKPTR_NO_INSTR __attribute__ ((no_instrument_function))
+#else
+#    define _CHKPTR_NO_INSTR
+#endif
+
 
 namespace ChkPtr
 {
 
+/**
+ * These error codes map to error messages that checked pointers genereate.
+ */
 enum error_codes {
 	PTRERR_DELETE_ARRAY = 0,
 	PTRERR_DELETE_NONARRAY,
@@ -51,6 +52,18 @@ enum error_codes {
 	PTRERR_MEMORY_CORRUPTION,
 };
 
+/**
+ * Values in this enumeration are returned by the findAddress() method to
+ * indicate whether a memory address was found in the checked or unchecked
+ * pointer table.
+ */
+enum find_address_results
+{
+	address_not_found = 0,
+	address_found_unchecked,
+	address_found_checked,
+};
+
 class chkptr_reporter
 {
 public:
@@ -65,7 +78,7 @@ public:
 
 /**
  * The __checked_pointer_table class is not intended to be used directly
- * by client code. Its methos are only called by the Ptr<T> checked pointer
+ * by client code. Its methods are only called by the Ptr<T> checked pointer
  * class and by the auto-generated code in the CxxTest test driver.
  */
 class __checked_pointer_table
@@ -173,7 +186,7 @@ private:
 	 * A pointer to a function that is called when a pointer error occurs
 	 * at runtime. 
 	 */
-	void (*errorHandler)(const char*, const char*, int);
+	void (*errorHandler)(bool, const char*);
 
 	/**
 	 * A pointer to a chkptr_reporter object that is used to report the
@@ -181,6 +194,12 @@ private:
 	 */
 	chkptr_reporter* reporter;
 
+	/**
+	 * Indicates whether the checked pointer manager owns the reporter object
+	 * it uses. This should typically be true, so that the reporter will not
+	 * be destroyed until the very end of the program, when the checked
+	 * pointer manager is destroyed.
+	 */
 	bool ownReporter;
 
 	/**
@@ -230,18 +249,18 @@ public:
 	/**
 	 * Initializes a new checked pointer table.
 	 */
-	__checked_pointer_table();
+	__checked_pointer_table() _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Destroys the checked pointer table.
 	 */
-	~__checked_pointer_table();
+	~__checked_pointer_table() _CHKPTR_NO_INSTR;
 
 	/**
 	 * Returns the next unique tag (up to 2^32 - 1) for memory address
 	 * reuse tracking.
 	 */
-	unsigned long getTag();
+	unsigned long getTag() _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Returns a value indicating whether the assigned pointer table contains
@@ -252,19 +271,18 @@ public:
 	 * @param tag the unique tag associated with the pointer
 	 * @returns true if the address is live; otherwise, false.
 	 */
-	bool contains(void* address, unsigned long tag);
+	bool contains(void* address, unsigned long tag) _CHKPTR_NO_INSTR;
 	
 	/**
-	 * Returns a value indicating whether the unchecked pointer table contains
-	 * the specified address; that is, the memory at the address has been
-	 * allocated by the overloaded new operator but has not yet assigned to a
-	 * checked pointer.
+	 * Tries to find the specified address in the unchecked and checked tables,
+	 * and returns a flag indicating where or if it was found.
 	 * 
 	 * @param address the memory address to check
-	 * @returns true if the address is allocated but unassigned; otherwise,
-	 *     false. 
+	 * @param tag a reference to an unsigned long that will contain the tag of
+	 *     the pointer if it was found
+	 * @returns one of the values from the find_address_results enumeration. 
 	 */
-	bool containsUnchecked(void* address);
+	find_address_results findAddress(void* address, unsigned long& tag) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Increments the reference count of the specified memory address to
@@ -273,7 +291,7 @@ public:
 	 * 
 	 * @param address the memory address being referenced
 	 */
-	void retain(void* address);
+	void retain(void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Decrements the reference count of the specified memory address to
@@ -282,7 +300,7 @@ public:
 	 * 
 	 * @param address the memory address being unreferenced
 	 */
-	void release(void* address);
+	void release(void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Returns the number of live references to the specified memory address.
@@ -290,7 +308,7 @@ public:
 	 * @param address the memory address being checked
 	 * @returns the number of live references to the address
 	 */
-	unsigned long getRefCount(void* address);
+	unsigned long getRefCount(void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Returns the size of the memory block allocated at the specified
@@ -300,7 +318,7 @@ public:
 	 * @returns a size_t value indicating the number of bytes allocated at
 	 *     the memory address
 	 */
-	size_t getSize(void* address);
+	size_t getSize(void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Returns a value indicating whether the memory block allocated at the
@@ -311,7 +329,7 @@ public:
 	 * @returns true if the memory was allocated using new[]; false if it was
 	 *     allocated with new.
 	 */
-	bool isArray(void* address);
+	bool isArray(void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Adds a newly allocated block of memory to the unchecked pointer list.
@@ -330,7 +348,7 @@ public:
 	 *     statement was invoked
 	 */
 	void addUnchecked(void* address, bool isArray, size_t size,
-		unsigned long tag, const char* filename, int line);
+		unsigned long tag, const char* filename, int line) _CHKPTR_NO_INSTR;
 		
 	/**
 	 * Moves a currently unchecked memory address to the checked pointer list.
@@ -340,8 +358,8 @@ public:
 	 * @param address the memory address to move
 	 * @returns the unique tag associated with this address
 	 */
-	unsigned long moveToChecked(void* address);
-
+	unsigned long moveToChecked(void* address) _CHKPTR_NO_INSTR;
+	
 	/**
 	 * Removes a memory address from the unchecked pointer table. This is
 	 * called by the overloaded delete operators in order to remove any
@@ -350,7 +368,7 @@ public:
 	 * 
 	 * @param address the memory address to remove
 	 */	
-	void removeUnchecked(void* address);
+	void removeUnchecked(void* address) _CHKPTR_NO_INSTR;
 
 	/**
 	 * Removes a memory address from the checked pointer table. This is called
@@ -359,13 +377,13 @@ public:
 	 * 
 	 * @param address the memory address to remove
 	 */
-	void remove(void* address);
+	void remove(void* address) _CHKPTR_NO_INSTR;
 
 	/**
 	 * Logs a pointer error to the error handler.
 	 */
-	void logError(int code, ...);
-	
+	void logError(bool fatal, int code, ...) _CHKPTR_NO_INSTR;
+
 	/**
 	 * Sets the error handler that will be called by the logError method when
 	 * a pointer error occurs.
@@ -373,13 +391,13 @@ public:
 	 * @param handler a pointer to a function that is called when a pointer
 	 *     error occurs.
 	 */
-	void setErrorHandler(void (*handler)(const char*, const char*, int));
+	void setErrorHandler(void (*handler)(bool, const char*)) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Prints a report of any memory that is still currently allocated but
 	 * not freed at runtime. 
 	 */
-	void reportAllocations();
+	void reportAllocations() _CHKPTR_NO_INSTR;
 
 	/**
 	 * Sets the reporter object used by the reportAllocations method to report
@@ -387,7 +405,7 @@ public:
 	 * 
 	 * @param reporter the reporter to use
 	 */
-	void setReporter(chkptr_reporter* reporter, bool own);
+	void setReporter(chkptr_reporter* reporter, bool own) _CHKPTR_NO_INSTR;
 
 	/**
 	 * Sets a value indicating whether the reportAllocations method should be
@@ -396,10 +414,14 @@ public:
 	 * @param value true if reportAllocations should be called; otherwise,
 	 *     false.
 	 */
-	void setReportAtEnd(bool value);
+	void setReportAtEnd(bool value) _CHKPTR_NO_INSTR;
 
+	/**
+	 * Reports various statistics about the memory usage tracked by the
+	 * checked pointer manager.
+	 */
 	void getStatistics(int& totalBytes, int& maxBytes, int& numNew,
-		int& numArrayNew, int& numDelete, int& numArrayDelete) const;
+		int& numArrayNew, int& numDelete, int& numArrayDelete) const _CHKPTR_NO_INSTR;
 };
 
 /**

@@ -41,8 +41,8 @@ public class CxxTestMethod implements ICxxTestMethod
 		this.suite = suite;
 		assertions = new Vector();
 		
-		suite.addTest(this);
-		
+		suite.addChild(this);
+
 		name = attributes.getValue("name");
 		String lineStr = attributes.getValue("line");
 		

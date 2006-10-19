@@ -37,7 +37,9 @@ import net.sf.webcat.eclipse.cxxtest.framework.FrameworkPlugin;
 import org.eclipse.cdt.core.model.CModelException;
 import org.eclipse.cdt.core.model.ICProject;
 import org.eclipse.cdt.core.model.IMethodDeclaration;
+import org.eclipse.cdt.core.model.ITranslationUnit;
 import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 
 /**
@@ -58,6 +60,8 @@ public class CxxTestDriverGenerator
 	private ICProject project;
 	
 	private CxxTestSuiteInfo[] suites;
+	
+	private ITranslationUnit[] possibleTestFiles;
 	
 	private PrintWriter writer;
 	
@@ -232,6 +236,16 @@ public class CxxTestDriverGenerator
 	{
 		memWatchFile = value;
 	}
+	
+	public ITranslationUnit[] getPossibleTestFiles()
+	{
+		return possibleTestFiles;
+	}
+
+	public void setPossibleTestFiles(ITranslationUnit[] value)
+	{
+		possibleTestFiles = value;
+	}
 
 	public void buildDriver() throws IOException
 	{
@@ -241,6 +255,7 @@ public class CxxTestDriverGenerator
 		writePreamble();
 		writeWorld();
 		writeMain();
+		writePossibleTestFiles();
 
 		writer.close();
 	}
@@ -266,9 +281,17 @@ public class CxxTestDriverGenerator
 			writer.println("#define _CXXTEST_LONGLONG " + longLongType);
 
 		if(traceStack && compiledExePath != null)
+		{
+			writer.println("#define CXXTEST_TRACE_STACK");
 			writer.println("#define CXXTEST_STACK_TRACE_EXE \"" +
 					compiledExePath + "\"");
+		}
 
+		if("XmlStdioPrinter".equals(runner))
+		{
+			writer.println("#define CXXTEST_XML_OUTPUT");
+		}
+		
 		writer.println();
 
 		//for header in headers:
@@ -292,10 +315,11 @@ public class CxxTestDriverGenerator
 
 		writer.println("#ifdef CXXTEST_TRACE_STACK");
 		writer.println("#include <symreader.h>");
+		writer.println("#ifdef CXXTEST_INCLUDE_SYMREADER_DIRECTLY");
+		writer.println("#include <symreader.c>");
+		writer.println("#endif");
 		writer.println("#endif");
 	    
-	    writer.println("#include <chkptr.h>");
-
 	    writer.println("typedef const CxxTest::SuiteDescription *SuiteDescriptionPtr;");
 	    writer.println("typedef const CxxTest::TestDescription *TestDescriptionPtr;");
 	    writer.println();
@@ -306,11 +330,14 @@ public class CxxTestDriverGenerator
 		if(root || !part)
 			writeRoot();
 
-		if(trapSignals)
-			writeSignalHandler();
-
 		writeCheckedPointerHandler();
 		writeCheckedPointerReporter();
+
+		if(trapSignals)
+		{
+			writeSignalHandler();
+			writeSignalRegistration();
+		}
 
 		if(!mainProvided)
 			writeMainRunner();
@@ -318,19 +345,23 @@ public class CxxTestDriverGenerator
 			writeStaticObjectRunner();
 	}
 
+	private void writePossibleTestFiles()
+	{
+		for(int i = 0; i < possibleTestFiles.length; i++)
+		{
+			ITranslationUnit unit = possibleTestFiles[i];
+
+			IPath projectPath = unit.getCProject().getPath();
+			IPath elementPath = unit.getPath();
+			int matchingSegments = elementPath.matchingFirstSegments(projectPath);
+			String includeName = elementPath.removeFirstSegments(matchingSegments).toString();
+			
+			writer.println("#include \"" + includeName + "\"");
+		}
+	}
+
 	private void writeTestRunStatement(boolean inCtor) throws IOException
 	{
-		writer.println("#ifdef CXXTEST_TRACE_STACK");
-		writer.println(" symreader_initialize(CXXTEST_STACK_TRACE_EXE, SYMFLAGS_DEMANGLE);");
-		writer.println("#endif");
-		
-		writer.println(" ChkPtr::__manager.setReportAtEnd(true);");
-		writer.println(" ChkPtr::__manager.setErrorHandler(" +
-				"&CxxTest::__cxxtest_chkptr_error_handler);");
-		writer.println(" ChkPtr::__manager.setReporter(" +
-				"new CxxTest::xml_chkptr_reporter(\"" +
-				memWatchFile + "\"), true);");
-
 		if("XmlStdioPrinter".equals(runner))
 		{
 			writer.println(" FILE* resultsFile = fopen(\"" +
@@ -341,6 +372,8 @@ public class CxxTestDriverGenerator
 			
 			writer.println(" CxxTest::" + runner + "(resultsFile).run();");
 			writer.println(" fclose(resultsFile);");
+			writer.println(" CxxTest::__cxxtest_runCompleted = true;");
+			writer.println(" CxxTest::cleanup();");
 
 			if(createBinaryLog)
 			{
@@ -357,9 +390,18 @@ public class CxxTestDriverGenerator
 		else
 		{
 			if(!inCtor)
-				writer.println(" return CxxTest::" + runner + "().run();");
+			{
+				writer.println(" int resultCode = CxxTest::" + runner + "().run();");
+				writer.println(" CxxTest::__cxxtest_runCompleted = true;");
+				writer.println(" CxxTest::cleanup();");
+				writer.println(" return resultCode;");
+			}
 			else
+			{
 				writer.println(" CxxTest::" + runner + "().run();");				
+				writer.println(" CxxTest::__cxxtest_runCompleted = true;");
+				writer.println(" CxxTest::cleanup();");
+			}
 		}
 	}
 
@@ -367,9 +409,13 @@ public class CxxTestDriverGenerator
 	{
 		writer.println("int main() {");
 		
-		if(trapSignals)
-			writeSignalRegistration();
-		
+		writer.println(" ChkPtr::__manager.setReportAtEnd(true);");
+		writer.println(" ChkPtr::__manager.setErrorHandler(" +
+			"&CxxTest::__cxxtest_chkptr_error_handler);");
+		writer.println(" ChkPtr::__manager.setReporter(" +
+				"new CxxTest::xml_chkptr_reporter(\"" +
+				memWatchFile + "\"), true);");
+
 		if(noStaticInit)
 			writer.println(" CxxTest::initialize();");
 
@@ -384,8 +430,12 @@ public class CxxTestDriverGenerator
 		writer.println("public:");
 		writer.println("    CxxTestMain() {");
 
-		if(trapSignals)
-			writeSignalRegistration();
+		writer.println(" ChkPtr::__manager.setReportAtEnd(true);");
+		writer.println(" ChkPtr::__manager.setErrorHandler(" +
+			"&CxxTest::__cxxtest_chkptr_error_handler);");
+		writer.println(" ChkPtr::__manager.setReporter(" +
+				"new CxxTest::xml_chkptr_reporter(\"" +
+				memWatchFile + "\"), true);");
 
 		if(noStaticInit)
 			writer.println("        CxxTest::initialize();");
@@ -465,8 +515,6 @@ public class CxxTestDriverGenerator
 				writer.println("#define MW_STACK_TRACE_INITIAL_PREFIX CXXTEST_STACK_TRACE_INITIAL_PREFIX");
 				writer.println("#define MW_STACK_TRACE_OTHER_PREFIX CXXTEST_STACK_TRACE_INITIAL_PREFIX");
 			}
-//			writer.println("#define MW_XML_OUTPUT_FILE \"" + memWatchFile + "\"\n");
-//			writer.println("#include <cxxtest/Memwatch.cpp>");
 		}
 	}
 
@@ -498,11 +546,22 @@ public class CxxTestDriverGenerator
 			}
 			else
 			{
+			    writer.println("_TS_TRY_WITH_SIGNAL_PROTECTION {");
+			    writer.println("  _TS_TRY {");
+				writer.println("    " + suite.getObjectName() + " = new " + suite.getName() + ";");
+			    writer.println("  } _TS_CATCH_ABORT( {} )");
+			    writer.println("_TS_LAST_CATCH( { addSuiteToFailures(\"" + suite.getName() +
+			    		"\", \"Exception thrown when initializing " + suite.getName() + "\"); })");
+			    writer.println("} _TS_CATCH_SIGNAL({");
+			    writer.println("  addSuiteToFailures(\"" + suite.getName() + "\", CxxTest::__cxxtest_sigmsg);");
+			    writer.println("});");
+				writer.println();
+
 				writer.print("  " + suite.getDescriptionObjectName() + ".initialize( ");
 				writer.print(makeCString(suite.getPath()) + ", ");
 				writer.print(suite.getLineNumber());
 				writer.print(", \"" + suite.getName() + "\", ");
-				writer.print(suite.getObjectName() + ", ");
+				writer.print("*" + suite.getObjectName() + ", ");
 				writer.print(suite.getTestListName());
 				writer.println(" );");
 			}
@@ -521,7 +580,23 @@ public class CxxTestDriverGenerator
 			}
 		}
 		
+		writer.println(" }\n");
+
+		writer.println(" void cleanup()");
+		writer.println(" {");
+
+		for(int i = 0; i < suites.length; i++)
+		{
+			CxxTestSuiteInfo suite = suites[i];			
+
+			if(!suite.isDynamic())
+			{
+				writer.println("    delete " + suite.getObjectName() + ";");
+			}
+		}
+
 		writer.println(" }");
+
 		writer.println("}");
 	}
 
@@ -544,23 +619,26 @@ public class CxxTestDriverGenerator
 			CxxTestSuiteInfo suite = suites[i];
 			
 			writeInclude(suite);
-			
-			if(suite.isDynamic())
-				writeSuitePointer(suite);
-			else
-				writeSuiteObject(suite);
-			
+			writeSuiteDeclaration(suite);
 			writeTestList(suite);
 			writeSuiteDescription(suite);
 			writeTestDescriptions(suite);
 		}
 	}
-	
+
 	private void writeInclude(CxxTestSuiteInfo suite) throws IOException
 	{
 		writer.println("#include \"" + suite.getPath() + "\"");
 	}
 	
+	private void writeSuiteDeclaration(CxxTestSuiteInfo suite) throws IOException
+	{
+//		if(suite.isDynamic())
+			writeSuitePointer(suite);
+//		else
+//			writeSuiteObject(suite);
+	}
+
 	private void writeSuitePointer(CxxTestSuiteInfo suite) throws IOException
 	{
 		if(noStaticInit)
@@ -577,35 +655,27 @@ public class CxxTestDriverGenerator
 		writer.println();
 	}
 
-	private void writeSuiteObject(CxxTestSuiteInfo suite) throws IOException
+/*	private void writeSuiteObject(CxxTestSuiteInfo suite) throws IOException
 	{
 		writer.print("static " + suite.getName() + " ");
-		writer.println(suite.getObjectName() + ";");
+		writer.println(suite.getObjectName() + " __attribute((init_priority(65535)));");
 		writer.println();
-	}
+	}*/
 
 	private void writeTestList(CxxTestSuiteInfo suite) throws IOException
 	{
 		if(noStaticInit)
-		{
 			writer.println("static CxxTest::List " + suite.getTestListName() + ";");
-		}
 		else
-		{
 			writer.println("static CxxTest::List " + suite.getTestListName() + " = { 0, 0 };");
-		}
 	}
 	
 	private void writeSuiteDescription(CxxTestSuiteInfo suite) throws IOException
 	{
 		if(suite.isDynamic())
-		{
 			writeDynamicDescription(suite);
-		}
 		else
-		{
 			writeStaticDescription(suite);
-		}
 	}
 	
 	private String makeCString(String str)
@@ -694,10 +764,10 @@ public class CxxTestDriverGenerator
 		
 		writer.print(" void runTest() { ");
 
-		if(suite.isDynamic())
+//		if(suite.isDynamic())
 			writeDynamicRun(suite, test);
-		else
-			writeStaticRun(suite, test);
+//		else
+//			writeStaticRun(suite, test);
 		
 		writer.println(" }");
 		
@@ -711,8 +781,8 @@ public class CxxTestDriverGenerator
 		writer.print(suite.getObjectName() + "->" + test.getElementName() + "();");
 	}
 
-	private void writeStaticRun(CxxTestSuiteInfo suite, IMethodDeclaration test) throws IOException
+/*	private void writeStaticRun(CxxTestSuiteInfo suite, IMethodDeclaration test) throws IOException
 	{
 		writer.print(suite.getObjectName() + "." + test.getElementName() + "();");
-	}
+	}*/
 }

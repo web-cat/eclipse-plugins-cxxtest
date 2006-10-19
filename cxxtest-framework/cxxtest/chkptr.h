@@ -15,20 +15,12 @@
  *	along with Web-CAT; if not, write to the Free Software
  *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-
-/*
- * ACKNOWLEDGMENTS: 
- * This code is based on and extends the work done by Scott M. Pike and
- * Bruce W. Weide at The Ohio State University and Joseph E. Hollingsworth of
- * Indiana University SE in "Checkmate: Cornering C++ Dynamic Memory Errors
- * With Checked Pointers", Proc. of the 31st SIGCSE Technical Symposium on
- * CSE, ACM Press, March 2000.  
- */
-
 #ifndef __CHKPTR_H__
 #define __CHKPTR_H__
 
-#include <chkptr_table.h>
+#include <cstdio>
+#include <memory>
+#include "chkptr_table.h"
 
 /**
  * Ptr<T> is a checked pointer class that should be used in lieu of T* in
@@ -38,8 +30,8 @@
  * at runtime are instead logged to an error mechanism (stderr by default,
  * but this can be overridden if desired).
  *
- * As stated above, Ptr<T> totally replaces T* syntactically. Through the
- * use of operator overloading and some macro magic, no other syntactic
+ * As stated above, Ptr<T> is a drop-in replacement for T*, syntactically.
+ * Through the use of tricky operator overloading, no other syntactic
  * constructs need to be modified (notably, standard 'new' and 'delete'
  * work as expected).
  */
@@ -89,63 +81,18 @@ private:
 		Ptr<T>* parent;
 		bool doNothing;
 
-		ptr_proxy() : doNothing(false) { }
-
-		void set(Ptr<T>* p, bool a)
-		{
-			parent = p;
-			tag = (a ? PROXY_ARRAY_TAG : PROXY_NONARRAY_TAG);
-		}
-
-		~ptr_proxy()
-		{
-			if(doNothing)
-				return;
-
-			parent->deallocate(tag == PROXY_ARRAY_TAG);
-		}
-	
+		ptr_proxy();
+		void set(Ptr<T>* p, bool a);
+		~ptr_proxy();
+			
 		/**
 		 * This class uses custom new/delete operators so that the allocation
 		 * and deallocation of these objects does not pass through the
 		 * overloaded global operators used for tracking.
 		 */
-		void* operator new[](size_t size, bool isArray)
-		{
-			void* ptr = malloc(size + PROXY_HEADER_SIZE);
-			*((unsigned long*)ptr) = isArray ? PROXY_ARRAY_TAG : PROXY_NONARRAY_TAG;
-			return (char*)ptr + PROXY_HEADER_SIZE;
-		}
-
-		void operator delete(void* ptr)
-		{
-			unsigned long tag = *((unsigned long*)ptr);
-			if(tag != PROXY_NONARRAY_TAG)
-			{
-				CHKPTR_ERROR(ChkPtr::PTRERR_DELETE_ARRAY);
-//					"Called \"delete\" on array pointer (should use \"delete[]\")",
-//					"", 0);
-			}
-
-			char* backtrack = (char*)ptr - 1;
-			while(*((unsigned long*)backtrack) != PROXY_NONARRAY_TAG)
-				backtrack--;
-
-			free(backtrack);
-		}
-		
-		void operator delete[](void* ptr)
-		{
-			unsigned long tag = *((unsigned long*)ptr - 1);						
-			if(tag != PROXY_ARRAY_TAG)
-			{
-				CHKPTR_ERROR(ChkPtr::PTRERR_DELETE_NONARRAY);
-//					"Called \"delete[]\" on non-array pointer (should use \"delete\")",
-//					"", 0);
-			}
-	
-			free((char*)ptr - PROXY_HEADER_SIZE);
-		}
+		void* operator new[](size_t size, bool isArray);
+		void operator delete(void* ptr);
+		void operator delete[](void* ptr);
 	};
 
 	ptr_proxy* proxy;
@@ -157,58 +104,21 @@ private:
 	 * 
 	 * @returns true if the pointer is dead; otherwise, false.
 	 */
-	bool isDead() const
-	{
-		return !isInit || ((pointer != 0) && (!ChkPtr::__manager.contains(pointer, tag)));
-	}
+	bool isDead() const;
 
-	T* dereference()
-	{	
-		if(!isInit)
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_UNINITIALIZED);
-//				"Dereferenced uninitialized pointer",
-//				"", 0);
-		}
-		else if(pointer == 0)
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_NULL);
-//				"Dereferenced null pointer",
-//				"", 0);
-		}
-		else if(!ChkPtr::__manager.contains(pointer, tag))
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_FREED);
-//				"Dereferenced pointer to freed memory",
-//				"", 0);
-		}
-
-		return pointer;
-	}
+	/**
+	 * Used by the dereferencing operators to return the pointer owned by
+	 * this checked pointer object. This method also handles error checking,
+	 * for dead/uninitialized pointers.
+	 */
+	T* dereference();
 	
-	const T* constDereference() const
-	{	
-		if(!isInit)
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_UNINITIALIZED);
-//				"Dereferenced uninitialized pointer",
-//				"", 0);
-		}
-		else if(pointer == 0)
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_NULL);
-//				"Dereferenced null pointer",
-//				"", 0);
-		}
-		else if(!ChkPtr::__manager.contains(pointer, tag))
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_FREED);
-//				"Dereferenced pointer to freed memory",
-//				"", 0);
-		}
-
-		return pointer;
-	}
+	/**
+	 * Used by the dereferencing operators to return a const pointer to the
+	 * memory owned by this checked pointer object. This method also handles
+	 * error checking, for dead/uninitialized pointers.
+	 */
+	const T* constDereference() const;
 
 	/**
 	 * Deallocates the memory at the address indicated by this pointer.
@@ -217,50 +127,15 @@ private:
 	 *     on the memory address indicated by this pointer; false if delete
 	 *     should be called.
 	 */
-	void deallocate(bool useArrayDelete)
-	{
-		if(!isInit)
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DELETE_UNINITIALIZED);
-//				"Attempted to delete uninitialized pointer",
-//				"", 0);
-		}
-		else if(pointer != 0)
-		{
-			if(!ChkPtr::__manager.contains(pointer, tag))
-			{
-				CHKPTR_ERROR(ChkPtr::PTRERR_DELETE_FREED);
-//					"Attempted to free memory that has already been freed",
-//					"", 0);
-			}
-			else
-			{				
-				if(useArrayDelete)
-					delete[] pointer;
-				else
-					delete pointer;
-	
-				ChkPtr::__manager.remove(pointer);
-				createProxy();
-			}
-		}
-	}
+	void deallocate(bool useArrayDelete);
 
-	void createProxy()
-	{
-		bool isArray = false;
-		if(ChkPtr::__manager.contains(pointer, tag))
-			isArray = ChkPtr::__manager.isArray(pointer);
-		
-		proxy = new(isArray) ptr_proxy[1];
-		proxy[0].set(this, isArray);
-	}
+	void createProxy();
 	
 public:
 	/**
 	 * Creates a checked pointer that represents an uninitialized pointer.
 	 */
-	Ptr() : tag((unsigned long)~0), isInit(false), proxy(0) { }
+	Ptr();
 	
 	/**
 	 * Creates a checked pointer that aliases an existing checked pointer
@@ -270,23 +145,8 @@ public:
 	 * 
 	 * @param rhs The checked pointer being aliased.
 	 */
-	Ptr(const Ptr<T>& rhs)
-	{
-		pointer = rhs.pointer;
-		tag = rhs.tag;
-		isInit = rhs.isInit;
-		proxy = 0;
+	Ptr(const Ptr<T>& rhs);	
 
-		// When a checked pointer object is copied (due to aliasing or
-		// passing to a function), we increment the pointer's reference
-		// count if it is live.
-		if(ChkPtr::__manager.contains(pointer, tag))
-		{
-			ChkPtr::__manager.retain(pointer);
-			createProxy();
-		}
-	}
-	
 	/**
 	 * Creates a checked pointer that encapsulates the specified memory
 	 * address. This is typically only used on the left-hand side of a call
@@ -296,26 +156,7 @@ public:
 	 * @param ptr A pointer to an object of type T, to be assigned to this
 	 *     checked pointer object.
 	 */
-	Ptr(T* ptr)
-	{
-		if(ptr != 0 && !ChkPtr::__manager.containsUnchecked(ptr))
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_POINT_TO_NONNEW);
-//				"Checked pointers cannot point to memory that was not allocated with \"new\" or \"new[]\"",
-//				"", 0);
-		}
-
-		pointer = ptr;
-		isInit = true;
-		proxy = 0;
-
-		if(ptr != 0)
-		{
-			tag = ChkPtr::__manager.moveToChecked(ptr);
-			ChkPtr::__manager.retain(pointer);
-			createProxy();
-		}
-	}
+	Ptr(T* ptr);
 
 	/**
 	 * Destroys the checked pointer object. Since this is called when a
@@ -323,174 +164,79 @@ public:
 	 * the memory address identified by this pointer, an error is generated
 	 * that a leak will occur.
 	 */
-	~Ptr()
-	{
-		// If the pointer table contains the pointer, then it is still
-		// alive and we decrement its reference count. If this causes the
-		// count to reach zero, then we have a live pointer going out of
-		// scope, which will result in a memory leak.
-		if(ChkPtr::__manager.contains(pointer, tag))
-		{
-			ChkPtr::__manager.release(pointer);
-			if(ChkPtr::__manager.getRefCount(pointer) == 0)
-			{
-				CHKPTR_ERROR(ChkPtr::PTRERR_LIVE_OUT_OF_SCOPE);
-//					"Memory leak caused by live pointer going out of scope without any other references",
-//					"", 0);
-			}
-		}
-		
-		if(proxy)
-		{
-			proxy->doNothing = true;
-			delete proxy;
-		}
-	}
+	~Ptr();
 
 	/**
+	 * Sets the current checked pointer to alias an existing checked pointer.
+	 * This causes the reference count of the memory address to be
+	 * incremented. If the current pointer is not dead, a memory leak warning
+	 * will be generated if it is the last reference to a particular memory
+	 * block.
 	 * 
+	 * @param rhs The checked pointer being aliased.
+	 * @returns a reference to this pointer
 	 */
-	Ptr<T>& operator=(const Ptr<T>& rhs)
-	{
-		if(this != &rhs)
-		{
-			// If the pointer to which assignment is being made is alive,
-			// decrement its reference count since we are writing over its
-			// value. If this causes the count to reach zero, then we have
-			// a memory leak because no references to the memory remain.
-			if(ChkPtr::__manager.contains(pointer, tag))
-			{
-				ChkPtr::__manager.release(pointer);
-				
-				if(ChkPtr::__manager.getRefCount(pointer) == 0)
-				{
-					CHKPTR_ERROR(ChkPtr::PTRERR_LIVE_OVERWRITTEN);
-//						"Memory leak caused by live pointer being overwritten without any other references",
-//						"", 0);
-				}
-			}
-			
-			pointer = rhs.pointer;
-			tag = rhs.tag;
-			isInit = rhs.isInit;
-			proxy = 0;
-			
-			// Increment the reference count of the pointer that was used
-			// on the right-hand side of the assignment.
-			if(ChkPtr::__manager.contains(pointer, tag))
-			{
-				ChkPtr::__manager.retain(pointer);
-				createProxy();
-			}
-		}
-
-		return *this;
-	}
+	Ptr<T>& operator=(const Ptr<T>& rhs);
 
 	/**
+	 * Sets the current checked pointer to alias a memory address, which may
+	 * be checked or unchecked. This causes the reference count of the memory
+	 * address to be incremented (if checked), or moved into the checked table
+	 * (if unchecked). If the current pointer is not dead, a memory leak
+	 * warning will be generated if it is the last reference to a particular
+	 * memory block.
 	 * 
+	 * @param ptr A pointer to an object of type T, to be assigned to this
+	 *     checked pointer object.
+	 * @returns a reference to this pointer
 	 */
-	Ptr<T>& operator=(T* ptr)
-	{
-		// If the pointer to which assignment is being made is alive,
-		// decrement its reference count since we are writing over its
-		// value. If this causes the count to reach zero, then we have
-		// a memory leak because no references to the memory remain.
-		if(ChkPtr::__manager.contains(pointer, tag))
-		{
-			ChkPtr::__manager.release(pointer);
-			
-			if(ChkPtr::__manager.getRefCount(pointer) == 0)
-			{
-				CHKPTR_ERROR(ChkPtr::PTRERR_LIVE_OVERWRITTEN);
-//					"Memory leak caused by live pointer being overwritten without any other references",
-//					"", 0);
-			}
-		}
-		else if(ptr != 0 && !ChkPtr::__manager.containsUnchecked(ptr))
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_POINT_TO_NONNEW);
-//				"Checked pointers cannot point to memory that was not allocated with \"new\" or \"new[]\"",
-//				"", 0);
-		}
-		
-		pointer = ptr;
-		isInit = true;
-		proxy = 0;
-		
-		if(ptr != 0)
-		{
-			tag = ChkPtr::__manager.moveToChecked(ptr);
-			ChkPtr::__manager.retain(pointer);
-			createProxy();	
-		}
-		
-		return *this;
-	}
+	Ptr<T>& operator=(T* ptr);
 
 	/**
+	 * Returns a value indicating whether the memory addresses of two checked
+	 * pointers are equal. If either pointer is dead, a warning is generated
+	 * to notify the user that this is likely a logical error.
 	 * 
+	 * @param rhs the pointer to compare to this pointer
+	 * @returns true if the pointers point to the same address; otherwise,
+	 *     false.
 	 */
-	bool operator==(const Ptr<T>& rhs) const
-	{
-		// If either of the pointers is non-NULL and is not in the pointer
-		// table, then it must be a dead pointer. Performing a comparison
-		// with a dead pointer can yield to unpredictable results.
-		if(isDead() || rhs.isDead())
-		{
-			// equality checking with dead pointer; depending on the value of a
-			// pointer that is no longer alive is unpredictable
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEAD_COMPARISON);
-//				"Performing comparison against dead pointer can yield unpredictable results",
-//				"", 0);
-		}
-		
-		return (pointer == rhs.pointer);
-	}
+	bool operator==(const Ptr<T>& rhs) const;
 	
 	/**
+	 * Returns a value indicating whether the memory address of a checked
+	 * pointer is equal to that of a raw pointer. If the checked pointer is
+	 * dead, a warning is generated to notify the user that this is likely a
+	 * logical error.
 	 * 
+	 * @param rhs the pointer to compare to this pointer
+	 * @returns true if the pointers point to the same address; otherwise,
+	 *     false.
 	 */
-	bool operator==(const T* rhs) const
-	{
-		// If either of the pointers is non-NULL and is not in the pointer
-		// table, then it must be a dead pointer. Performing a comparison
-		// with a dead pointer can yield to unpredictable results.
-		if(isDead())
-		{
-			// equality checking with dead pointer; depending on the value of a
-			// pointer that is no longer alive is unpredictable
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEAD_COMPARISON);
-//				"Performing comparison against dead pointer can yield unpredictable results",
-//				"", 0);
-		}
-		
-		return (pointer == rhs);
-	}
+	bool operator==(const T* rhs) const;
 
 	/**
+	 * Returns a value indicating whether the memory addresses of two checked
+	 * pointers are not equal. If either pointer is dead, a warning is
+	 * generated to notify the user that this is likely a logical error.
 	 * 
+	 * @param rhs the pointer to compare to this pointer
+	 * @returns true if the pointers point to the same address; otherwise,
+	 *     false.
 	 */
-	bool operator!=(const Ptr<T>& rhs) const
-	{
-		return !(*this == rhs);
-	}
+	bool operator!=(const Ptr<T>& rhs) const;
 
 	/**
+	 * Returns a value indicating whether the memory address of a checked
+	 * pointer is not equal to that of a raw pointer. If the checked pointer
+	 * is dead, a warning is generated to notify the user that this is likely
+	 * a logical error.
 	 * 
+	 * @param rhs the pointer to compare to this pointer
+	 * @returns true if the pointers point to the same address; otherwise,
+	 *     false.
 	 */
-	bool operator!=(const T* rhs) const
-	{
-		return !(*this == rhs);
-	}
-
-	/**
-	 * Dereferences the memory address indicated by this pointer.
-	 * 
-	 * @returns a reference to the object at the memory address indicated
-	 *     by this pointer.
-	 */
-	T& operator*() { return *dereference(); }
+	bool operator!=(const T* rhs) const;
 
 	/**
 	 * Dereferences the memory address indicated by this pointer.
@@ -498,7 +244,15 @@ public:
 	 * @returns a reference to the object at the memory address indicated
 	 *     by this pointer.
 	 */
-	T* operator->() { return dereference(); }
+	T& operator*();
+
+	/**
+	 * Dereferences the memory address indicated by this pointer.
+	 * 
+	 * @returns a reference to the object at the memory address indicated
+	 *     by this pointer.
+	 */
+	T* operator->();
 
 	/**
 	 * Dereferences the memory address indicated by this pointer (const).
@@ -506,7 +260,7 @@ public:
 	 * @returns a constant reference to the object at the memory address
 	 *     indicated by this pointer.
 	 */
-	const T& operator*() const { return *constDereference(); }
+	const T& operator*() const;
 
 	/**
 	 * Dereferences the memory address indicated by this pointer (const).
@@ -514,7 +268,7 @@ public:
 	 * @returns a constant reference to the object at the memory address
 	 *     indicated by this pointer.
 	 */
-	const T* operator->() const { return constDereference(); }
+	const T* operator->() const;
 
 	/**
 	 * Performs an implicit cast of the checked pointer to a pointer to a
@@ -524,19 +278,10 @@ public:
 	 * operator that will be called when a delete or delete[] statement is
 	 * used. This allows us to perform some tasks at deletion-time, by
 	 * implementing these in the destructor of the ptr_proxy class.
-	 * 
-	 * This method actually returns different values depending on which state
-	 * the delete state-machine loop is in. The first time through the loop,
-	 * the ptr_proxy object is set up but NULL is returned so that the
-	 * actual delete call will be a no-op. The second invocation of this
-	 * operator in the loop will return the actual proxy object for deletion.
 	 *  
 	 * @returns A pointer to a ptr_proxy object.
 	 */
-	operator ptr_proxy*()
-	{
-		return proxy;
-	}
+	operator ptr_proxy*();
 	
 	/**
 	 * Accesses an element of the array pointed to by this pointer, if it is
@@ -546,46 +291,7 @@ public:
 	 * @returns a reference to the element at the specified index in the
 	 *     array.
 	 */ 
-	T& operator[](int index)
-	{
-		if(!isInit)
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_UNINITIALIZED);
-//				"Dereferenced uninitialized pointer",
-//				"", 0);
-		}
-		else if(pointer == 0)
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_NULL);
-//				"Dereferenced null pointer",
-//				"", 0);
-		}
-		else if(!ChkPtr::__manager.contains(pointer, tag))
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_FREED);
-//				"Dereferenced pointer to freed memory",
-//				"", 0);
-		}
-
-		if(!ChkPtr::__manager.isArray(pointer))
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_INDEX_NONARRAY);
-//				"Attempted to index non-array pointer",
-//				"", 0);
-		}
-
-		size_t size = ChkPtr::__manager.getSize(pointer) / sizeof(T);
-		if(index < 0 || index >= (int)size)
-		{
-//			char msg[256] = { 0 };
-//			sprintf(msg, "Invalid array index (%d); "
-//				"valid indices are [0..%lu]", index, size - 1);
-
-			CHKPTR_ERROR(ChkPtr::PTRERR_INDEX_INVALID, index, size - 1);
-		}
-		
-		return *(pointer + index);
-	}
+	T& operator[](int index);
 
 	/**
 	 * Accesses an element of the array pointed to by this pointer, if it is
@@ -595,46 +301,9 @@ public:
 	 * @returns a constant reference to the element at the specified index
 	 *     in the array.
 	 */ 
-	const T& operator[](int index) const
-	{
-		if(!isInit)
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_UNINITIALIZED);
-//				"Dereferenced uninitialized pointer",
-//				"", 0);
-		}
-		else if(pointer == 0)
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_NULL);
-//				"Dereferenced null pointer",
-//				"", 0);
-		}
-		else if(!ChkPtr::__manager.contains(pointer, tag))
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_DEREF_FREED);
-//				"Dereferenced pointer to freed memory",
-//				"", 0);
-		}
-
-		if(!ChkPtr::__manager.isArray(pointer))
-		{
-			CHKPTR_ERROR(ChkPtr::PTRERR_INDEX_NONARRAY);
-//				"Attempted to index non-array pointer",
-//				"", 0);
-		}
-
-		size_t size = ChkPtr::__manager.getSize(pointer) / sizeof(T);
-		if(index < 0 || index >= (int)size)
-		{
-//			char msg[256] = { 0 };
-//			sprintf(msg, "Invalid array index (%d); "
-//				"valid indices are [0..%lu]", index, size - 1);
-
-			CHKPTR_ERROR(ChkPtr::PTRERR_INDEX_INVALID, index, size - 1);
-		}
-		
-		return *(pointer + index);
-	}
+	const T& operator[](int index) const;
 };
+
+#include "chkptr_impl.h"
 
 #endif // __CHKPTR_H__

@@ -50,5 +50,5 @@ public interface ICxxTestSuite extends ICxxTestBase
 	 * 
 	 * @return an array of ICxxTestMethod objects.
 	 */
-	ICxxTestMethod[] getTests();
+	ICxxTestSuiteChild[] getChildren(boolean onlyTests);
 }

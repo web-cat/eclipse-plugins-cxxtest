@@ -7,7 +7,7 @@
 // stream in the form of an XML document.
 // Since we cannot rely ou the standard
 // iostreams, this header defines a base class
-// analogous to std::ostream.
+// analogout to std::ostream.
 //
 
 // The following definitions are used if stack trace support is enabled,
@@ -120,19 +120,24 @@ namespace CxxTest
             endTag();
         }
 
+        void suiteInitError( const char *file, unsigned line, const char *expression )
+        {
+            (*_o) << "        <suite-error type=\"init\" line=\"" << line << "\">" << endl;
+            (*_o) << expression;
+            (*_o) << "        </suite-error>" << endl;
+            _o->flush();
+        }
+
         void warning( const char *file, unsigned line, const char *expression )
         {
-            startTag( "warning", file, line );
-            attribute( "message", expression );
-            endTag();
+            (*_o) << "            <warning line=\"" << line << "\">" << endl;
+            (*_o) << expression;
+            (*_o) << "            </warning>" << endl;
+            _o->flush();
         }
 
         void failedTest( const char *file, unsigned line, const char *expression )
         {
-//            startTag( "failed-test", file, line );
-//            attribute( "message", expression );
-//            endTag();
-
             (*_o) << "            <failed-test line=\"" << line << "\">" << endl;
             (*_o) << expression;
             (*_o) << "            </failed-test>" << endl;

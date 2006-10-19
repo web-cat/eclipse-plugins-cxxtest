@@ -1,26 +1,51 @@
+
 namespace CxxTest
 {
-	
-void __cxxtest_chkptr_error_handler(const char* msg,
-	const char* filename, int line)
+
+void __cxxtest_chkptr_error_handler(bool fatal, const char* msg) _CXXTEST_NO_INSTR;
+
+void __cxxtest_chkptr_error_handler(bool fatal, const char* msg)
 {
 	char text[256];
 
-	if(line != 0)
+	if(fatal)
+		sprintf(text, "Pointer error: %s", msg);
+	else
+		strncpy(text, msg, 256);
+
+	if(fatal)
 	{
-		sprintf(text, "Pointer error in %s:%d: %s", filename, line, msg);
+#ifdef CXXTEST_TRAP_SIGNALS
+		__cxxtest_assertmsg = text;
+#else
+		printf("%s\n", text);
+#endif
+		abort();
 	}
 	else
 	{
-		sprintf(text, "Pointer error: %s", msg);
-	}
+		std::string finalMsg = text;
 
 #ifdef CXXTEST_TRACE_STACK
-	__cxxtest_assertmsg = text;
-#else
-	fprintf(stderr, "%s\n", text);
+    {
+        std::string trace = CxxTest::getStackTrace(__cxxtest_runCompleted);
+        if ( trace.length() )
+        {
+            finalMsg += "\n";
+            finalMsg += trace;
+        }
+    }
 #endif
-	abort();
+
+		if(!__cxxtest_runCompleted)
+		{
+			CxxTest::doWarn("", 0, finalMsg.c_str());
+		}
+		else
+		{
+			printf("Warning: %s\n", finalMsg.c_str());
+		}
+	}
 }
 
 } // namespace CxxTest

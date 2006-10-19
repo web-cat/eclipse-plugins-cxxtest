@@ -11,6 +11,7 @@
 #include <cxxtest/GlobalFixture.h>
 #include <cxxtest/ValueTraits.h>
 #include <cxxtest/Signals.h>
+#include <map>
 
 namespace CxxTest
 {
@@ -20,14 +21,39 @@ namespace CxxTest
     bool TestTracker::_created = false;
     List GlobalFixture::_list = { 0, 0 };
     List RealSuiteDescription::_suites = { 0, 0 };
+    bool __cxxtest_runCompleted = false;
 #ifdef CXXTEST_TRAP_SIGNALS
     sigjmp_buf __cxxtest_jmpbuf[__cxxtest_jmpmax];
 #ifdef CXXTEST_TRACE_STACK
     unsigned int __cxxtest_stackTopBuf[__cxxtest_jmpmax];
 #endif
     volatile sig_atomic_t __cxxtest_jmppos = -1;
-    std::string __cxxtest_sigmsg;
-    std::string __cxxtest_assertmsg;
+    std::string __cxxtest_sigmsg __attribute__((init_priority(101)));
+    std::string __cxxtest_assertmsg __attribute__((init_priority(101)));
+    typedef std::map<std::string, std::string> SuiteInitFailureMap;
+    SuiteInitFailureMap __cxxtest_failed_init_suites __attribute__((init_priority(101)));
+
+	void addSuiteToFailures(const std::string& name, const std::string& reason)
+	{
+		CxxTest::__cxxtest_failed_init_suites[name] = reason;
+	}
+
+	bool didSuiteFailInitialization(const std::string& name, std::string& reason)
+	{
+		SuiteInitFailureMap::const_iterator it = __cxxtest_failed_init_suites.find(name);
+		if(it != __cxxtest_failed_init_suites.end())
+		{
+			reason = it->second;
+			return true;
+		}
+		
+		return false;
+	}
+#else
+	bool didSuiteFailInitialization(const std::string& name, std::string& reason)
+	{
+		return false;
+	}
 #endif
 
     //
@@ -38,41 +64,48 @@ namespace CxxTest
         if ( !suite() )
             return false;
 
-        for ( GlobalFixture *gf = GlobalFixture::firstGlobalFixture(); gf != 0; gf = gf->nextGlobalFixture() ) {
-            bool ok;
-            _TS_TRY
+        bool ok = true;
+
+        for ( GlobalFixture *gf = GlobalFixture::firstGlobalFixture();
+	      gf != 0; gf = gf->nextGlobalFixture() )
+	{
+            _TS_TRY_WITH_SIGNAL_PROTECTION
             {
-                _TS_TRY_WITH_SIGNAL_PROTECTION
+                _TS_TRY
                 {
                   ok = gf->setUp();
                 }
-                _TS_CATCH_SIGNAL({
-                  doFailTest( file(), line(), __cxxtest_sigmsg.c_str() );
-                  ok = false;
-                });
-            }
-            _TS_LAST_CATCH( { ok = false; } );
-
-            if ( !ok ) {
-                doFailTest( file(), line(), "Error in GlobalFixture::setUp()" );
-                return false;
-            }
-        }
-
-        _TS_TRY {
-            _TS_TRY_WITH_SIGNAL_PROTECTION
-            {
-                _TSM_ASSERT_THROWS_NOTHING( file(), line(), "Exception thrown from setUp()", suite()->setUp() );
+                _TS_LAST_CATCH( {
+		    tracker().failedTest( file(), line(),
+		        "Exception thrown from GlobalFixture::setUp()" );
+		    ok = false;
+		} );
             }
             _TS_CATCH_SIGNAL({
-                doFailTest( file(), line(), __cxxtest_sigmsg.c_str() );
-                _TS_SIGNAL_CLEANUP;
-                return false;
+                tracker().failedTest( file(), line(),
+		    __cxxtest_sigmsg.c_str() );
+                ok = false;
             });
-        }
-        _TS_CATCH_ABORT( { return false; } );
 
-        return true;
+            if ( !ok ) {
+                return false;
+            }
+        }
+
+        _TS_TRY_WITH_SIGNAL_PROTECTION
+        {
+            _TS_TRY {
+                _TSM_ASSERT_THROWS_NOTHING( file(), line(),
+		    "Exception thrown from setUp()", suite()->setUp() );
+            }
+            _TS_CATCH_ABORT( { ok = false; } );
+        }
+        _TS_CATCH_SIGNAL({
+            tracker().failedTest( file(), line(), __cxxtest_sigmsg.c_str() );
+            ok = false;
+        });
+
+        return ok;
     }
 
     bool RealTestDescription::tearDown()
@@ -80,61 +113,80 @@ namespace CxxTest
         if ( !suite() )
             return false;
 
-        _TS_TRY {
+        bool ok = true;
+
+        _TS_TRY_WITH_SIGNAL_PROTECTION
+        {
+            _TS_TRY {
+                _TSM_ASSERT_THROWS_NOTHING( file(), line(),
+		    "Exception thrown from tearDown()", suite()->tearDown() );
+            }
+	    _TS_CATCH_ABORT( { ok = false; } );
+        }
+        _TS_CATCH_SIGNAL({
+            tracker().failedTest( file(), line(),
+		__cxxtest_sigmsg.c_str() );
+	    ok = false;
+	});
+
+	if ( !ok )
+	{
+	  return false;
+	}
+
+        for ( GlobalFixture *gf = GlobalFixture::lastGlobalFixture();
+	      gf != 0; gf = gf->prevGlobalFixture() )
+	{
             _TS_TRY_WITH_SIGNAL_PROTECTION
             {
-                _TSM_ASSERT_THROWS_NOTHING( file(), line(), "Exception thrown from tearDown()", suite()->tearDown() );
+                _TS_TRY
+                {
+                    ok = gf->tearDown();
+                }
+                _TS_LAST_CATCH( {
+                    tracker().failedTest( file(), line(),
+			"Exception thrown from GlobalFixture::tearDown()" );
+		    ok = false;
+		} );
             }
             _TS_CATCH_SIGNAL({
-                doFailTest( file(), line(), __cxxtest_sigmsg.c_str() );
-                _TS_SIGNAL_CLEANUP;
-                return false;
-            });
-        }
-        _TS_CATCH_ABORT( { return false; } );
+                tracker().failedTest( file(), line(),
+		    __cxxtest_sigmsg.c_str() );
+		ok = false;
+	    });
 
-        for ( GlobalFixture *gf = GlobalFixture::lastGlobalFixture(); gf != 0; gf = gf->prevGlobalFixture() ) {
-            bool ok;
-            _TS_TRY
-            {
-                _TS_TRY_WITH_SIGNAL_PROTECTION
-                {
-                  ok = gf->tearDown();
-                }
-                _TS_CATCH_SIGNAL({
-                  doFailTest( file(), line(), __cxxtest_sigmsg.c_str() );
-                  ok = false;
-                });
-            }
-            _TS_LAST_CATCH( { ok = false; } );
-
-            if ( !ok ) {
-                doFailTest( file(), line(), "Error in GlobalFixture::tearDown()" );
+            if ( !ok )
+	    {
                 return false;
             }
         }
 
-        return true;
+        return ok;
     }
 
     bool RealWorldDescription::setUp()
     {
-        for ( GlobalFixture *gf = GlobalFixture::firstGlobalFixture(); gf != 0; gf = gf->nextGlobalFixture() ) {
-            bool ok;
-            _TS_TRY {
-                _TS_TRY_WITH_SIGNAL_PROTECTION
-                {
-                  ok = gf->setUpWorld();
+        for ( GlobalFixture *gf = GlobalFixture::firstGlobalFixture();
+	      gf != 0; gf = gf->nextGlobalFixture() )
+	{
+            bool ok = true;
+            _TS_TRY_WITH_SIGNAL_PROTECTION
+            {
+                _TS_TRY {
+                    ok = gf->setUpWorld();
                 }
-                _TS_CATCH_SIGNAL({
-                  doWarn( __FILE__, 1, __cxxtest_sigmsg.c_str() );
-                  ok = false;
-                });
+                _TS_LAST_CATCH( {
+                    doWarn( __FILE__, 1, "Error setting up world" );
+		    ok = false;
+		} );
             }
-            _TS_LAST_CATCH( { ok = false; } );
+            _TS_CATCH_SIGNAL({
+                doWarn( __FILE__, 1, __cxxtest_sigmsg.c_str() );
+                ok = false;
+	    });
 
-            if ( !ok ) {
-                doWarn( __FILE__, 1, "Error setting up world" );
+            if ( !ok )
+	    {
                 return false;
             }
         }
@@ -144,22 +196,27 @@ namespace CxxTest
 
     bool RealWorldDescription::tearDown()
     {
-        for ( GlobalFixture *gf = GlobalFixture::lastGlobalFixture(); gf != 0; gf = gf->prevGlobalFixture() ) {
-            bool ok;
-            _TS_TRY {
-                _TS_TRY_WITH_SIGNAL_PROTECTION
-                {
-                  ok = gf->tearDownWorld();
+        for ( GlobalFixture *gf = GlobalFixture::lastGlobalFixture();
+	      gf != 0; gf = gf->prevGlobalFixture() )
+	{
+            bool ok = true;
+            _TS_TRY_WITH_SIGNAL_PROTECTION
+            {
+                _TS_TRY {
+                    ok = gf->tearDownWorld();
                 }
-                _TS_CATCH_SIGNAL({
-                  doWarn( __FILE__, 1, __cxxtest_sigmsg.c_str() );
-                  ok = false;
-                });
+                _TS_LAST_CATCH( {
+		    doWarn( __FILE__, 1, "Error tearing down world" );
+		    ok = false;
+		} );
             }
-            _TS_LAST_CATCH( { ok = false; } );
+	    _TS_CATCH_SIGNAL({
+                doWarn( __FILE__, 1, __cxxtest_sigmsg.c_str() );
+		ok = false;
+	    });
 
-            if ( !ok ) {
-                doWarn( __FILE__, 1, "Error tearing down world" );
+            if ( !ok )
+	    {
                 return false;
             }
         }
@@ -291,7 +348,7 @@ namespace CxxTest
     {
         currentAbortTestOnFail = value;
     }
-    
+
     void doAbortTest()
     {
         if ( currentAbortTestOnFail )
@@ -308,12 +365,39 @@ namespace CxxTest
     {
         return currentMaxDumpSize;
     }
-    
+
     void setMaxDumpSize( unsigned value )
     {
         currentMaxDumpSize = value;
     }
 };
+
+std::string escapeString(const char* str)
+{
+	std::string escStr;
+	escStr.reserve(512);
+
+	while(*str != 0)
+	{
+		char ch = *str++;
+		switch(ch)
+		{
+			case '"':  escStr += "&quot;"; break;
+			case '\'': escStr += "&apos;"; break;
+			case '<':  escStr += "&lt;"; break;
+			case '>':  escStr += "&gt;"; break;
+			case '&':  escStr += "&amp;"; break;
+			default:   escStr += ch; break;
+		}
+	}
+	
+	return escStr;
+}
+
+std::string escapeString(const std::string& str)
+{
+	return escapeString(str.c_str());
+}
 
 #ifdef CXXTEST_TRAP_SIGNALS
 // <signal.h> will have already been included by CxxTest-generated
@@ -338,7 +422,11 @@ extern "C" {
             << file
             << "\", line "
             << line;
+#ifdef CXXTEST_XML_OUTPUT
+        CxxTest::__cxxtest_assertmsg = escapeString(out.str());
+#else
         CxxTest::__cxxtest_assertmsg = out.str();
+#endif
         abort();
     }
 
