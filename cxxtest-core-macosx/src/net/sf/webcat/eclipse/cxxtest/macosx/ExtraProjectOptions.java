@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URL;
 
 import net.sf.webcat.eclipse.cxxtest.CxxTestPlugin;
-import net.sf.webcat.eclipse.cxxtest.framework.FrameworkPlugin;
 import net.sf.webcat.eclipse.cxxtest.options.IExtraProjectOptions;
 import net.sf.webcat.eclipse.cxxtest.options.ProjectOptionsUtil;
 
@@ -71,9 +70,7 @@ public class ExtraProjectOptions implements IExtraProjectOptions
 	private void addStackTraceOptions(IProject project, IConfiguration config)
 		throws BuildException
 	{
-		String cxxTestPath = "\"" + FrameworkPlugin.getDefault().getFrameworkPath() + "\"";
-		String frameworkPath = "\"" + getEntryPath("/Frameworks/") + "\"";
-		String includePath = "\"" + getEntryPath("/include/") + "\"";
+		String frameworkPath = "\"/System/Library/PrivateFrameworks/\"";
 		String libsPath = "\"" + getEntryPath("/lib/") + "\"";
 
 		ITool[] tools = config.getToolsBySuperClassId("cdt.managedbuild.tool.gnu.cpp.compiler");
@@ -82,10 +79,6 @@ public class ExtraProjectOptions implements IExtraProjectOptions
 			ProjectOptionsUtil.addToString(config, tools[i],
 					"gnu.cpp.compiler.option.other.other",
 					new String[] { "-finstrument-functions" });
-			
-			ProjectOptionsUtil.addToIncludes(config, tools[i],
-					"gnu.cpp.compiler.option.include.paths",
-					new String[] { cxxTestPath, includePath });
 		}
 		
 		tools = config.getToolsBySuperClassId("cdt.managedbuild.tool.macosx.cpp.linker");
