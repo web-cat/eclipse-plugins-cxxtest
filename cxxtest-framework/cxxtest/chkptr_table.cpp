@@ -30,6 +30,15 @@
 
 #define SAFETY_CHAR '!'
 
+#ifdef CXXTEST_TRACE_STACK
+#ifndef CHKPTR_STACK_TRACE_INITIAL_PREFIX
+#   define CHKPTR_STACK_TRACE_INITIAL_PREFIX CHKPTR_PREFIX "  allocated using: "
+#endif
+#ifndef CHKPTR_STACK_TRACE_OTHER_PREFIX
+#   define CHKPTR_STACK_TRACE_OTHER_PREFIX CHKPTR_PREFIX   "      called from: "
+#endif
+#endif
+
 namespace ChkPtr
 {
 
@@ -63,6 +72,66 @@ void __stderr_error_handler(bool fatal, const char* msg);
 
 #define HASH_PROXY(address) \
 	(reinterpret_cast<unsigned long>(address) % PROXY_HASHTABLE_SIZE)
+
+// ------------------------------------------------------------------
+void __checked_pointer_table::__stderr_reporter::beginReport(int numEntries,
+	int totalBytes, int maxBytes, int numNew, int numArrayNew,
+	int numDelete, int numArrayDelete)
+{
+	if(numEntries > 0)
+	{
+		printf(CHKPTR_PREFIX "%d memory leaks were detected:\n", numEntries);
+		printf(CHKPTR_PREFIX "--------\n");
+	}
+	else
+	{
+		printf(CHKPTR_PREFIX "No memory leaks detected.\n");
+	}
+	
+	totalBytesAllocated = totalBytes;
+	maxBytesInUse = maxBytes;
+	numCallsToNew = numNew;
+	numCallsToArrayNew = numArrayNew;
+	numCallsToDelete = numDelete;
+	numCallsToArrayDelete = numArrayDelete;
+}
+
+// ------------------------------------------------------------------
+void __checked_pointer_table::__stderr_reporter::report(void* address,
+	size_t size, const char* filename, int line)
+{
+#ifdef CXXTEST_TRACE_STACK
+	printf(CHKPTR_PREFIX "Leaked %lu bytes at address %p\n",
+		(unsigned long)size, address);
+
+	printf(getStackTrace(true, CHKPTR_STACK_WINDOW_SIZE,
+			(CxxTest::StackElem*)(((char*)address) + size),
+			CHKPTR_STACK_TRACE_INITIAL_PREFIX,
+			CHKPTR_STACK_TRACE_OTHER_PREFIX).c_str());
+#else
+	if(line == 0)
+	{
+		printf(CHKPTR_PREFIX "Leaked %lu bytes at address %p\n",
+			(unsigned long)size, address);
+	}
+	else
+	{
+		printf(CHKPTR_PREFIX "Leaked %lu bytes at address %p, allocated at %s:%d\n",
+			(unsigned long)size, address, filename, line);
+	}
+#endif
+	printf(CHKPTR_PREFIX "\n");
+}
+
+// ------------------------------------------------------------------
+void __checked_pointer_table::__stderr_reporter::endReport()
+{
+	printf(CHKPTR_PREFIX "\n");
+	printf(CHKPTR_PREFIX "Memory usage statistics:\n");
+	printf(CHKPTR_PREFIX "--------\n");
+	printf(CHKPTR_PREFIX "Total memory allocated during execution:  %d bytes\n", totalBytesAllocated);
+	printf(CHKPTR_PREFIX "Maximum memory in use during execution:   %d bytes\n", maxBytesInUse);
+}
 
 // ------------------------------------------------------------------
 __checked_pointer_table::__checked_pointer_table()
@@ -318,9 +387,18 @@ size_t __checked_pointer_table::getSize(void* address)
 // ------------------------------------------------------------------
 bool __checked_pointer_table::isArray(void* address)
 {
-	int index = HASH(address);
-	__node* node = table[index];
-	
+	int index = HASH_UNCHECKED(address);
+	__node* node = uncheckedTable[index];
+
+	while((node != 0) && (node->address != address))
+		node = node->next;
+
+	if(node != 0)
+		return node->isArray;
+
+	index = HASH(address);
+	node = table[index];
+
 	while(node->address != address)
 		node = node->next;
 
@@ -485,10 +563,14 @@ void operator delete(void* address)
 #ifdef CHKPTR_BASIC_HEAP_CHECK
 		if(size == (size_t)-1)
 		{
-			ChkPtr::__manager.logError(false, ChkPtr::PTRERR_DELETE_NOT_DYNAMIC, address);
+			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_NOT_DYNAMIC, address);
 			return;
 		}
-		else		
+		
+		if(ChkPtr::__manager.isArray(address))
+		{
+			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_ARRAY);
+		}		
 #endif
 		{
 			ChkPtr::__manager.currentBytesAllocated -= size;
@@ -547,10 +629,14 @@ void operator delete[](void* address)
 #ifdef CHKPTR_BASIC_HEAP_CHECK
 		if(size == (size_t)-1)
 		{
-			ChkPtr::__manager.logError(false, ChkPtr::PTRERR_DELETE_NOT_DYNAMIC);
+			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_NOT_DYNAMIC);
 			return;
 		}
-		else
+
+		if(!ChkPtr::__manager.isArray(address))
+		{
+			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_NONARRAY);
+		}		
 #endif
 		{
 			ChkPtr::__manager.currentBytesAllocated -= size;

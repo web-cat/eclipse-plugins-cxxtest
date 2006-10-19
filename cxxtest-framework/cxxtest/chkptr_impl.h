@@ -73,9 +73,10 @@ Ptr<T>::~Ptr()
 		if(ChkPtr::__manager.getRefCount(pointer) == 0)
 		{
 			ChkPtr::__manager.logError(false, ChkPtr::PTRERR_LIVE_OUT_OF_SCOPE);
+			return;
 		}
 	}
-	
+
 	if(proxy)
 	{
 		proxy->doNothing = true;
@@ -246,7 +247,7 @@ const T* Ptr<T>::operator->() const
 
 // ------------------------------------------------------------------
 template <typename T>
-Ptr<T>::operator ptr_proxy*()
+Ptr<T>::operator ptr_proxy*() const
 {
 	return proxy;
 }

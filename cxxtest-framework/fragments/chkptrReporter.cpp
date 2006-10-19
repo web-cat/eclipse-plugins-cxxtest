@@ -31,9 +31,11 @@ public:
 		fprintf(xmlFile, "    <leak address=\"%p\" size=\"%lu\">\n",
 			address, (unsigned long)size);
 
+#ifdef CXXTEST_TRACE_STACK
 		fprintf(xmlFile,
 			getStackTrace(false, CHKPTR_STACK_WINDOW_SIZE,
 				(CxxTest::StackElem*)(((char*)address) + size)).c_str() );
+#endif
 
 		fprintf(xmlFile, "    </leak>\n");
 	}

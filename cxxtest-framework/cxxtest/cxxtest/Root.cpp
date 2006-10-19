@@ -50,6 +50,10 @@ namespace CxxTest
 		return false;
 	}
 #else
+	void addSuiteToFailures(const std::string& name, const std::string& reason)
+	{
+	}
+
 	bool didSuiteFailInitialization(const std::string& name, std::string& reason)
 	{
 		return false;

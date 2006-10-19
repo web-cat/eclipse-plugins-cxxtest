@@ -81,7 +81,9 @@ bool getCallerInfo(std::string& name, std::string& filename, int& line)
 std::string getStackTrace(
     bool forcePlainText        = false,
     unsigned int top           = __cxxtest_stackTop,
-    StackElem*   stackBase     = __cxxtest_stack
+    StackElem*   stackBase     = __cxxtest_stack,
+    const char* initialPrefix  = 0,
+    const char* otherPrefix    = 0
     ) _CXXTEST_NO_INSTR;
 static bool shouldPrintEntry( const std::string& ) _CXXTEST_NO_INSTR;
 bool findInStackTrace(bool (*matcher)(const std::string&)) _CXXTEST_NO_INSTR;
@@ -125,17 +127,19 @@ bool getCallerInfo(std::string& name, std::string& filename, int& line)
 std::string getStackTrace(
     bool forcePlainText,
     unsigned int top,
-    StackElem* stackBase//,
-    //const char* initialPrefix,
-    //const char* otherPrefix )
-    )
+    StackElem* stackBase,
+    const char* initialPrefix,
+    const char* otherPrefix )
 {
-    const char*  initialPrefix = forcePlainText?
-    	CXXTEST_PLAIN_STACK_TRACE_INITIAL_PREFIX :
-    	CXXTEST_STACK_TRACE_INITIAL_PREFIX;
-    const char*  otherPrefix   = forcePlainText?
-    	CXXTEST_PLAIN_STACK_TRACE_OTHER_PREFIX :
-    	CXXTEST_STACK_TRACE_OTHER_PREFIX;
+    if(!initialPrefix)
+    	initialPrefix = forcePlainText?
+    		CXXTEST_PLAIN_STACK_TRACE_INITIAL_PREFIX :
+    		CXXTEST_STACK_TRACE_INITIAL_PREFIX;
+
+    if(!otherPrefix)
+    	otherPrefix   = forcePlainText?
+    		CXXTEST_PLAIN_STACK_TRACE_OTHER_PREFIX :
+    		CXXTEST_STACK_TRACE_OTHER_PREFIX;
 
 	if(symreader_is_initialized() == 0)
 	{
@@ -257,9 +261,9 @@ static bool printStackTraceEntry(
 {
     if ( !location ) return false;
 
-	char symName[SYMNAME_MAX];
-	char filename[PATH_MAX];
-	int line;
+	char symName[SYMNAME_MAX] = { 0 };
+	char filename[PATH_MAX] = { 0 };
+	int line = 0;
 
     void* found = symreader_get_symbol_info(location,
     	symName, filename, &line);

@@ -27,6 +27,9 @@
 #    define _CHKPTR_NO_INSTR
 #endif
 
+#ifndef CHKPTR_PREFIX
+#define CHKPTR_PREFIX
+#endif
 
 namespace ChkPtr
 {
@@ -96,39 +99,14 @@ private:
 
 	public:
 		void beginReport(int numEntries, int totalBytes, int maxBytes,
-			int numNew, int numArrayNew, int numDelete, int numArrayDelete)
-		{
-			if(numEntries > 0)
-			{
-				printf("%d memory leaks were detected:\n", numEntries);
-				printf("--------\n");
-			}
-			else
-			{
-				printf("No memory leaks detected.\n");
-			}
-			
-			totalBytesAllocated = totalBytes;
-			maxBytesInUse = maxBytes;
-			numCallsToNew = numNew;
-			numCallsToArrayNew = numArrayNew;
-			numCallsToDelete = numDelete;
-			numCallsToArrayDelete = numArrayDelete;
-		}
+			int numNew, int numArrayNew, int numDelete, int numArrayDelete);
 	
-		void report(void* address, size_t size, const char* filename, int line)
-		{
-			printf("%10p (%lu bytes), allocated at %s:%d\n",
-				address, (unsigned long)size, filename, line);
-		}
+		void report(void* address, size_t size, const char* filename, int line);
 		
-		void endReport()
-		{
-			printf("\nMemory usage statistics:\n--------\n");
-			printf("Total memory allocated during execution:  %d bytes\n", totalBytesAllocated);
-			printf("Maximum memory in use during execution:   %d bytes\n", maxBytesInUse);
-		}
-	} __stderr_reporter_obj;
+		void endReport();
+	};
+	
+	__stderr_reporter __stderr_reporter_obj;
 
 	/**
 	 * The number of buckets in the checked and unchecked pointer hash tables.

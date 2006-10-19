@@ -17,6 +17,7 @@
  */
 package net.sf.webcat.eclipse.cxxtest.framework;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
@@ -68,7 +69,7 @@ public class FrameworkPlugin extends Plugin {
 
 		try
 		{
-			URL entry = FileLocator.find(getBundle(), new Path("/cxxtest/"), null);
+			URL entry = FileLocator.find(getBundle(), new Path("/cxxtest"), null);
 			URL url = FileLocator.resolve(entry);
 			path = url.getFile();
 
@@ -79,6 +80,8 @@ public class FrameworkPlugin extends Plugin {
 				path = path.substring(1);
 			
 			path = new Path(path).toOSString();
+			if(path.charAt(path.length() - 1) == File.separatorChar)
+				path = path.substring(0, path.length() - 1);
 		}
 		catch(IOException e)
 		{

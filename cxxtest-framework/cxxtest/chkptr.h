@@ -95,7 +95,7 @@ private:
 		void operator delete[](void* ptr);
 	};
 
-	ptr_proxy* proxy;
+	mutable ptr_proxy* proxy;
 
 	/**
 	 * A shorthand method that returns a value indicating whether the pointer
@@ -281,7 +281,7 @@ public:
 	 *  
 	 * @returns A pointer to a ptr_proxy object.
 	 */
-	operator ptr_proxy*();
+	operator ptr_proxy*() const;
 	
 	/**
 	 * Accesses an element of the array pointed to by this pointer, if it is
