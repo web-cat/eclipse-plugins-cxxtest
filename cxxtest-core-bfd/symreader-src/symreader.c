@@ -126,9 +126,7 @@ static void findBfdAddress(bfd* abfd, asection* section, void* data)
 	if(pc >= section->size) return;
 
 	info->found = bfd_find_nearest_line(abfd, section, syms, pc,
-		&info->filename,
-		&info->funcName,
-		(unsigned int*)(&info->line));
+		&info->filename, &info->funcName, (unsigned int*)(&info->line));
 }
 
 int symreader_initialize(const char* path, int flags)

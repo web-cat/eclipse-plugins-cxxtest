@@ -17,6 +17,7 @@
  */
 package net.sf.webcat.eclipse.cxxtest.bfd;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
@@ -52,6 +53,8 @@ public class ExtraProjectOptions implements IExtraProjectOptions
 				path = path.substring(1);
 			
 			path = new Path(path).toOSString();
+			if(path.charAt(path.length() - 1) == File.separatorChar)
+				path = path.substring(0, path.length() - 1);
 		}
 		catch(IOException e)
 		{
@@ -89,7 +92,7 @@ public class ExtraProjectOptions implements IExtraProjectOptions
 	private void addStackTraceOptions(IProject project, IConfiguration config)
 		throws BuildException
 	{
-		String includePath = "\"" + getEntryPath("/symreader-src/") + "\"";
+		String includePath = "\"" + getEntryPath("/symreader-src") + "\"";
 
 		ITool[] tools = config.getToolsBySuperClassId("cdt.managedbuild.tool.gnu.cpp.compiler");
 		for(int i = 0; i < tools.length; i++)
