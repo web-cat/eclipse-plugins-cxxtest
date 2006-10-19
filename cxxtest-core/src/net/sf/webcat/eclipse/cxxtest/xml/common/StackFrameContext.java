@@ -38,7 +38,16 @@ public class StackFrameContext extends ElementContext
 			if(colonPos != -1)
 			{
 				file = fileLine.substring(0, colonPos);
-				lineNumber = Integer.parseInt(fileLine.substring(colonPos + 1));
+
+				try
+				{
+					lineNumber = Integer.parseInt(fileLine.substring(colonPos + 1));
+				}
+				catch(NumberFormatException e)
+				{
+					file = fileLine;
+					lineNumber = 0;
+				}
 			}
 			else
 			{
