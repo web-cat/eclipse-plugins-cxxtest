@@ -27,12 +27,6 @@ public class ExtraProjectOptions implements IExtraProjectOptions
 					CxxTestPlugin.getDefault().getBundle(), new Path(entry), null);
 			URL url = FileLocator.resolve(entryURL);
 			path = url.getFile();
-
-			// This special check is somewhat shady, but it looks like it's
-			// the only way to handle a Windows path properly, since Eclipse
-			// returns a string like "/C:/folder/...".
-			if(path.charAt(2) == ':')
-				path = path.substring(1);
 		}
 		catch(IOException e)
 		{
@@ -70,8 +64,8 @@ public class ExtraProjectOptions implements IExtraProjectOptions
 	private void addStackTraceOptions(IProject project, IConfiguration config)
 		throws BuildException
 	{
-		String frameworkPath = "\"/System/Library/PrivateFrameworks/\"";
-		String libsPath = "\"" + getEntryPath("/lib/") + "\"";
+		String frameworkPath = "\"/System/Library/PrivateFrameworks\"";
+		String libsPath = "\"" + getEntryPath("/lib") + "\"";
 
 		ITool[] tools = config.getToolsBySuperClassId("cdt.managedbuild.tool.gnu.cpp.compiler");
 		for(int i = 0; i < tools.length; i++)
