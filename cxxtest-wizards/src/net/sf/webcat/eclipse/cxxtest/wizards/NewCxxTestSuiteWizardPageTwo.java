@@ -1,6 +1,22 @@
+/*
+ *	This file is part of Web-CAT Eclipse Plugins.
+ *
+ *	Web-CAT is free software; you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; either version 2 of the License, or
+ *	(at your option) any later version.
+ *
+ *	Web-CAT is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU General Public License for more details.
+ *
+ *	You should have received a copy of the GNU General Public License
+ *	along with Web-CAT; if not, write to the Free Software
+ *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 package net.sf.webcat.eclipse.cxxtest.wizards;
 
-import java.util.ArrayList;
 import java.util.Vector;
 
 import net.sf.webcat.eclipse.cxxtest.wizards.ui.SWTUtil;
@@ -8,7 +24,10 @@ import net.sf.webcat.eclipse.cxxtest.wizards.ui.SWTUtil;
 import org.eclipse.cdt.core.model.CModelException;
 import org.eclipse.cdt.core.model.CoreModel;
 import org.eclipse.cdt.core.model.ICElement;
+import org.eclipse.cdt.core.model.IFunctionDeclaration;
 import org.eclipse.cdt.core.model.IMethodDeclaration;
+import org.eclipse.cdt.core.model.INamespace;
+import org.eclipse.cdt.core.model.IParent;
 import org.eclipse.cdt.core.model.IStructure;
 import org.eclipse.cdt.core.model.ITranslationUnit;
 import org.eclipse.cdt.core.parser.ast.ASTAccessVisibility;
@@ -16,6 +35,7 @@ import org.eclipse.cdt.ui.CElementLabelProvider;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.jface.viewers.AbstractTreeViewer;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -36,14 +56,14 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 {
 	private static final String PAGE_NAME = "NewCxxTestSuiteWizardPageTwo";
 
-	private static final String PAGE_TITLE = "Test Methods";
+	private static final String PAGE_TITLE = "Test Functions";
 	private static final String PAGE_DESCRIPTION =
-		"Select methods for which test method stubs should be created.";
+		"Select the functions for which test method stubs should be created.";
 
-	private ContainerCheckedTreeViewer methodsTree;
+	private ContainerCheckedTreeViewer functionsTree;
 	private Button selectAllButton;
 	private Button deselectAllButton;
-	private Label selectedMethodsLabel;
+	private Label selectedFunctionsLabel;
 
 	private IPath headerUnderTestPath;
 	private Object[] checkedObjects;
@@ -98,52 +118,32 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 		layout.numColumns = 2;
 		container.setLayout(layout);
 
-		createMethodsTreeControls(container);
+		createFunctionsTreeControls(container);
 
 		setControl(container);
 	}
 
-	private void createMethodsTreeControls(Composite container)
+	private void createFunctionsTreeControls(Composite container)
 	{
 		Label label= new Label(container, SWT.LEFT | SWT.WRAP);
 		label.setFont(container.getFont());
-		label.setText("Available methods:"); 
+		label.setText("Available functions:"); 
 		GridData gd = new GridData();
 		gd.horizontalSpan = 2;
 		label.setLayoutData(gd);
 
-		methodsTree = new ContainerCheckedTreeViewer(container, SWT.BORDER);
+		functionsTree = new ContainerCheckedTreeViewer(container, SWT.BORDER);
 		gd = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
 		gd.heightHint = 180;
-		methodsTree.getTree().setLayoutData(gd);
+		functionsTree.getTree().setLayoutData(gd);
 
-		methodsTree.setLabelProvider(new CElementLabelProvider());
-		methodsTree.setAutoExpandLevel(2);			
-		methodsTree.addCheckStateListener(new ICheckStateListener() {
+		functionsTree.setLabelProvider(new CustomCElementLabelProvider());
+		functionsTree.setAutoExpandLevel(AbstractTreeViewer.ALL_LEVELS);			
+		functionsTree.addCheckStateListener(new ICheckStateListener() {
 			public void checkStateChanged(CheckStateChangedEvent event) {
 				doCheckedStateChanged();
 			}	
 		});
-/*		methodsTree.addFilter(new ViewerFilter() {
-			public boolean select(Viewer viewer, Object parentElement, Object element)
-			{
-				try
-				{
-					if (element instanceof IMethodDeclaration)
-					{
-						IMethodDeclaration method = (IMethodDeclaration) element;
-						return !method.isStatic();
-					}
-				}
-				catch(CModelException e)
-				{
-					e.printStackTrace();
-				}
-
-				return true;
-			}
-		});
-*/
 
 		Composite buttonContainer = new Composite(container, SWT.NONE);
 		gd = new GridData(GridData.FILL_VERTICAL);
@@ -159,7 +159,7 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 		selectAllButton.setLayoutData(gd);
 		selectAllButton.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				methodsTree.setCheckedElements((Object[]) methodsTree.getInput());
+				functionsTree.setCheckedElements((Object[]) functionsTree.getInput());
 				doCheckedStateChanged();
 			}
 		});
@@ -171,19 +171,19 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 		deselectAllButton.setLayoutData(gd);
 		deselectAllButton.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				methodsTree.setCheckedElements(new Object[0]);
+				functionsTree.setCheckedElements(new Object[0]);
 				doCheckedStateChanged();
 			}
 		});
 		SWTUtil.setButtonDimensionHint(deselectAllButton);
 
-		/* No of selected methods label */
-		selectedMethodsLabel = new Label(container, SWT.LEFT);
-		selectedMethodsLabel.setFont(container.getFont());
+		/* No of selected functions label */
+		selectedFunctionsLabel = new Label(container, SWT.LEFT);
+		selectedFunctionsLabel.setFont(container.getFont());
 		doCheckedStateChanged();
 		gd= new GridData(GridData.FILL_HORIZONTAL);
 		gd.horizontalSpan = 1;
-		selectedMethodsLabel.setLayoutData(gd);
+		selectedFunctionsLabel.setLayoutData(gd);
 		
 		Label emptyLabel = new Label(container, SWT.LEFT);
 		gd= new GridData();
@@ -200,33 +200,26 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 			if(headerUnderTestPath == null)
 				return;
 			
-			ArrayList types = null;
+			ITranslationUnit unit = null;
 			try
 			{
-				types = new ArrayList();
-				
 				ICElement element = CoreModel.getDefault().create(headerUnderTestPath);
 				if(element instanceof ITranslationUnit)
 				{
-					ITranslationUnit unit = (ITranslationUnit)element;
-					types.addAll(unit.getChildrenOfType(ICElement.C_CLASS));
+					unit = (ITranslationUnit)element;
 				}
 			}
-			catch(CModelException e)
+			catch(Exception e)
 			{
 				e.printStackTrace();
 			}
 
-			methodsTree.setContentProvider(new MethodsTreeContentProvider(types.toArray()));
-			
-			if (types == null)
-				types= new ArrayList();
+			functionsTree.setContentProvider(new FunctionsTreeContentProvider());
+			functionsTree.setInput(new Object[] { unit });
 
-			methodsTree.setInput(types.toArray());
-//			methodsTree.setSelection(new StructuredSelection(fClassToTest), true);
 			doCheckedStateChanged();
 			
-			methodsTree.getControl().setFocus();
+			functionsTree.getControl().setFocus();
 		}
 		else
 		{
@@ -241,113 +234,121 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 
 	private void doCheckedStateChanged()
 	{
-		Object[] checked = methodsTree.getCheckedElements();
+		Object[] checked = functionsTree.getCheckedElements();
 		checkedObjects = checked;
 		
-		int checkedMethodCount= 0;
+		int checkedFunctionCount= 0;
 		for(int i= 0; i < checked.length; i++)
 		{
-			if(checked[i] instanceof IMethodDeclaration)
-				checkedMethodCount++;
+			if(checked[i] instanceof IFunctionDeclaration)
+				checkedFunctionCount++;
 		}
 
-		String label = Integer.toString(checkedMethodCount);
-		if(checkedMethodCount == 1)
-			label += " method selected."; 
+		String label = Integer.toString(checkedFunctionCount);
+		if(checkedFunctionCount == 1)
+			label += " function selected."; 
 		else
-			label += " methods selected."; 
+			label += " functions selected."; 
 
-		selectedMethodsLabel.setText(label);
+		selectedFunctionsLabel.setText(label);
 	}
 
-	public IMethodDeclaration[] getCheckedMethods()
+	public IFunctionDeclaration[] getCheckedFunctions()
 	{
-		int methodCount= 0;
+		int functionCount= 0;
 		for(int i = 0; i < checkedObjects.length; i++)
 		{
-			if(checkedObjects[i] instanceof IMethodDeclaration)
-				methodCount++;
+			if(checkedObjects[i] instanceof IFunctionDeclaration)
+				functionCount++;
 		}
 		
-		IMethodDeclaration[] checkedMethods= new IMethodDeclaration[methodCount];
+		IFunctionDeclaration[] checkedFunctions= new IFunctionDeclaration[functionCount];
 		int j = 0;
 		for(int i = 0; i < checkedObjects.length; i++)
 		{
-			if(checkedObjects[i] instanceof IMethodDeclaration)
+			if(checkedObjects[i] instanceof IFunctionDeclaration)
 			{
-				checkedMethods[j]= (IMethodDeclaration)checkedObjects[i];
+				checkedFunctions[j]= (IFunctionDeclaration)checkedObjects[i];
 				j++;
 			}
 		}
 
-		return checkedMethods;
+		return checkedFunctions;
 	}
-	
-	private static class MethodsTreeContentProvider implements ITreeContentProvider
+
+	private static class CustomCElementLabelProvider extends CElementLabelProvider
 	{
-		private Object[] fTypes;
-		private IMethodDeclaration[] fMethods;
+		public String getText(Object element)
+		{
+			if(element instanceof ITranslationUnit)
+			{
+				return "<global scope>";
+			}
+			else
+			{
+				return super.getText(element);
+			}
+		}
+	}
+
+	private static class FunctionsTreeContentProvider implements ITreeContentProvider
+	{
+		private Object[] elements = new Object[0];
 		private final Object[] fEmpty = new Object[0];
 
-		public MethodsTreeContentProvider(Object[] types)
+		public FunctionsTreeContentProvider()
 		{
-			fTypes= types;
-			Vector methods= new Vector();
-			for (int i = types.length-1; i > -1; i--) {
-				Object object = types[i];
-				if (object instanceof IStructure) {
-					IStructure type = (IStructure) object;
+		}
 
-					try
+		private ICElement[] getChildrenOfElement(IParent element)
+		{
+			Vector vec = new Vector();
+			
+			try
+			{
+				ICElement[] children = element.getChildren();
+				
+				for(int i = 0; i < children.length; i++)
+				{
+					ICElement child = children[i];
+					
+					if(child instanceof INamespace || child instanceof IStructure)
 					{
-						IMethodDeclaration[] currMethods = type.getMethods();
-						for_currMethods:
-						for (int j = 0; j < currMethods.length; j++)
+						vec.add(child);
+					}
+					else if(child instanceof IMethodDeclaration)
+					{
+						IMethodDeclaration method = (IMethodDeclaration)child;
+						if (!method.isDestructor() &&
+								method.getVisibility() == ASTAccessVisibility.PUBLIC)
 						{
-							IMethodDeclaration currMethod = currMethods[j];
-							if (!currMethod.isDestructor() &&
-									currMethod.getVisibility() == ASTAccessVisibility.PUBLIC)
-							{
-								for (int k = 0; k < methods.size(); k++)
-								{
-									IMethodDeclaration m= ((IMethodDeclaration)methods.get(k));
-									if (m.getElementName().equals(currMethod.getElementName())
-										&& m.getSignature().equals(currMethod.getSignature()))
-									{
-										methods.set(k,currMethod);
-										continue for_currMethods;
-									}
-								}
-								methods.add(currMethod);
-							}
+							vec.add(method);
 						}
 					}
-					catch(CModelException e)
+					else if(child instanceof IFunctionDeclaration)
 					{
-						e.printStackTrace();
+						vec.add(child);
 					}
 				}
 			}
-			fMethods= new IMethodDeclaration[methods.size()];
-			methods.copyInto(fMethods);
+			catch(CModelException e)
+			{
+				e.printStackTrace();
+			}
+
+			return (ICElement[])vec.toArray(
+					new ICElement[vec.size()]);			
 		}
-		
+
 		/*
 		 * @see ITreeContentProvider#getChildren(Object)
 		 */
 		public Object[] getChildren(Object parentElement)
 		{
-			if (parentElement instanceof IStructure)
-			{
-				ArrayList result= new ArrayList(fMethods.length);
-				for (int i= 0; i < fMethods.length; i++)
-				{
-					result.add(fMethods[i]);
-				}
-
-				return result.toArray();
-			}
-			return fEmpty;
+			if(parentElement instanceof IParent)
+				return getChildrenOfElement((IParent)parentElement);
+			else
+				return fEmpty;
 		}
 
 		/*
@@ -355,39 +356,43 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 		 */
 		public Object getParent(Object element)
 		{
-			if (element instanceof IMethodDeclaration) 
-				return ((IMethodDeclaration)element).getParent();
-			return null;
-		}
+			if(element instanceof ITranslationUnit)
+				return null;
+			else if(element instanceof ICElement)
+				return ((ICElement)element).getParent();
+			else
+				return null;
+			}
 
 		/*
 		 * @see ITreeContentProvider#hasChildren(Object)
 		 */
-		public boolean hasChildren(Object element) {
+		public boolean hasChildren(Object element)
+		{
 			return getChildren(element).length > 0;
 		}
 
 		/*
 		 * @see IStructuredContentProvider#getElements(Object)
 		 */
-		public Object[] getElements(Object inputElement) {
-			return fTypes;
+		public Object[] getElements(Object inputElement)
+		{
+			return elements;
 		}
 
 		/*
 		 * @see IContentProvider#dispose()
 		 */
-		public void dispose() {
+		public void dispose()
+		{
 		}
 
 		/*
 		 * @see IContentProvider#inputChanged(Viewer, Object, Object)
 		 */
-		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-		}
-		
-		public IMethodDeclaration[] getAllMethods() {
-			return fMethods;
+		public void inputChanged(Viewer viewer, Object oldInput, Object newInput)
+		{
+			this.elements = (Object[])newInput;
 		}
 	}
 }

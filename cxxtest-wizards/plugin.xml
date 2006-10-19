@@ -25,4 +25,10 @@
               name="CxxTest Suite"
               project="false"/>
      </extension>
+     <extension
+           point="org.eclipse.ui.perspectiveExtensions">
+        <perspectiveExtension targetID="org.eclipse.cdt.ui.CPerspective">
+           <newWizardShortcut id="net.sf.webcat.eclipse.cxxtest.wizards.NewCxxTestSuiteWizard"/>
+        </perspectiveExtension>
+     </extension>
 </plugin>

@@ -1,7 +1,25 @@
+/*
+ *	This file is part of Web-CAT Eclipse Plugins.
+ *
+ *	Web-CAT is free software; you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; either version 2 of the License, or
+ *	(at your option) any later version.
+ *
+ *	Web-CAT is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU General Public License for more details.
+ *
+ *	You should have received a copy of the GNU General Public License
+ *	along with Web-CAT; if not, write to the Free Software
+ *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 package net.sf.webcat.eclipse.cxxtest.wizards;
 
 import org.eclipse.cdt.core.model.CoreModel;
-import org.eclipse.cdt.core.model.IMethodDeclaration;
+import org.eclipse.cdt.core.model.ICElement;
+import org.eclipse.cdt.core.model.IFunctionDeclaration;
 import org.eclipse.cdt.core.model.ITranslationUnit;
 import org.eclipse.cdt.core.model.IWorkingCopy;
 import org.eclipse.cdt.internal.ui.wizards.classwizard.NewClassWizardMessages;
@@ -12,6 +30,12 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 
+/**
+ * Generates a CxxTest suite header file based on information chose in the
+ * wizard by the user.
+ * 
+ * @author Tony Allowatt (Virginia Tech Computer Science)
+ */
 public class CxxTestSuiteGenerator
 {
 	private String suiteName;
@@ -20,7 +44,8 @@ public class CxxTestSuiteGenerator
 	private String superClass;
 	private boolean createSetUp;
 	private boolean createTearDown;
-	private IMethodDeclaration[] methodStubs;
+	private IFunctionDeclaration[] functionStubs;
+	private String[] stubNames;
 
 	private IFile suiteFile;
 	private ITranslationUnit createdSuite;
@@ -28,7 +53,7 @@ public class CxxTestSuiteGenerator
 	public CxxTestSuiteGenerator(String suiteName, IPath suitePath,
 			IPath headerUnderTestPath, String superClass,
 			boolean createSetUp, boolean createTearDown,
-			IMethodDeclaration[] methodStubs)
+			IFunctionDeclaration[] methodStubs)
 	{
 		this.suiteName = suiteName;
 		this.suitePath = suitePath;
@@ -36,9 +61,79 @@ public class CxxTestSuiteGenerator
 		this.superClass = superClass;
 		this.createSetUp = createSetUp;
 		this.createTearDown = createTearDown;
-		this.methodStubs = methodStubs;
+		this.functionStubs = methodStubs;
+		
+		populateStubNameMap();
 	}
 	
+	private void populateStubNameMap()
+	{
+		int stubCount = functionStubs.length;
+
+		stubNames = new String[stubCount];
+		ICElement[] stubElements = new ICElement[stubCount];
+		
+		for(int i = 0; i < stubCount; i++)
+		{
+			stubNames[i] = functionStubs[i].getElementName();
+			stubElements[i] = functionStubs[i];
+		}
+
+		boolean anotherPass, fixIthName;
+
+		do
+		{
+			anotherPass = false;
+			fixIthName = false;
+
+			for(int i = 0; i < stubCount; i++)
+			{
+				for(int j = 0; j < stubCount; j++)
+				{
+					if(i != j && stubNames[i].equals(stubNames[j]))
+					{
+						// The names of the stubs are equal, so go up a step and
+						// try to further qualify them.
+						if(!(stubElements[j] instanceof ITranslationUnit))
+						{
+							stubElements[j] = stubElements[j].getParent();
+							
+							String jPrefix;
+							
+							if(!(stubElements[j] instanceof ITranslationUnit))
+								jPrefix = stubElements[j].getElementName();
+							else
+								jPrefix = "_global";
+							
+							stubNames[j] = jPrefix + "_" + stubNames[j];
+							
+							anotherPass = true;
+							fixIthName = true;
+						}
+					}
+				}
+				
+				if(fixIthName)
+				{
+					if(!(stubElements[i] instanceof ITranslationUnit))
+					{
+						stubElements[i] = stubElements[i].getParent();
+		
+						String iPrefix;
+						if(!(stubElements[i] instanceof ITranslationUnit))
+							iPrefix = stubElements[i].getElementName();
+						else
+							iPrefix = "_global";
+		
+						stubNames[i] = iPrefix + "_" + stubNames[i];
+					}
+					
+					fixIthName = false;
+				}
+			}
+		} while(anotherPass);
+	}
+
 	public void generate(IProgressMonitor monitor) throws CoreException, InterruptedException
 	{
         suiteFile = NewSourceFileGenerator.createHeaderFile(
@@ -86,8 +181,8 @@ public class CxxTestSuiteGenerator
         if(createTearDown)
         	appendTearDown(text);
 
-        if(methodStubs != null)
-        	appendMethodStubs(text);
+        if(functionStubs != null)
+        	appendFunctionStubs(text);
 
         appendClassEpilogue(text);
         appendFileEpilogue(text);
@@ -139,13 +234,12 @@ public class CxxTestSuiteGenerator
     	text.append("\t}\n\n");
     }
 
-    private void appendMethodStubs(StringBuffer text)
+    private void appendFunctionStubs(StringBuffer text)
     {
-    	for(int i = 0; i < methodStubs.length; i++)
+    	for(int i = 0; i < functionStubs.length; i++)
     	{
-    		IMethodDeclaration method = methodStubs[i];
-    		
-    		String name = method.getElementName();
+    		String name = stubNames[i];
+
     		name = "test" + Character.toUpperCase(name.charAt(0)) +
     			name.substring(1);
     		

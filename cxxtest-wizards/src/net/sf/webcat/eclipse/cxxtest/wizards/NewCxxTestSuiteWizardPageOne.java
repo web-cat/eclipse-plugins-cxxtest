@@ -1,3 +1,20 @@
+/*
+ *	This file is part of Web-CAT Eclipse Plugins.
+ *
+ *	Web-CAT is free software; you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; either version 2 of the License, or
+ *	(at your option) any later version.
+ *
+ *	Web-CAT is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU General Public License for more details.
+ *
+ *	You should have received a copy of the GNU General Public License
+ *	along with Web-CAT; if not, write to the Free Software
+ *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 package net.sf.webcat.eclipse.cxxtest.wizards;
 
 import net.sf.webcat.eclipse.cxxtest.wizards.dialogs.TranslationUnitSelectionDialog;
@@ -36,7 +53,8 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 
 	private static final String PAGE_TITLE = "CxxTest Suite";
 	private static final String PAGE_DESCRIPTION =
-		"Select the name of the new CxxTest suite. You have the options to specify the\nheader of the class under test and on the next page, the methods to be tested.";
+		"Select the name of the new CxxTest suite. You have the options to specify the\n" +
+		"header of the class under test and on the next page, the methods to be tested.";
 
 	private IPath sourceFolder;
 	private IPath headerUnderTest;
@@ -274,6 +292,8 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 			}			
 		});
 
+		suiteNameField.setFocus();
+
 		label = new Label(composite, SWT.NONE);
 		label.setLayoutData(gridDataForLabel(1));
 	}
@@ -345,6 +365,25 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 		});
 	}
 
+	private boolean isValidSuiteName()
+	{
+		String suiteName = suiteNameField.getText();
+		
+		char ch = suiteName.charAt(0);
+		if(!Character.isLetter(ch) && ch != '_')
+			return false;
+
+		for(int i = 1; i < suiteName.length(); i++)
+		{
+			ch = suiteName.charAt(i);
+			
+			if(!Character.isLetterOrDigit(ch) && ch != '_')
+				return false;
+		}
+		
+		return true;
+	}
+
 	private void checkForErrors()
 	{
 		String msg = null;
@@ -353,10 +392,10 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 			msg = "Please enter the source folder in which the test suite will be created.";
 		else if(suiteNameField.getText().length() == 0)
 			msg = "Please enter a name for the test suite class.";
+		else if(!isValidSuiteName())
+			msg = "The suite name you have specified is not a valid C++ class name. Please enter a valid name.";
 		else if(superClassField.getText().length() == 0)
 			msg = "Please enter the name of the superclass of the test suite.";
-		else if(headerUnderTestField.getText().length() == 0)
-			msg = "Please enter the location of the header file containing the class to be tested.";
 		
 		setErrorMessage(msg);
 		setPageComplete(msg == null);
@@ -370,7 +409,8 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 		return gd;
 	}
 
-	private static GridData gridDataForText(int span) {
+	private static GridData gridDataForText(int span)
+	{
 		GridData gd = new GridData();
 		gd.horizontalAlignment = SWT.FILL;
 		gd.grabExcessHorizontalSpace = true;

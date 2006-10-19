@@ -1,10 +1,27 @@
+/*
+ *	This file is part of Web-CAT Eclipse Plugins.
+ *
+ *	Web-CAT is free software; you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; either version 2 of the License, or
+ *	(at your option) any later version.
+ *
+ *	Web-CAT is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU General Public License for more details.
+ *
+ *	You should have received a copy of the GNU General Public License
+ *	along with Web-CAT; if not, write to the Free Software
+ *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 package net.sf.webcat.eclipse.cxxtest.wizards;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.eclipse.cdt.core.model.IMethodDeclaration;
+import org.eclipse.cdt.core.model.IFunctionDeclaration;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
@@ -76,13 +93,13 @@ public class NewCxxTestSuiteWizard extends Wizard implements INewWizard
 		IPath suitePath = Path.fromPortableString(
 				pageOne.getSourceFolder().toPortableString());
 		suitePath = suitePath.append(pageOne.getSuiteName() + ".h");
-		IMethodDeclaration[] methodStubs = pageTwo.getCheckedMethods();
+		IFunctionDeclaration[] functionStubs = pageTwo.getCheckedFunctions();
 
 		final CxxTestSuiteGenerator generator = new CxxTestSuiteGenerator(
 				pageOne.getSuiteName(), suitePath,
 				pageOne.getHeaderUnderTest(), pageOne.getSuperClass(),
 				pageOne.getCreateSetUp(), pageOne.getCreateTearDown(),
-				methodStubs);
+				functionStubs);
 
 		try {
 			getContainer().run(false, true, new IRunnableWithProgress() {
