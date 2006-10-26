@@ -70,7 +70,7 @@ public class ExtraProjectOptions implements IExtraProjectOptions
 		ITool[] tools = config.getToolsBySuperClassId("cdt.managedbuild.tool.gnu.cpp.compiler");
 		for(int i = 0; i < tools.length; i++)
 		{
-			ProjectOptionsUtil.addToString(config, tools[i],
+			ProjectOptionsUtil.addToString(tools[i],
 					"gnu.cpp.compiler.option.other.other",
 					new String[] { "-finstrument-functions" });
 		}
@@ -78,15 +78,15 @@ public class ExtraProjectOptions implements IExtraProjectOptions
 		tools = config.getToolsBySuperClassId("cdt.managedbuild.tool.macosx.cpp.linker");
 		for(int i = 0; i < tools.length; i++)
 		{
-			ProjectOptionsUtil.addToStringList(config, tools[i],
+			ProjectOptionsUtil.addToStringList(tools[i],
 					"macosx.cpp.link.option.paths",
 					new String[] { libsPath });
 
-			ProjectOptionsUtil.addToLibraries(config, tools[i],
+			ProjectOptionsUtil.addToLibraries(tools[i],
 					"macosx.cpp.link.option.libs",
 					new String[] { "objc", "symreader" });
 
-			ProjectOptionsUtil.addToString(config, tools[i],
+			ProjectOptionsUtil.addToString(tools[i],
 					"macosx.cpp.link.option.flags",
 					new String[] { "-F" + frameworkPath, "-framework vmutils" });
 		}
