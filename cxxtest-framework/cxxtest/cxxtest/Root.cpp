@@ -434,8 +434,14 @@ extern "C" {
         abort();
     }
 
-    void abort() _CXXTEST_NO_INSTR;
-    void abort()
+#ifdef __THROW
+#define _CXXTEST_ABORT_THROW __THROW
+#else
+#define _CXXTEST_ABORT_THROW
+#endif
+
+    void abort() _CXXTEST_ABORT_THROW _CXXTEST_NO_INSTR;
+    void abort() _CXXTEST_ABORT_THROW
     {
 #ifndef __CYGWIN__
         raise( SIGABRT );

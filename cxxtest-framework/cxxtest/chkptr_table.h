@@ -74,8 +74,9 @@ public:
 
 	virtual void beginReport(int numEntries, int totalBytes, int maxBytes,
 		int numNew, int numArrayNew, int numDelete, int numArrayDelete) = 0;
-	virtual void report(void* address, size_t size, const char* filename,
-		int line) = 0;
+	virtual void report(const void* address, size_t size,
+		const char* filename, int line) = 0;
+	virtual void reportsTruncated(int reportsLogged, int actualLeaks) = 0;
 	virtual void endReport() = 0;
 };
 
@@ -101,7 +102,10 @@ private:
 		void beginReport(int numEntries, int totalBytes, int maxBytes,
 			int numNew, int numArrayNew, int numDelete, int numArrayDelete);
 	
-		void report(void* address, size_t size, const char* filename, int line);
+		void report(const void* address, size_t size,
+			const char* filename, int line);
+		
+		void reportsTruncated(int reportsLogged, int actualCount);
 		
 		void endReport();
 	};
@@ -121,7 +125,7 @@ private:
 	struct __node
 	{
 		__node* next;
-		void* address;
+		const void* address;
 		bool isArray;
 		size_t size;
 		unsigned long tag;
@@ -134,7 +138,15 @@ private:
 	 * Keeps track of the next unique pointer tag.
 	 */
 	unsigned long nextTag;
-	
+
+	/**
+	 * A unique block of memory allocated to flag checked pointers as
+	 * uninitialized. When a Ptr<> object is declared but not assigned a
+	 * value, it will be set to point to this address, which can be used
+	 * to detect accesses to uninitialized pointers.
+	 */	
+	void* uninitHandle;
+
 	/**
 	 * A hash table that keeps track of the memory addresses that have been
 	 * assigned or were once assigned to checked pointer objects.
@@ -185,6 +197,12 @@ private:
 	 * pointer table is destroyed.
 	 */
 	bool reportAtEnd;
+
+	/**
+	 * Indicates the maximum number of memory leaks to report at the end of
+	 * the program.
+	 */
+	int numReportsToLog;
 
 public:
 	/**
@@ -249,7 +267,7 @@ public:
 	 * @param tag the unique tag associated with the pointer
 	 * @returns true if the address is live; otherwise, false.
 	 */
-	bool contains(void* address, unsigned long tag) _CHKPTR_NO_INSTR;
+	bool contains(const void* address, unsigned long tag) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Tries to find the specified address in the unchecked and checked tables,
@@ -260,7 +278,9 @@ public:
 	 *     the pointer if it was found
 	 * @returns one of the values from the find_address_results enumeration. 
 	 */
-	find_address_results findAddress(void* address, unsigned long& tag) _CHKPTR_NO_INSTR;
+	find_address_results findAddress(const void* address, unsigned long& tag) _CHKPTR_NO_INSTR;
+	
+	void* getUninitHandle() _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Increments the reference count of the specified memory address to
@@ -269,7 +289,7 @@ public:
 	 * 
 	 * @param address the memory address being referenced
 	 */
-	void retain(void* address) _CHKPTR_NO_INSTR;
+	void retain(const void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Decrements the reference count of the specified memory address to
@@ -278,7 +298,7 @@ public:
 	 * 
 	 * @param address the memory address being unreferenced
 	 */
-	void release(void* address) _CHKPTR_NO_INSTR;
+	void release(const void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Returns the number of live references to the specified memory address.
@@ -286,7 +306,7 @@ public:
 	 * @param address the memory address being checked
 	 * @returns the number of live references to the address
 	 */
-	unsigned long getRefCount(void* address) _CHKPTR_NO_INSTR;
+	unsigned long getRefCount(const void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Returns the size of the memory block allocated at the specified
@@ -296,7 +316,7 @@ public:
 	 * @returns a size_t value indicating the number of bytes allocated at
 	 *     the memory address
 	 */
-	size_t getSize(void* address) _CHKPTR_NO_INSTR;
+	size_t getSize(const void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Returns a value indicating whether the memory block allocated at the
@@ -307,7 +327,7 @@ public:
 	 * @returns true if the memory was allocated using new[]; false if it was
 	 *     allocated with new.
 	 */
-	bool isArray(void* address) _CHKPTR_NO_INSTR;
+	bool isArray(const void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Adds a newly allocated block of memory to the unchecked pointer list.
@@ -325,7 +345,7 @@ public:
 	 * @param line the line number in the source file at which the "new"
 	 *     statement was invoked
 	 */
-	void addUnchecked(void* address, bool isArray, size_t size,
+	void addUnchecked(const void* address, bool isArray, size_t size,
 		unsigned long tag, const char* filename, int line) _CHKPTR_NO_INSTR;
 		
 	/**
@@ -336,7 +356,7 @@ public:
 	 * @param address the memory address to move
 	 * @returns the unique tag associated with this address
 	 */
-	unsigned long moveToChecked(void* address) _CHKPTR_NO_INSTR;
+	unsigned long moveToChecked(const void* address) _CHKPTR_NO_INSTR;
 	
 	/**
 	 * Removes a memory address from the unchecked pointer table. This is
@@ -346,7 +366,7 @@ public:
 	 * 
 	 * @param address the memory address to remove
 	 */	
-	void removeUnchecked(void* address) _CHKPTR_NO_INSTR;
+	void removeUnchecked(const void* address) _CHKPTR_NO_INSTR;
 
 	/**
 	 * Removes a memory address from the checked pointer table. This is called
@@ -355,7 +375,7 @@ public:
 	 * 
 	 * @param address the memory address to remove
 	 */
-	void remove(void* address) _CHKPTR_NO_INSTR;
+	void remove(const void* address) _CHKPTR_NO_INSTR;
 
 	/**
 	 * Logs a pointer error to the error handler.

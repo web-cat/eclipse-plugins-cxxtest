@@ -1,11 +1,13 @@
+
 /*
  * Implementation of Ptr<T> public methods.
  */
 
 // ------------------------------------------------------------------
 template <typename T>
-Ptr<T>::Ptr() : tag((unsigned long)~0), isInit(false), proxy(0)
+Ptr<T>::Ptr() : tag((unsigned long)~0)
 {
+	pointer = reinterpret_cast<T*>(ChkPtr::__manager.getUninitHandle());
 }
 
 // ------------------------------------------------------------------
@@ -14,17 +16,12 @@ Ptr<T>::Ptr(const Ptr<T>& rhs)
 {
 	pointer = rhs.pointer;
 	tag = rhs.tag;
-	isInit = rhs.isInit;
-	proxy = 0;
 
 	// When a checked pointer object is copied (due to aliasing or
 	// passing to a function), we increment the pointer's reference
 	// count if it is live.
 	if(ChkPtr::__manager.contains(pointer, tag))
-	{
 		ChkPtr::__manager.retain(pointer);
-		createProxy();
-	}
 }
 
 // ------------------------------------------------------------------
@@ -38,14 +35,10 @@ Ptr<T>::Ptr(T* ptr)
 	{
 		found = ChkPtr::__manager.findAddress(ptr, tagIfFound);
 		if(found == ChkPtr::address_not_found)
-		{
 			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_POINT_TO_NONNEW);
-		}
 	}
 
 	pointer = ptr;
-	isInit = true;
-	proxy = 0;
 
 	if(ptr != 0)
 	{
@@ -55,7 +48,6 @@ Ptr<T>::Ptr(T* ptr)
 			tag = ChkPtr::__manager.moveToChecked(ptr);
 
 		ChkPtr::__manager.retain(pointer);
-		createProxy();
 	}
 }
 
@@ -70,17 +62,9 @@ Ptr<T>::~Ptr()
 	if(ChkPtr::__manager.contains(pointer, tag))
 	{
 		ChkPtr::__manager.release(pointer);
-		if(ChkPtr::__manager.getRefCount(pointer) == 0)
-		{
-			ChkPtr::__manager.logError(false, ChkPtr::PTRERR_LIVE_OUT_OF_SCOPE);
-			return;
-		}
-	}
 
-	if(proxy)
-	{
-		proxy->doNothing = true;
-		delete proxy;
+		if(ChkPtr::__manager.getRefCount(pointer) == 0)
+			ChkPtr::__manager.logError(false, ChkPtr::PTRERR_LIVE_OUT_OF_SCOPE);
 	}
 }
 
@@ -99,23 +83,16 @@ Ptr<T>& Ptr<T>::operator=(const Ptr<T>& rhs)
 			ChkPtr::__manager.release(pointer);
 			
 			if(ChkPtr::__manager.getRefCount(pointer) == 0)
-			{
 				ChkPtr::__manager.logError(false, ChkPtr::PTRERR_LIVE_OVERWRITTEN);
-			}
 		}
 		
 		pointer = rhs.pointer;
 		tag = rhs.tag;
-		isInit = rhs.isInit;
-		proxy = 0;
-		
+
 		// Increment the reference count of the pointer that was used
 		// on the right-hand side of the assignment.
 		if(ChkPtr::__manager.contains(pointer, tag))
-		{
 			ChkPtr::__manager.retain(pointer);
-			createProxy();
-		}
 	}
 
 	return *this;
@@ -134,9 +111,7 @@ Ptr<T>& Ptr<T>::operator=(T* ptr)
 		ChkPtr::__manager.release(pointer);
 		
 		if(ChkPtr::__manager.getRefCount(pointer) == 0)
-		{
 			ChkPtr::__manager.logError(false, ChkPtr::PTRERR_LIVE_OVERWRITTEN);
-		}
 	}
 	
 	ChkPtr::find_address_results found = ChkPtr::address_not_found;
@@ -146,14 +121,10 @@ Ptr<T>& Ptr<T>::operator=(T* ptr)
 	{
 		found = ChkPtr::__manager.findAddress(ptr, tagIfFound);
 		if(found == ChkPtr::address_not_found)
-		{
 			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_POINT_TO_NONNEW);
-		}
 	}
 	
 	pointer = ptr;
-	isInit = true;
-	proxy = 0;
 	
 	if(ptr != 0)
 	{
@@ -163,15 +134,14 @@ Ptr<T>& Ptr<T>::operator=(T* ptr)
 			tag = ChkPtr::__manager.moveToChecked(ptr);
 
 		ChkPtr::__manager.retain(pointer);
-		createProxy();	
 	}
 	
 	return *this;
 }
 
 // ------------------------------------------------------------------
-template <typename T>
-bool Ptr<T>::operator==(const Ptr<T>& rhs) const
+template <typename T> template <typename TRhs>
+bool Ptr<T>::operator==(const Ptr<TRhs>& rhs)
 {
 	// If either of the pointers is non-NULL and is not in the pointer
 	// table, then it must be a dead pointer. Performing a comparison
@@ -183,36 +153,32 @@ bool Ptr<T>::operator==(const Ptr<T>& rhs) const
 		ChkPtr::__manager.logError(false, ChkPtr::PTRERR_DEAD_COMPARISON);
 	}
 	
-	return (pointer == rhs.pointer);
+	return (pointer == (TRhs*)rhs);
 }
 
 // ------------------------------------------------------------------
-template <typename T>
-bool Ptr<T>::operator==(const T* rhs) const
+template <typename T> template <typename TRhs>
+bool Ptr<T>::operator==(const TRhs* rhs) const
 {
 	// If either of the pointers is non-NULL and is not in the pointer
 	// table, then it must be a dead pointer. Performing a comparison
 	// with a dead pointer can yield to unpredictable results.
 	if(isDead())
-	{
-		// equality checking with dead pointer; depending on the value of a
-		// pointer that is no longer alive is unpredictable
 		ChkPtr::__manager.logError(false, ChkPtr::PTRERR_DEAD_COMPARISON);
-	}
 	
 	return (pointer == rhs);
 }
 
 // ------------------------------------------------------------------
-template <typename T>
-bool Ptr<T>::operator!=(const Ptr<T>& rhs) const
+template <typename T> template <typename TRhs>
+bool Ptr<T>::operator!=(const Ptr<TRhs>& rhs) const
 {
 	return !(*this == rhs);
 }
 
 // ------------------------------------------------------------------
-template <typename T>
-bool Ptr<T>::operator!=(const T* rhs) const
+template <typename T> template <typename TRhs>
+bool Ptr<T>::operator!=(const TRhs* rhs) const
 {
 	return !(*this == rhs);
 }
@@ -247,16 +213,23 @@ const T* Ptr<T>::operator->() const
 
 // ------------------------------------------------------------------
 template <typename T>
-Ptr<T>::operator ptr_proxy*() const
+Ptr<T>::operator T*() const
 {
-	return proxy;
+	return pointer;
+}
+
+// ------------------------------------------------------------------
+template <typename T> template <typename TCast>
+Ptr<T>::operator Ptr<TCast>() const
+{
+	return Ptr<TCast>(pointer);
 }
 
 // ------------------------------------------------------------------
 template <typename T>
 T& Ptr<T>::operator[](int index)
 {
-	if(!isInit)
+	if(!isInit())
 	{
 		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DEREF_UNINITIALIZED);
 	}
@@ -287,7 +260,7 @@ T& Ptr<T>::operator[](int index)
 template <typename T>
 const T& Ptr<T>::operator[](int index) const
 {
-	if(!isInit)
+	if(!isInit())
 	{
 		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DEREF_UNINITIALIZED);
 	}
@@ -321,16 +294,25 @@ const T& Ptr<T>::operator[](int index) const
 
 // ------------------------------------------------------------------
 template <typename T>
+bool Ptr<T>::isInit() const
+{
+	return pointer !=
+		reinterpret_cast<T*>(ChkPtr::__manager.getUninitHandle()); 
+}
+
+// ------------------------------------------------------------------
+template <typename T>
 bool Ptr<T>::isDead() const
 {
-	return !isInit || ((pointer != 0) && (!ChkPtr::__manager.contains(pointer, tag)));
+	return !isInit() || ((pointer != 0) &&
+		(!ChkPtr::__manager.contains(pointer, tag)));
 }
 
 // ------------------------------------------------------------------
 template <typename T>
 T* Ptr<T>::dereference()
 {
-	if(!isInit)
+	if(!isInit())
 	{
 		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DEREF_UNINITIALIZED);
 	}
@@ -350,7 +332,7 @@ T* Ptr<T>::dereference()
 template <typename T>
 const T* Ptr<T>::constDereference() const
 {	
-	if(!isInit)
+	if(!isInit())
 	{
 		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DEREF_UNINITIALIZED);
 	}
@@ -364,116 +346,4 @@ const T* Ptr<T>::constDereference() const
 	}
 
 	return pointer;
-}
-
-// ------------------------------------------------------------------
-template <typename T>
-void Ptr<T>::deallocate(bool useArrayDelete)
-{
-	if(!isInit)
-	{
-		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_UNINITIALIZED);
-	}
-	else if(pointer != 0)
-	{
-		if(!ChkPtr::__manager.contains(pointer, tag))
-		{
-			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_FREED);
-		}
-		else
-		{				
-			if(useArrayDelete)
-				delete[] pointer;
-			else
-				delete pointer;
-
-			ChkPtr::__manager.remove(pointer);
-			createProxy();
-		}
-	}
-}
-
-// ------------------------------------------------------------------
-template <typename T>
-void Ptr<T>::createProxy()
-{
-	bool isArray = false;
-	if(ChkPtr::__manager.contains(pointer, tag))
-		isArray = ChkPtr::__manager.isArray(pointer);
-	
-	proxy = new(isArray) ptr_proxy[1];
-	proxy[0].set(this, isArray);
-}
-
-
-/*
- * Implementation of Ptr<T>::ptr_proxy methods.
- */
-
-// ------------------------------------------------------------------
-template <typename T>
-Ptr<T>::ptr_proxy::ptr_proxy() : doNothing(false)
-{
-}
-
-// ------------------------------------------------------------------
-template <typename T>
-void Ptr<T>::ptr_proxy::set(Ptr<T>* p, bool a)
-{
-	parent = p;
-	tag = (a ? PROXY_ARRAY_TAG : PROXY_NONARRAY_TAG);
-}
-
-// ------------------------------------------------------------------
-template <typename T>
-Ptr<T>::ptr_proxy::~ptr_proxy()
-{
-	if(doNothing)
-		return;
-
-	parent->deallocate(tag == PROXY_ARRAY_TAG);
-}
-
-/*
- * Note that there is no bracketless operator new for ptr_proxy,
- * because we always allocate ptr_proxy objects with new[].
- */
- 
-// ------------------------------------------------------------------
-template <typename T>
-void* Ptr<T>::ptr_proxy::operator new[](size_t size, bool isArray)
-{
-	void* ptr = malloc(size + PROXY_HEADER_SIZE);
-	*((unsigned long*)ptr) = isArray ? PROXY_ARRAY_TAG : PROXY_NONARRAY_TAG;
-	return (char*)ptr + PROXY_HEADER_SIZE;
-}
-
-// ------------------------------------------------------------------
-template <typename T>
-void Ptr<T>::ptr_proxy::operator delete(void* ptr)
-{
-	unsigned long tag = *((unsigned long*)ptr);
-	if(tag != PROXY_NONARRAY_TAG)
-	{
-		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_ARRAY);
-	}
-
-	char* backtrack = (char*)ptr - 1;
-	while(*((unsigned long*)backtrack) != PROXY_NONARRAY_TAG)
-		backtrack--;
-
-	free(backtrack);
-}
-
-// ------------------------------------------------------------------
-template <typename T>
-void Ptr<T>::ptr_proxy::operator delete[](void* ptr)
-{
-	unsigned long tag = *((unsigned long*)ptr - 1);						
-	if(tag != PROXY_ARRAY_TAG)
-	{
-		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_NONARRAY);
-	}
-
-	free((char*)ptr - PROXY_HEADER_SIZE);
 }

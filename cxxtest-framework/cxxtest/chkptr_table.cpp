@@ -56,7 +56,7 @@ static const char* __error_messages[] = {
 	"Comparison with a dead pointer may result in unpredictable behavior",
 	"Indexed a non-array pointer",
 	"Invalid array index (%d); valid indices are [0..%lu]",
-	"Attempted to delete memory at %p that was not dynamically allocated or was already freed",
+	"Freed memory that was not dynamically allocated or was already freed",
 	"Memory %s block was corrupted; likely invalid array indexing or pointer arithmetic",
 };
 
@@ -97,7 +97,7 @@ void __checked_pointer_table::__stderr_reporter::beginReport(int numEntries,
 }
 
 // ------------------------------------------------------------------
-void __checked_pointer_table::__stderr_reporter::report(void* address,
+void __checked_pointer_table::__stderr_reporter::report(const void* address,
 	size_t size, const char* filename, int line)
 {
 #ifdef CXXTEST_TRACE_STACK
@@ -124,6 +124,14 @@ void __checked_pointer_table::__stderr_reporter::report(void* address,
 }
 
 // ------------------------------------------------------------------
+void __checked_pointer_table::__stderr_reporter::reportsTruncated(
+	int reportsLogged, int actualCount)
+{
+	printf(CHKPTR_PREFIX "\n");
+	printf(CHKPTR_PREFIX "(only %d of %d leaks shown)\n", reportsLogged, actualCount);
+}
+
+// ------------------------------------------------------------------
 void __checked_pointer_table::__stderr_reporter::endReport()
 {
 	printf(CHKPTR_PREFIX "\n");
@@ -136,7 +144,11 @@ void __checked_pointer_table::__stderr_reporter::endReport()
 // ------------------------------------------------------------------
 __checked_pointer_table::__checked_pointer_table()
 {
+	uninitHandle = malloc(4);
+
 	reportAtEnd = false;
+	numReportsToLog = 20;
+
 	nextTag = 0;
 	numEntries = 0;
 	numUnchecked = 0;
@@ -166,6 +178,8 @@ __checked_pointer_table::~__checked_pointer_table()
 		
 	if(ownReporter)
 		delete reporter;
+		
+	free(uninitHandle);
 }
 
 // ------------------------------------------------------------------
@@ -175,7 +189,7 @@ unsigned long __checked_pointer_table::getTag()
 }
 
 // ------------------------------------------------------------------
-unsigned long __checked_pointer_table::moveToChecked(void* address)
+unsigned long __checked_pointer_table::moveToChecked(const void* address)
 {
 	int index = HASH_UNCHECKED(address);
 	__node* node = uncheckedTable[index];
@@ -208,7 +222,7 @@ unsigned long __checked_pointer_table::moveToChecked(void* address)
 }
 
 // ------------------------------------------------------------------
-void __checked_pointer_table::addUnchecked(void* address, bool isArray,
+void __checked_pointer_table::addUnchecked(const void* address, bool isArray,
 	size_t size, unsigned long tag, const char* filename, int line)
 {
 	int index = HASH_UNCHECKED(address);
@@ -228,7 +242,7 @@ void __checked_pointer_table::addUnchecked(void* address, bool isArray,
 }
 
 // ------------------------------------------------------------------
-void __checked_pointer_table::remove(void* address)
+void __checked_pointer_table::remove(const void* address)
 {
 	int index = HASH(address);
 	__node* node = table[index];
@@ -255,7 +269,7 @@ void __checked_pointer_table::remove(void* address)
 }
 
 // ------------------------------------------------------------------
-void __checked_pointer_table::removeUnchecked(void* address)
+void __checked_pointer_table::removeUnchecked(const void* address)
 {
 	int index = HASH_UNCHECKED(address);
 	__node* node = uncheckedTable[index];
@@ -282,7 +296,7 @@ void __checked_pointer_table::removeUnchecked(void* address)
 }
 
 // ------------------------------------------------------------------
-bool __checked_pointer_table::contains(void* address, unsigned long tag)
+bool __checked_pointer_table::contains(const void* address, unsigned long tag)
 {
 	int index = HASH(address);
 	__node* node = table[index];
@@ -297,7 +311,8 @@ bool __checked_pointer_table::contains(void* address, unsigned long tag)
 }
 
 // ------------------------------------------------------------------
-find_address_results __checked_pointer_table::findAddress(void* address, unsigned long& tag)
+find_address_results __checked_pointer_table::findAddress(const void* address,
+	unsigned long& tag)
 {
 	int index = HASH_UNCHECKED(address);
 	__node* node = uncheckedTable[index];
@@ -325,7 +340,13 @@ find_address_results __checked_pointer_table::findAddress(void* address, unsigne
 }
 
 // ------------------------------------------------------------------
-void __checked_pointer_table::retain(void* address)
+void* __checked_pointer_table::getUninitHandle()
+{
+	return uninitHandle;
+}
+
+// ------------------------------------------------------------------
+void __checked_pointer_table::retain(const void* address)
 {
 	int index = HASH(address);
 	__node* node = table[index];
@@ -337,7 +358,7 @@ void __checked_pointer_table::retain(void* address)
 }
 
 // ------------------------------------------------------------------
-void __checked_pointer_table::release(void* address)
+void __checked_pointer_table::release(const void* address)
 {
 	int index = HASH(address);
 	__node* node = table[index];
@@ -349,7 +370,7 @@ void __checked_pointer_table::release(void* address)
 }
 
 // ------------------------------------------------------------------
-unsigned long __checked_pointer_table::getRefCount(void* address)
+unsigned long __checked_pointer_table::getRefCount(const void* address)
 {
 	int index = HASH(address);
 	__node* node = table[index];
@@ -361,7 +382,7 @@ unsigned long __checked_pointer_table::getRefCount(void* address)
 }
 
 // ------------------------------------------------------------------
-size_t __checked_pointer_table::getSize(void* address)
+size_t __checked_pointer_table::getSize(const void* address)
 {
 	int index = HASH_UNCHECKED(address);
 	__node* node = uncheckedTable[index];
@@ -385,7 +406,7 @@ size_t __checked_pointer_table::getSize(void* address)
 }
 
 // ------------------------------------------------------------------
-bool __checked_pointer_table::isArray(void* address)
+bool __checked_pointer_table::isArray(const void* address)
 {
 	int index = HASH_UNCHECKED(address);
 	__node* node = uncheckedTable[index];
@@ -429,22 +450,57 @@ void __checked_pointer_table::setErrorHandler(
 // ------------------------------------------------------------------
 void __checked_pointer_table::reportAllocations()
 {
-	reporter->beginReport(numEntries + numUnchecked,
-		totalBytesAllocated, maxBytesInUse, numCallsToNew, numCallsToArrayNew,
-		numCallsToDelete, numCallsToArrayDelete);
-
-	if(numEntries > 0)
-		for(int i = 0; i < CHECKED_HASHTABLE_SIZE; i++)
-			for(__node* p = table[i]; p != 0; p = p->next)
-				reporter->report(p->address, p->size, p->filename, p->line);
+	int numLeaks = numEntries + numUnchecked;
 
 	if(numUnchecked > 0)
 		for(int i = 0; i < UNCHECKED_HASHTABLE_SIZE; i++)
 			for(__node* p = uncheckedTable[i]; p != 0; p = p->next)
+				if(p->address == dynamic_cast<void*>(reporter))
+					numLeaks--;
+	
+	reporter->beginReport(numLeaks,
+		totalBytesAllocated, maxBytesInUse, numCallsToNew, numCallsToArrayNew,
+		numCallsToDelete, numCallsToArrayDelete);
+
+	int reportsLogged = 0;
+
+	if(numEntries > 0)
+	{
+		for(int i = 0; i < CHECKED_HASHTABLE_SIZE; i++)
+		{
+			for(__node* p = table[i]; p != 0; p = p->next)
 			{
-				if(p->address != dynamic_cast<void*>(reporter))
+				if(reportsLogged < numReportsToLog)
+				{
 					reporter->report(p->address, p->size, p->filename, p->line);
+					reportsLogged++;
+				}
 			}
+		}
+	}
+
+	if(numUnchecked > 0)
+	{
+		for(int i = 0; i < UNCHECKED_HASHTABLE_SIZE; i++)
+		{
+			for(__node* p = uncheckedTable[i]; p != 0; p = p->next)
+			{
+				if(reportsLogged < numReportsToLog)
+				{
+					if(p->address != dynamic_cast<void*>(reporter))
+					{	
+						reporter->report(p->address, p->size, p->filename, p->line);
+						reportsLogged++;
+					}
+				}
+			}
+		}
+	}
+	
+	if(reportsLogged < numReportsToLog)
+	{
+		reporter->reportsTruncated(reportsLogged, numLeaks);
+	}	
 	
 	reporter->endReport();
 }
@@ -557,13 +613,18 @@ void* operator new[](size_t size)
 // ------------------------------------------------------------------
 void operator delete(void* address)
 {
-	if(address != 0)
+	if(address == ChkPtr::__manager.getUninitHandle())
+	{
+		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_UNINITIALIZED);
+		return;
+	}
+	else if(address != 0)
 	{
 		size_t size = ChkPtr::__manager.getSize(address);
 #ifdef CHKPTR_BASIC_HEAP_CHECK
 		if(size == (size_t)-1)
 		{
-			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_NOT_DYNAMIC, address);
+			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_NOT_DYNAMIC);
 			return;
 		}
 		
@@ -578,7 +639,9 @@ void operator delete(void* address)
 			unsigned long dummy;
 			ChkPtr::find_address_results found = ChkPtr::__manager.findAddress(address, dummy);
 			
-			if(found == ChkPtr::address_found_unchecked)
+			if(found == ChkPtr::address_found_checked)
+				ChkPtr::__manager.remove(address);
+			else if(found == ChkPtr::address_found_unchecked)
 				ChkPtr::__manager.removeUnchecked(address);
 
 			void* realAddr = (char*)address - SAFETY_SIZE;
@@ -623,7 +686,12 @@ void operator delete(void* address)
 // ------------------------------------------------------------------
 void operator delete[](void* address)
 {
-	if(address != 0)
+	if(address == ChkPtr::__manager.getUninitHandle())
+	{
+		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_UNINITIALIZED);
+		return;
+	}
+	else if(address != 0)
 	{
 		size_t size = ChkPtr::__manager.getSize(address);
 #ifdef CHKPTR_BASIC_HEAP_CHECK
@@ -644,7 +712,9 @@ void operator delete[](void* address)
 			unsigned long dummy;
 			ChkPtr::find_address_results found = ChkPtr::__manager.findAddress(address, dummy);
 			
-			if(found == ChkPtr::address_found_unchecked)
+			if(found == ChkPtr::address_found_checked)
+				ChkPtr::__manager.remove(address);
+			else if(found == ChkPtr::address_found_unchecked)
 				ChkPtr::__manager.removeUnchecked(address);
 		
 			void* realAddr = (char*)address - SAFETY_SIZE;

@@ -56,55 +56,10 @@ private:
 	 * Is initially false, when a pointer object is declared but not yet
 	 * assigned an address. This is used to customize some error messages
 	 * regarding use of uninitialized pointers.
-	 */
-	bool isInit;
-
-	/**
-	 * The ptr_proxy class is used to cajole the delete and delete[]
-	 * statements to work with the checked pointers. A checked pointer can
-	 * be implicitly cast to a pointer to one of these objects, and since
-	 * ptr_proxy* is the only available pointer cast, it will be invoked
-	 * when delete or delete[] is called. When this temporary ptr_proxy
-	 * object is freed, the actual delete logic for the checked pointer is
-	 * then executed.
-	 */
-	class ptr_proxy
-	{
-		enum {
-			PROXY_HEADER_SIZE = sizeof(unsigned long),
-			PROXY_ARRAY_TAG = 0xFAFBFCFD,
-			PROXY_NONARRAY_TAG = 0xFDFCFBFA
-		};
-
-	public:
-		unsigned long tag;
-		Ptr<T>* parent;
-		bool doNothing;
-
-		ptr_proxy();
-		void set(Ptr<T>* p, bool a);
-		~ptr_proxy();
-			
-		/**
-		 * This class uses custom new/delete operators so that the allocation
-		 * and deallocation of these objects does not pass through the
-		 * overloaded global operators used for tracking.
-		 */
-		void* operator new[](size_t size, bool isArray);
-		void operator delete(void* ptr);
-		void operator delete[](void* ptr);
-	};
-
-	mutable ptr_proxy* proxy;
-
-	/**
-	 * A shorthand method that returns a value indicating whether the pointer
-	 * is dead; that is, it either is uninitialized or is non-NULL but no
-	 * longer in the checked pointer table.
 	 * 
-	 * @returns true if the pointer is dead; otherwise, false.
+	 * @returns true if the pointer is uninitialized; otherwise, false.
 	 */
-	bool isDead() const;
+	bool isInit() const;
 
 	/**
 	 * Used by the dereferencing operators to return the pointer owned by
@@ -120,17 +75,6 @@ private:
 	 */
 	const T* constDereference() const;
 
-	/**
-	 * Deallocates the memory at the address indicated by this pointer.
-	 * 
-	 * @param useArrayDelete true if the delete[] operator should be called
-	 *     on the memory address indicated by this pointer; false if delete
-	 *     should be called.
-	 */
-	void deallocate(bool useArrayDelete);
-
-	void createProxy();
-	
 public:
 	/**
 	 * Creates a checked pointer that represents an uninitialized pointer.
@@ -201,8 +145,9 @@ public:
 	 * @returns true if the pointers point to the same address; otherwise,
 	 *     false.
 	 */
-	bool operator==(const Ptr<T>& rhs) const;
-	
+	template <typename TRhs>
+	bool operator==(const Ptr<TRhs>& rhs);
+
 	/**
 	 * Returns a value indicating whether the memory address of a checked
 	 * pointer is equal to that of a raw pointer. If the checked pointer is
@@ -213,7 +158,8 @@ public:
 	 * @returns true if the pointers point to the same address; otherwise,
 	 *     false.
 	 */
-	bool operator==(const T* rhs) const;
+	template <typename TRhs>
+	bool operator==(const TRhs* rhs) const;
 
 	/**
 	 * Returns a value indicating whether the memory addresses of two checked
@@ -224,7 +170,8 @@ public:
 	 * @returns true if the pointers point to the same address; otherwise,
 	 *     false.
 	 */
-	bool operator!=(const Ptr<T>& rhs) const;
+	template <typename TRhs>
+	bool operator!=(const Ptr<TRhs>& rhs) const;
 
 	/**
 	 * Returns a value indicating whether the memory address of a checked
@@ -236,7 +183,8 @@ public:
 	 * @returns true if the pointers point to the same address; otherwise,
 	 *     false.
 	 */
-	bool operator!=(const T* rhs) const;
+	template <typename TRhs>
+	bool operator!=(const TRhs* rhs) const;
 
 	/**
 	 * Dereferences the memory address indicated by this pointer.
@@ -271,18 +219,28 @@ public:
 	const T* operator->() const;
 
 	/**
-	 * Performs an implicit cast of the checked pointer to a pointer to a
-	 * ptr_proxy object.
+	 * Returns the underlying pointer managed by this checked pointer object.
+	 * This permits operations that would be very difficult to implement
+	 * without it (the C++ casts, for instance). This also allows the pointer
+	 * to be used in contexts where a regular C++ pointer is required, but it
+	 * should be use at one's own risk since it bypasses the enhanced error
+	 * reporting provided by the checked pointer class.
 	 * 
-	 * This is the only pointer-cast available in this class, so this is the
-	 * operator that will be called when a delete or delete[] statement is
-	 * used. This allows us to perform some tasks at deletion-time, by
-	 * implementing these in the destructor of the ptr_proxy class.
-	 *  
-	 * @returns A pointer to a ptr_proxy object.
+	 * @returns the pointer being managed by this checked pointer object.
 	 */
-	operator ptr_proxy*() const;
-	
+	operator T*() const;
+
+	/**
+	 * Permits a checked pointer of one type to be cast to a checked pointer
+	 * of another type. Essentially, this allows Ptr<X> to be cast to Ptr<Y>
+	 * if the compiler will allow X* to be cast to Y*.
+	 * 
+	 * @returns a checked pointer of type Ptr<TCast> that points to the same
+	 *     address as this pointer.
+	 */
+	template <typename TCast>
+	operator Ptr<TCast>() const;
+
 	/**
 	 * Accesses an element of the array pointed to by this pointer, if it is
 	 * an array pointer.
@@ -302,7 +260,82 @@ public:
 	 *     in the array.
 	 */ 
 	const T& operator[](int index) const;
+
+	/**
+	 * A shorthand method that returns a value indicating whether the pointer
+	 * is dead; that is, it either is uninitialized or is non-NULL but no
+	 * longer in the checked pointer table.
+	 * 
+	 * This method is only public because of some template friend problems.
+	 * 
+	 * @returns true if the pointer is dead; otherwise, false.
+	 */
+	bool isDead() const;
 };
+
+/**
+ * Performs a static cast of the pointer managed by the specified checked
+ * pointer object.
+ * 
+ * @param ptrToCast the checked pointer object to cast
+ * @returns the value resulting from the cast
+ */
+template <typename TCast, typename T>
+TCast __checked_static_cast(const Ptr<T>& ptrToCast)
+{
+	return static_cast<TCast>((T*)ptrToCast);
+}
+
+/**
+ * Performs a standard static cast of a value. This stub exists so that the
+ * compiler will fall back to a regular static cast if the argument is not
+ * a checked pointer.
+ * 
+ * @param valueToCast the value to cast
+ * @returns the value resulting from the cast
+ */
+template <typename TCast, typename T>
+TCast __checked_static_cast(T valueToCast)
+{
+	return static_cast<TCast>(valueToCast);
+}
+
+/**
+ * Performs a standard dynamic cast of a pointer. This stub exists so that the
+ * compiler will fall back to a regular static cast if the argument is not a
+ * checked pointer.
+ * 
+ * @param valueToCast the value to cast
+ * @returns the value resulting from the cast
+ */
+template <typename TCast, typename T>
+TCast __checked_dynamic_cast(T valueToCast)
+{
+	return dynamic_cast<TCast>(valueToCast);
+}
+
+/**
+ * Performs a dynamic cast of the pointer managed by the specified checked
+ * pointer object. The return value is the raw pointer that results from the
+ * cast, which can then be assigned to a checked pointer object if desired.
+ * 
+ * @param ptrToCast the checked pointer object to cast
+ * @returns the pointer resulting from the cast
+ */
+template <typename TCast, typename T>
+TCast __checked_dynamic_cast(const Ptr<T>& ptrToCast)
+{
+	return dynamic_cast<TCast>((T*)ptrToCast);
+}
+
+/**
+ * These macros permit dynamic_ and static_cast to work with checked pointers.
+ * The "take anything" stub versions of the functions to permit the old
+ * functionality to pass through, with apparently no ill effects.
+ */
+#define dynamic_cast __checked_dynamic_cast
+#define static_cast __checked_static_cast
+
 
 #include "chkptr_impl.h"
 

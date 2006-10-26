@@ -9,35 +9,46 @@ void __cxxtest_sig_handler( int signum, siginfo_t* info, void* /*arg*/ )
     switch ( signum )
     {
         case SIGFPE:
-	    msg = "SIGFPE: floating point exception (div by zero?)";
-	    // Currently, can't get cygwin g++ to pass in info,
+            msg = "SIGFPE: floating point exception (div by zero?)";
+	        // Currently, can't get cygwin g++ to pass in info,
             // so we can't be more specific.
-	    break;
+	        break;
+
         case SIGSEGV:
             msg = "SIGSEGV: segmentation fault (null pointer dereference?)";
             break;
+
         case SIGILL:
             msg = "SIGILL: illegal instruction "
-		"(dereference uninitialized or deleted pointer?)";
+                "(dereference uninitialized or deleted pointer?)";
             break;
+
         case SIGTRAP:
             msg = "SIGTRAP: trace trap";
             break;
+
 #ifdef SIGEMT
         case SIGEMT:
             msg = "SIGEMT: EMT instruction";
             break;
 #endif
+
         case SIGBUS:
             msg = "SIGBUS: bus error "
-		"(dereference uninitialized or deleted pointer?)";
+                "(dereference uninitialized or deleted pointer?)";
             break;
+
         case SIGSYS:
             msg = "SIGSYS: bad argument to system call";
             break;
+
         case SIGABRT:
             msg = "SIGABRT: execution aborted "
-		"(failed assertion, corrupted heap, or other problem?)";
+                "(failed assertion, corrupted heap, or other problem?)";
+            break;
+
+        case SIGALRM:
+            msg = "SIGALRM: allotted time expired";
             break;
     }
 
@@ -47,17 +58,17 @@ void __cxxtest_sig_handler( int signum, siginfo_t* info, void* /*arg*/ )
 
     if ( !CxxTest::__cxxtest_assertmsg.empty() )
     {
-	CxxTest::__cxxtest_sigmsg = CxxTest::__cxxtest_assertmsg;
-	CxxTest::__cxxtest_assertmsg = "";
+        CxxTest::__cxxtest_sigmsg = CxxTest::__cxxtest_assertmsg;
+        CxxTest::__cxxtest_assertmsg = "";
     }
     else if ( CxxTest::__cxxtest_sigmsg.empty() )
     {
-	CxxTest::__cxxtest_sigmsg = msg;
+        CxxTest::__cxxtest_sigmsg = msg;
     }
     else
     {
-	CxxTest::__cxxtest_sigmsg = std::string(msg)
-	    + ", maybe related to " + CxxTest::__cxxtest_sigmsg;
+        CxxTest::__cxxtest_sigmsg = std::string(msg)
+	        + ", maybe related to " + CxxTest::__cxxtest_sigmsg;
     }
 
 #ifdef CXXTEST_TRACE_STACK
@@ -70,9 +81,10 @@ void __cxxtest_sig_handler( int signum, siginfo_t* info, void* /*arg*/ )
         }
     }
 #endif
+
     if ( CxxTest::__cxxtest_jmppos >= 0 )
     {
-		siglongjmp( CxxTest::__cxxtest_jmpbuf[CxxTest::__cxxtest_jmppos], 1 );
+        siglongjmp( CxxTest::__cxxtest_jmpbuf[CxxTest::__cxxtest_jmppos], 1 );
     }
     else
     {

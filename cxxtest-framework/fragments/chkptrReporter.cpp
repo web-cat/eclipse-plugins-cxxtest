@@ -22,11 +22,11 @@ public:
 		maxBytesInUse = maxBytes;
 
 		fprintf(xmlFile, "<?xml version='1.0'?>\n");
-		fprintf(xmlFile, "<memwatch>\n");
+		fprintf(xmlFile, "<memwatch actual-leak-count=\"%d\">\n", numEntries);
 	}
 		
-	virtual void report(void* address, size_t size, const char* filename,
-		int line)
+	virtual void report(const void* address, size_t size,
+		const char* filename, int line)
 	{
 		fprintf(xmlFile, "    <leak address=\"%p\" size=\"%lu\">\n",
 			address, (unsigned long)size);
@@ -40,6 +40,10 @@ public:
 		fprintf(xmlFile, "    </leak>\n");
 	}
 	
+	virtual void reportsTruncated(int numReports, int actualCount)
+	{
+	}
+
 	virtual void endReport()
 	{
 		fprintf(xmlFile, "    <summary "
