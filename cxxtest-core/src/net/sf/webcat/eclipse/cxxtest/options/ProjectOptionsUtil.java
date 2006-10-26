@@ -20,7 +20,6 @@ package net.sf.webcat.eclipse.cxxtest.options;
 import java.util.ArrayList;
 
 import org.eclipse.cdt.managedbuilder.core.BuildException;
-import org.eclipse.cdt.managedbuilder.core.IConfiguration;
 import org.eclipse.cdt.managedbuilder.core.IOption;
 import org.eclipse.cdt.managedbuilder.core.ITool;
 
@@ -93,13 +92,12 @@ public class ProjectOptionsUtil
 
 	/**
 	 * Adds an array of string options to the specified compiler option.
-	 * 
-	 * @param configuration no longer used
+	 *
 	 * @param tool the tool whose option will be modified
 	 * @param optionId the identifier of the option to be modified
 	 * @param newEntries the new options to be added to the tool's option
 	 */
-	public static void addToString(IConfiguration configuration, ITool tool,
+	public static void addToString(ITool tool,
 			String optionId, String[] newEntries) throws BuildException
 	{
 		IOption option = tool.getOptionById(optionId);
@@ -111,12 +109,11 @@ public class ProjectOptionsUtil
 	/**
 	 * Adds an array of paths to an Includes-type compiler option.
 	 * 
-	 * @param configuration no longer used
 	 * @param tool the tool whose option will be modified
 	 * @param optionId the identifier of the option to be modified
 	 * @param newEntries the new options to be added to the tool's option
 	 */
-	public static void addToIncludes(IConfiguration configuration, ITool tool,
+	public static void addToIncludes(ITool tool,
 			String optionId, String[] newEntries) throws BuildException
 	{
 		IOption option = tool.getOptionById(optionId);
@@ -128,12 +125,11 @@ public class ProjectOptionsUtil
 	/**
 	 * Adds an array of library names to a Libraries-type compiler option.
 	 * 
-	 * @param configuration no longer used
 	 * @param tool the tool whose option will be modified
 	 * @param optionId the identifier of the option to be modified
 	 * @param newEntries the new options to be added to the tool's option
 	 */
-	public static void addToLibraries(IConfiguration configuration, ITool tool,
+	public static void addToLibraries(ITool tool,
 			String optionId, String[] newEntries) throws BuildException
 	{
 		IOption option = tool.getOptionById(optionId);
@@ -146,12 +142,11 @@ public class ProjectOptionsUtil
 	 * Adds an array of preprocessor symbols to a DefinedSymbols-type
 	 * compiler option.
 	 * 
-	 * @param configuration no longer used
 	 * @param tool the tool whose option will be modified
 	 * @param optionId the identifier of the option to be modified
 	 * @param newEntries the new options to be added to the tool's option
 	 */
-	public static void addToDefinedSymbols(IConfiguration configuration, ITool tool,
+	public static void addToDefinedSymbols(ITool tool,
 			String optionId, String[] newEntries) throws BuildException
 	{
 		IOption option = tool.getOptionById(optionId);
@@ -163,17 +158,31 @@ public class ProjectOptionsUtil
 	/**
 	 * Adds an array of strings to a StringList-type compiler option.
 	 * 
-	 * @param configuration no longer used
 	 * @param tool the tool whose option will be modified
 	 * @param optionId the identifier of the option to be modified
 	 * @param newEntries the new options to be added to the tool's option
 	 */
-	public static void addToStringList(IConfiguration configuration, ITool tool,
+	public static void addToStringList(ITool tool,
 			String optionId, String[] newEntries) throws BuildException
 	{
 		IOption option = tool.getOptionById(optionId);
 		option = tool.getOptionToSet(option, false);
 		String[] array = mergeArrays(option.getStringListValue(), newEntries);
 		option.setValue(array);
+	}
+	
+	/**
+	 * Sets the value of a Boolean-type compiler option.
+	 * 
+	 * @param tool the tool whose option will be modified
+	 * @param optionId the identifier of the option to be modified
+	 * @param value the new value of the option
+	 */
+	public static void setBoolean(ITool tool, String optionId, boolean value)
+		throws BuildException
+	{
+		IOption option = tool.getOptionById(optionId);
+		option = tool.getOptionToSet(option, false);
+		option.setValue(value);
 	}
 }

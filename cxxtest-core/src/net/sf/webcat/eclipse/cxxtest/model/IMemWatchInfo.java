@@ -24,4 +24,6 @@ public interface IMemWatchInfo
 	int getMaxBytesInUse();
 
 	IMemWatchLeak[] getLeaks();
+	
+	int getActualLeakCount();
 }

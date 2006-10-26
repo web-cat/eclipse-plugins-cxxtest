@@ -30,6 +30,8 @@ public class MemStatsContext extends ElementContext
 	public MemStatsContext(DocumentContext document, Attributes attributes)
 	{
 		this.document = document;
+		
+		document.setActualLeakCount(getAttrInt(attributes, "actual-leak-count"));
 	}
 
 	public ElementContext startElement(String uri, String localName,
@@ -37,7 +39,7 @@ public class MemStatsContext extends ElementContext
 	{
 		if(localName.equals("summary"))
 			return new SummaryContext(this, attributes);
-		if(localName.equals("leak"))
+		else if(localName.equals("leak"))
 			return new LeakContext(this, attributes);
 		else
 			return null;
@@ -51,5 +53,10 @@ public class MemStatsContext extends ElementContext
 	public void setSummary(MemWatchInfo info)
 	{
 		document.setSummary(info);
+	}
+	
+	private int getAttrInt(Attributes attributes, String name)
+	{
+		return Integer.parseInt(attributes.getValue(name));
 	}
 }

@@ -158,8 +158,21 @@ public class TestMemoryTab extends TestRunTab
 		{
 			if(element instanceof IMemWatchInfo)
 			{
-				String msg = "" + memWatchInfo.getLeaks().length +
-					" memory leaks found";
+				int leaksShown = memWatchInfo.getLeaks().length;
+				int actualLeaks = memWatchInfo.getActualLeakCount();
+				
+				String msg;
+
+				if(leaksShown != actualLeaks)
+				{
+					msg = "" + actualLeaks + " memory leaks found (" +
+						leaksShown + " shown)";
+				}
+				else
+				{
+					msg = "" + leaksShown + " memory leaks found";
+				}
+
 				return msg;
 			}
 			else if(element instanceof IMemWatchLeak)

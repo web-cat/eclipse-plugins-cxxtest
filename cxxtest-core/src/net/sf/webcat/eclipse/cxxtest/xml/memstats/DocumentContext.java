@@ -32,6 +32,8 @@ public class DocumentContext extends ElementContext
 	
 	private MemWatchInfo summary;
 
+	private int actualLeakCount;
+	
 	public DocumentContext()
 	{
 		leaks = new Vector();
@@ -65,6 +67,12 @@ public class DocumentContext extends ElementContext
 	public IMemWatchInfo getSummary()
 	{
 		summary.setLeaks(getLeaks());
+		summary.setActualLeakCount(actualLeakCount);
 		return summary;
+	}
+	
+	public void setActualLeakCount(int value)
+	{
+		actualLeakCount = value;
 	}
 }

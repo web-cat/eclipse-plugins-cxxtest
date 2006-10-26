@@ -24,6 +24,7 @@ public class MemWatchInfo implements IMemWatchInfo
 {
 	private int totalBytesAllocated;
 	private int maxBytesInUse;
+	private int actualLeakCount;
 	private IMemWatchLeak[] leaks;
 
 	public MemWatchInfo(int totalBytes, int maxBytes) {
@@ -45,5 +46,15 @@ public class MemWatchInfo implements IMemWatchInfo
 
 	public void setLeaks(IMemWatchLeak[] leaks) {
 		this.leaks = leaks;
+	}
+	
+	public int getActualLeakCount()
+	{
+		return actualLeakCount;
+	}
+
+	public void setActualLeakCount(int value)
+	{
+		actualLeakCount = value;
 	}
 }

@@ -43,9 +43,12 @@ public class FrameworkProjectOptions implements IExtraProjectOptions
 			ITool[] tools = config.getToolsBySuperClassId("cdt.managedbuild.tool.gnu.cpp.compiler");
 			for(int i = 0; i < tools.length; i++)
 			{
-				ProjectOptionsUtil.addToIncludes(config, tools[i],
+				ProjectOptionsUtil.addToIncludes(tools[i],
 						"gnu.cpp.compiler.option.include.paths",
 						new String[] { cxxTestPath });
+				
+				ProjectOptionsUtil.setBoolean(tools[i],
+						"gnu.cpp.compiler.option.warnings.toerrors", true);
 			}
 		}
 		catch(BuildException e)
