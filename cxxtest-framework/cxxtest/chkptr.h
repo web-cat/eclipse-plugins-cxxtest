@@ -274,68 +274,16 @@ public:
 };
 
 /**
- * Performs a static cast of the pointer managed by the specified checked
- * pointer object.
+ * Some compilers may have problems with the partial specializations used to
+ * implement syntax-preserving C++-style casts of checked pointers. If this
+ * happens, define this preprocessor symbol to eliminate them.
  * 
- * @param ptrToCast the checked pointer object to cast
- * @returns the value resulting from the cast
+ * If eliminated, a checked pointer needs to be explicitly cast back to its
+ * raw type before it can be passed to a static_ or dynamic_cast.
  */
-template <typename TCast, typename T>
-TCast __checked_static_cast(const Ptr<T>& ptrToCast)
-{
-	return static_cast<TCast>((T*)ptrToCast);
-}
-
-/**
- * Performs a standard static cast of a value. This stub exists so that the
- * compiler will fall back to a regular static cast if the argument is not
- * a checked pointer.
- * 
- * @param valueToCast the value to cast
- * @returns the value resulting from the cast
- */
-template <typename TCast, typename T>
-TCast __checked_static_cast(T valueToCast)
-{
-	return static_cast<TCast>(valueToCast);
-}
-
-/**
- * Performs a standard dynamic cast of a pointer. This stub exists so that the
- * compiler will fall back to a regular static cast if the argument is not a
- * checked pointer.
- * 
- * @param valueToCast the value to cast
- * @returns the value resulting from the cast
- */
-template <typename TCast, typename T>
-TCast __checked_dynamic_cast(T valueToCast)
-{
-	return dynamic_cast<TCast>(valueToCast);
-}
-
-/**
- * Performs a dynamic cast of the pointer managed by the specified checked
- * pointer object. The return value is the raw pointer that results from the
- * cast, which can then be assigned to a checked pointer object if desired.
- * 
- * @param ptrToCast the checked pointer object to cast
- * @returns the pointer resulting from the cast
- */
-template <typename TCast, typename T>
-TCast __checked_dynamic_cast(const Ptr<T>& ptrToCast)
-{
-	return dynamic_cast<TCast>((T*)ptrToCast);
-}
-
-/**
- * These macros permit dynamic_ and static_cast to work with checked pointers.
- * The "take anything" stub versions of the functions to permit the old
- * functionality to pass through, with apparently no ill effects.
- */
-#define dynamic_cast __checked_dynamic_cast
-#define static_cast __checked_static_cast
-
+#ifndef CHKPTR_OMIT_CAST_SUPPORT
+#include <chkptr_casts.h>
+#endif
 
 #include "chkptr_impl.h"
 
