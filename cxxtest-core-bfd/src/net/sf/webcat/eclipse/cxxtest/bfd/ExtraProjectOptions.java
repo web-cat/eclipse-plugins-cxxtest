@@ -97,15 +97,15 @@ public class ExtraProjectOptions implements IExtraProjectOptions
 		ITool[] tools = config.getToolsBySuperClassId("cdt.managedbuild.tool.gnu.cpp.compiler");
 		for(int i = 0; i < tools.length; i++)
 		{
-			ProjectOptionsUtil.addToString(config, tools[i],
+			ProjectOptionsUtil.addToString(tools[i],
 					"gnu.cpp.compiler.option.other.other",
 					new String[] { "-finstrument-functions" });
 
-			ProjectOptionsUtil.addToIncludes(config, tools[i],
+			ProjectOptionsUtil.addToIncludes(tools[i],
 					"gnu.cpp.compiler.option.include.paths",
 					new String[] { includePath });
 
-			ProjectOptionsUtil.addToDefinedSymbols(config, tools[i],
+			ProjectOptionsUtil.addToDefinedSymbols(tools[i],
 					"gnu.cpp.compiler.option.preprocessor.def",
 					new String[] { "CXXTEST_INCLUDE_SYMREADER_DIRECTLY" });
 		}
@@ -113,7 +113,7 @@ public class ExtraProjectOptions implements IExtraProjectOptions
 		tools = config.getToolsBySuperClassId("cdt.managedbuild.tool.gnu.cpp.linker");
 		for(int i = 0; i < tools.length; i++)
 		{
-			ProjectOptionsUtil.addToLibraries(config, tools[i],
+			ProjectOptionsUtil.addToLibraries(tools[i],
 					"gnu.cpp.link.option.libs",
 					new String[] { "bfd", "iberty", "intl" });
 		}
