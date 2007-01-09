@@ -676,7 +676,7 @@ void operator delete(void* address)
 			// dangling pointer to an object with a vtable has a method
 			// called on it; in this case, a null pointer dereference
 			// will result.
-			bzero(realAddr, size);
+			bzero(realAddr, size + 2 * SAFETY_SIZE);
 
 			free(realAddr);
 		}
@@ -749,7 +749,7 @@ void operator delete[](void* address)
 			// dangling pointer to an object with a vtable has a method
 			// called on it; in this case, a null pointer dereference
 			// will result.
-			bzero(realAddr, size);
+			bzero(realAddr, size + 2 * SAFETY_SIZE);
 
 			free(realAddr);
 		}
