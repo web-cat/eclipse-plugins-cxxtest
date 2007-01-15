@@ -29,13 +29,15 @@ public class SummaryContext extends ElementContext
 		int totalBytes = getAttrInt(attributes, "total-bytes-allocated");
 		int maxBytes = getAttrInt(attributes, "max-bytes-in-use");
 
-/*		int maxBlocks = getAttrInt(attributes, "max-blocks");
 		int callsNew = getAttrInt(attributes, "calls-to-new");
 		int callsDelete = getAttrInt(attributes, "calls-to-delete");
-		int callsNewArray = getAttrInt(attributes, "calls-to-new-array");
-		int callsDeleteArray = getAttrInt(attributes, "calls-to-delete-array");*/
+		int callsArrayNew = getAttrInt(attributes, "calls-to-array-new");
+		int callsArrayDelete = getAttrInt(attributes, "calls-to-array-delete");
+		int callsDeleteNull = getAttrInt(attributes, "calls-to-delete-null");
 		
-		MemWatchInfo info = new MemWatchInfo(totalBytes, maxBytes);
+		MemWatchInfo info = new MemWatchInfo(totalBytes, maxBytes,
+				callsNew, callsDelete, callsArrayNew,
+				callsArrayDelete, callsDeleteNull);
 		parent.setSummary(info);
 	}
 	

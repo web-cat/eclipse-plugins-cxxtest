@@ -72,13 +72,31 @@ class chkptr_reporter
 public:
 	virtual ~chkptr_reporter() { }
 
-	virtual void beginReport(int numEntries, int totalBytes, int maxBytes,
-		int numNew, int numArrayNew, int numDelete, int numArrayDelete) = 0;
+	virtual void beginReport(int* tagList) = 0;
 	virtual void report(const void* address, size_t size,
 		const char* filename, int line) = 0;
 	virtual void reportsTruncated(int reportsLogged, int actualLeaks) = 0;
 	virtual void endReport() = 0;
+	
+	void* operator new(size_t size) { return malloc(size); }
+	void operator delete(void* ptr) { free(ptr); }
 };
+
+/**
+ * The chkptr_reporter::beginReport method takes an array of (tag, value)
+ * pairs to specify various statistics passed to the reporter. The tags
+ * can be any of the values below.  The list is terminated by the tag
+ * CHKPTR_REPORT_END.
+ */
+#define CHKPTR_REPORT_END						0
+#define CHKPTR_REPORT_NUM_LEAKS					1
+#define CHKPTR_REPORT_TOTAL_BYTES_ALLOCATED		2
+#define CHKPTR_REPORT_MAX_BYTES_IN_USE			3
+#define CHKPTR_REPORT_NUM_CALLS_NEW				4
+#define CHKPTR_REPORT_NUM_CALLS_ARRAY_NEW		5
+#define CHKPTR_REPORT_NUM_CALLS_DELETE			6
+#define CHKPTR_REPORT_NUM_CALLS_ARRAY_DELETE	7
+#define CHKPTR_REPORT_NUM_CALLS_DELETE_NULL		8
 
 /**
  * The __checked_pointer_table class is not intended to be used directly
@@ -97,10 +115,10 @@ private:
 		int numCallsToArrayNew;
 		int numCallsToDelete;
 		int numCallsToArrayDelete;
+		int numCallsToDeleteNull;
 
 	public:
-		void beginReport(int numEntries, int totalBytes, int maxBytes,
-			int numNew, int numArrayNew, int numDelete, int numArrayDelete);
+		void beginReport(int* tags);
 	
 		void report(const void* address, size_t size,
 			const char* filename, int line);
@@ -203,8 +221,14 @@ private:
 	 * the program.
 	 */
 	int numReportsToLog;
-
+	
 public:
+	/**
+	 * Used to prevent allocations caused by calls in overloaded new/delete
+	 * from being added to the tally.
+	 */
+	bool internalCall;
+
 	/**
 	 * Indicates the total amount of memory allocated by the program through
 	 * its entire execution.
@@ -233,14 +257,22 @@ public:
 	int numCallsToArrayNew;
 	
 	/**
-	 * Indicates the number of calls made to "delete" during execution.
+	 * Indicates the number of calls made to "delete" with a non-null
+	 * argument during execution.
 	 */
 	int numCallsToDelete;
 	
 	/**
-	 * Indicates the number of calls made to "delete[]" during execution.
+	 * Indicates the number of calls made to "delete[]" with a non-null
+	 * argument during execution.
 	 */
 	int numCallsToArrayDelete;
+
+	/**
+	 * Indicates the number of calls made to "delete" or "delete[]" with
+	 * a null argument during execution.
+	 */
+	int numCallsToDeleteNull;
 
 	/**
 	 * Initializes a new checked pointer table.

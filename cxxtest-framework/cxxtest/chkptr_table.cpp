@@ -74,26 +74,61 @@ void __stderr_error_handler(bool fatal, const char* msg);
 	(reinterpret_cast<unsigned long>(address) % PROXY_HASHTABLE_SIZE)
 
 // ------------------------------------------------------------------
-void __checked_pointer_table::__stderr_reporter::beginReport(int numEntries,
-	int totalBytes, int maxBytes, int numNew, int numArrayNew,
-	int numDelete, int numArrayDelete)
+void __checked_pointer_table::__stderr_reporter::beginReport(
+	int* tagList)
 {
-	if(numEntries > 0)
+	int numLeaks = 0;
+
+	while(*tagList != CHKPTR_REPORT_END)
 	{
-		printf(CHKPTR_PREFIX "%d memory leaks were detected:\n", numEntries);
+		int tag = *tagList++;
+		int value = *tagList++;
+		
+		switch(tag)
+		{
+			case CHKPTR_REPORT_NUM_LEAKS:
+				numLeaks = value;
+				break;
+			
+			case CHKPTR_REPORT_TOTAL_BYTES_ALLOCATED:
+				totalBytesAllocated = value;
+				break;
+				
+			case CHKPTR_REPORT_MAX_BYTES_IN_USE:
+				maxBytesInUse = value;
+				break;
+				
+			case CHKPTR_REPORT_NUM_CALLS_NEW:
+				numCallsToNew = value;
+				break;
+
+			case CHKPTR_REPORT_NUM_CALLS_ARRAY_NEW:
+				numCallsToArrayNew = value;
+				break;
+
+			case CHKPTR_REPORT_NUM_CALLS_DELETE:
+				numCallsToDelete = value;
+				break;
+
+			case CHKPTR_REPORT_NUM_CALLS_ARRAY_DELETE:
+				numCallsToArrayDelete = value;
+				break;
+
+			case CHKPTR_REPORT_NUM_CALLS_DELETE_NULL:
+				numCallsToDeleteNull = value;
+				break;
+		}
+	}
+
+	if(numLeaks > 0)
+	{
+		printf(CHKPTR_PREFIX "%d memory leaks were detected:\n", numLeaks);
 		printf(CHKPTR_PREFIX "--------\n");
 	}
 	else
 	{
 		printf(CHKPTR_PREFIX "No memory leaks detected.\n");
 	}
-	
-	totalBytesAllocated = totalBytes;
-	maxBytesInUse = maxBytes;
-	numCallsToNew = numNew;
-	numCallsToArrayNew = numArrayNew;
-	numCallsToDelete = numDelete;
-	numCallsToArrayDelete = numArrayDelete;
 }
 
 // ------------------------------------------------------------------
@@ -159,6 +194,8 @@ __checked_pointer_table::__checked_pointer_table()
 	numCallsToArrayNew = 0;
 	numCallsToDelete = 0;
 	numCallsToArrayDelete = 0;
+	numCallsToDeleteNull = 0;
+	internalCall = false;
 
 	for(int i = 0; i < CHECKED_HASHTABLE_SIZE; i++)
 		table[i] = 0;
@@ -452,15 +489,19 @@ void __checked_pointer_table::reportAllocations()
 {
 	int numLeaks = numEntries + numUnchecked;
 
-	if(numUnchecked > 0)
-		for(int i = 0; i < UNCHECKED_HASHTABLE_SIZE; i++)
-			for(__node* p = uncheckedTable[i]; p != 0; p = p->next)
-				if(p->address == dynamic_cast<void*>(reporter))
-					numLeaks--;
-	
-	reporter->beginReport(numLeaks,
-		totalBytesAllocated, maxBytesInUse, numCallsToNew, numCallsToArrayNew,
-		numCallsToDelete, numCallsToArrayDelete);
+	int tags[] = {
+		CHKPTR_REPORT_NUM_LEAKS,				numLeaks,
+		CHKPTR_REPORT_TOTAL_BYTES_ALLOCATED,	totalBytesAllocated,
+		CHKPTR_REPORT_MAX_BYTES_IN_USE,			maxBytesInUse,
+		CHKPTR_REPORT_NUM_CALLS_NEW,			numCallsToNew,
+		CHKPTR_REPORT_NUM_CALLS_ARRAY_NEW,		numCallsToArrayNew,
+		CHKPTR_REPORT_NUM_CALLS_DELETE,			numCallsToDelete,
+		CHKPTR_REPORT_NUM_CALLS_ARRAY_DELETE,	numCallsToArrayDelete,
+		CHKPTR_REPORT_NUM_CALLS_DELETE_NULL,	numCallsToDeleteNull,
+		CHKPTR_REPORT_END
+	};
+
+	reporter->beginReport(tags);
 
 	int reportsLogged = 0;
 
@@ -487,11 +528,8 @@ void __checked_pointer_table::reportAllocations()
 			{
 				if(reportsLogged < numReportsToLog)
 				{
-					if(p->address != dynamic_cast<void*>(reporter))
-					{	
-						reporter->report(p->address, p->size, p->filename, p->line);
-						reportsLogged++;
-					}
+					reporter->report(p->address, p->size, p->filename, p->line);
+					reportsLogged++;
 				}
 			}
 		}
@@ -533,7 +571,7 @@ void __checked_pointer_table::getStatistics(int& totalBytes, int& maxBytes,
 // ------------------------------------------------------------------
 void __stderr_error_handler(bool fatal, const char* msg)
 {
-	fprintf(stdout, "Pointer %s: %s\n",
+	fprintf(stdout, CHKPTR_PREFIX "Pointer %s: %s\n",
 		fatal? "error" : "warning", msg);
 }
 
@@ -543,6 +581,8 @@ void __stderr_error_handler(bool fatal, const char* msg)
 // ------------------------------------------------------------------
 void* operator new(size_t size)
 {
+	ChkPtr::__manager.numCallsToNew++;
+	
 	ChkPtr::__manager.currentBytesAllocated += size;
 	ChkPtr::__manager.totalBytesAllocated += size;
 	if(ChkPtr::__manager.currentBytesAllocated > ChkPtr::__manager.maxBytesInUse)
@@ -576,8 +616,16 @@ void* operator new(size_t size)
 }
 
 // ------------------------------------------------------------------
+void* operator new(size_t size, const std::nothrow_t& /*nothrow*/)
+{
+	return ::operator new(size);
+}
+
+// ------------------------------------------------------------------
 void* operator new[](size_t size)
 {
+	ChkPtr::__manager.numCallsToArrayNew++;
+
 	ChkPtr::__manager.currentBytesAllocated += size;
 	ChkPtr::__manager.totalBytesAllocated += size;
 	if(ChkPtr::__manager.currentBytesAllocated > ChkPtr::__manager.maxBytesInUse)
@@ -611,26 +659,42 @@ void* operator new[](size_t size)
 }
 
 // ------------------------------------------------------------------
+void* operator new[](size_t size, const std::nothrow_t& /*nothrow*/)
+{
+	return ::operator new[](size);
+}
+
+// ------------------------------------------------------------------
 void operator delete(void* address)
 {
+	printf("deleting %p\n", address);
+
 	if(address == ChkPtr::__manager.getUninitHandle())
 	{
+		ChkPtr::__manager.internalCall = true;
 		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_UNINITIALIZED);
+		ChkPtr::__manager.internalCall = false;
 		return;
 	}
 	else if(address != 0)
 	{
+		ChkPtr::__manager.numCallsToDelete++;
+
 		size_t size = ChkPtr::__manager.getSize(address);
 #ifdef CHKPTR_BASIC_HEAP_CHECK
 		if(size == (size_t)-1)
 		{
+			ChkPtr::__manager.internalCall = true;
 			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_NOT_DYNAMIC);
+			ChkPtr::__manager.internalCall = false;
 			return;
 		}
 		
 		if(ChkPtr::__manager.isArray(address))
 		{
+			ChkPtr::__manager.internalCall = true;
 			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_ARRAY);
+			ChkPtr::__manager.internalCall = false;
 		}		
 #endif
 		{
@@ -669,7 +733,9 @@ void operator delete(void* address)
 				else
 					damageStr = "after";
 
+				ChkPtr::__manager.internalCall = true;
 				ChkPtr::__manager.logError(false, ChkPtr::PTRERR_MEMORY_CORRUPTION, damageStr);
+				ChkPtr::__manager.internalCall = false;
 			}
 #endif
 			// Zero out the memory before freeing it. This is useful if a
@@ -680,6 +746,11 @@ void operator delete(void* address)
 
 			free(realAddr);
 		}
+	}
+	else
+	{
+		printf("delete null\n");
+		ChkPtr::__manager.numCallsToDeleteNull++;
 	}
 }
 
@@ -688,22 +759,30 @@ void operator delete[](void* address)
 {
 	if(address == ChkPtr::__manager.getUninitHandle())
 	{
+		ChkPtr::__manager.internalCall = true;
 		ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_UNINITIALIZED);
+		ChkPtr::__manager.internalCall = false;
 		return;
 	}
 	else if(address != 0)
 	{
+		ChkPtr::__manager.numCallsToArrayDelete++;
+
 		size_t size = ChkPtr::__manager.getSize(address);
 #ifdef CHKPTR_BASIC_HEAP_CHECK
 		if(size == (size_t)-1)
 		{
+			ChkPtr::__manager.internalCall = true;
 			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_NOT_DYNAMIC);
+			ChkPtr::__manager.internalCall = false;
 			return;
 		}
 
 		if(!ChkPtr::__manager.isArray(address))
 		{
+			ChkPtr::__manager.internalCall = true;
 			ChkPtr::__manager.logError(true, ChkPtr::PTRERR_DELETE_NONARRAY);
+			ChkPtr::__manager.internalCall = false;
 		}		
 #endif
 		{
@@ -742,7 +821,9 @@ void operator delete[](void* address)
 				else
 					damageStr = "after";
 
+				ChkPtr::__manager.internalCall = true;
 				ChkPtr::__manager.logError(false, ChkPtr::PTRERR_MEMORY_CORRUPTION, damageStr);
+				ChkPtr::__manager.internalCall = false;
 			}
 #endif
 			// Zero out the memory before freeing it. This is useful if a
@@ -753,5 +834,9 @@ void operator delete[](void* address)
 
 			free(realAddr);
 		}
+	}
+	else
+	{
+		ChkPtr::__manager.numCallsToDeleteNull++;
 	}
 }

@@ -25,11 +25,24 @@ public class MemWatchInfo implements IMemWatchInfo
 	private int totalBytesAllocated;
 	private int maxBytesInUse;
 	private int actualLeakCount;
+	private int callsNew;
+	private int callsDelete;
+	private int callsArrayNew;
+	private int callsArrayDelete;
+	private int callsDeleteNull;
 	private IMemWatchLeak[] leaks;
 
-	public MemWatchInfo(int totalBytes, int maxBytes) {
+	public MemWatchInfo(int totalBytes, int maxBytes,
+			int callsNew, int callsDelete, int callsArrayNew,
+			int callsArrayDelete, int callsDeleteNull)
+	{
 		totalBytesAllocated = totalBytes;
 		maxBytesInUse = maxBytes;
+		this.callsNew = callsNew;
+		this.callsDelete = callsDelete;
+		this.callsArrayNew = callsArrayNew;
+		this.callsArrayDelete = callsArrayDelete;
+		this.callsDeleteNull = callsDeleteNull;
 	}
 
 	public int getTotalBytesAllocated() {
@@ -56,5 +69,30 @@ public class MemWatchInfo implements IMemWatchInfo
 	public void setActualLeakCount(int value)
 	{
 		actualLeakCount = value;
+	}
+
+	public int getCallsToNew()
+	{
+		return callsNew;
+	}
+	
+	public int getCallsToDelete()
+	{
+		return callsDelete;
+	}
+
+	public int getCallsToArrayNew()
+	{
+		return callsArrayNew;
+	}
+	
+	public int getCallsToArrayDelete()
+	{
+		return callsArrayDelete;
+	}
+	
+	public int getCallsToDeleteNull()
+	{
+		return callsDeleteNull;
 	}
 }

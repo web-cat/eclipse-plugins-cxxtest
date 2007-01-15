@@ -26,4 +26,14 @@ public interface IMemWatchInfo
 	IMemWatchLeak[] getLeaks();
 	
 	int getActualLeakCount();
+	
+	int getCallsToNew();
+	
+	int getCallsToDelete();
+
+	int getCallsToArrayNew();
+	
+	int getCallsToArrayDelete();
+	
+	int getCallsToDeleteNull();
 }

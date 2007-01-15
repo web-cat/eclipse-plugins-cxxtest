@@ -193,11 +193,20 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 		// found in the resource delta).
 		IResourceDelta delta = getDelta(project);
 		ExecutableChangedVisitor visitor = new ExecutableChangedVisitor();
-		delta.accept(visitor);
-
-		if(!visitor.isExecutableChanged())
-       	{
-			// We don't need to rebuild the test case runner, so bail out.
+		
+		if(delta != null)
+		{
+			delta.accept(visitor);
+	
+			if(!visitor.isExecutableChanged())
+	       	{
+				// We don't need to rebuild the test case runner, so bail out.
+				monitor.done();
+				return null;
+			}
+		}
+		else
+		{
 			monitor.done();
 			return null;
 		}
