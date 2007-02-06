@@ -132,10 +132,10 @@ void __checked_pointer_table::__stderr_reporter::beginReport(
 }
 
 // ------------------------------------------------------------------
-void __checked_pointer_table::__stderr_reporter::report(const void* address,
-	size_t size, const char* filename, int line)
-{
 #ifdef CXXTEST_TRACE_STACK
+void __checked_pointer_table::__stderr_reporter::report(const void* address,
+	size_t size, const char* /*filename*/, int /* line */ )
+{
 	printf(CHKPTR_PREFIX "Leaked %lu bytes at address %p\n",
 		(unsigned long)size, address);
 
@@ -143,7 +143,12 @@ void __checked_pointer_table::__stderr_reporter::report(const void* address,
 			(CxxTest::StackElem*)(((char*)address) + size),
 			CHKPTR_STACK_TRACE_INITIAL_PREFIX,
 			CHKPTR_STACK_TRACE_OTHER_PREFIX).c_str());
+	printf(CHKPTR_PREFIX "\n");
+}
 #else
+void __checked_pointer_table::__stderr_reporter::report(const void* address,
+	size_t size, const char* filename, int line)
+{
 	if(line == 0)
 	{
 		printf(CHKPTR_PREFIX "Leaked %lu bytes at address %p\n",
@@ -154,9 +159,9 @@ void __checked_pointer_table::__stderr_reporter::report(const void* address,
 		printf(CHKPTR_PREFIX "Leaked %lu bytes at address %p, allocated at %s:%d\n",
 			(unsigned long)size, address, filename, line);
 	}
-#endif
 	printf(CHKPTR_PREFIX "\n");
 }
+#endif
 
 // ------------------------------------------------------------------
 void __checked_pointer_table::__stderr_reporter::reportsTruncated(
@@ -667,8 +672,6 @@ void* operator new[](size_t size, const std::nothrow_t& /*nothrow*/)
 // ------------------------------------------------------------------
 void operator delete(void* address)
 {
-	printf("deleting %p\n", address);
-
 	if(address == ChkPtr::__manager.getUninitHandle())
 	{
 		ChkPtr::__manager.internalCall = true;
