@@ -177,8 +177,13 @@ void __checked_pointer_table::__stderr_reporter::endReport()
 	printf(CHKPTR_PREFIX "\n");
 	printf(CHKPTR_PREFIX "Memory usage statistics:\n");
 	printf(CHKPTR_PREFIX "--------\n");
-	printf(CHKPTR_PREFIX "Total memory allocated during execution:  %d bytes\n", totalBytesAllocated);
-	printf(CHKPTR_PREFIX "Maximum memory in use during execution:   %d bytes\n", maxBytesInUse);
+	printf(CHKPTR_PREFIX "Total memory allocated during execution:   %d bytes\n", totalBytesAllocated);
+	printf(CHKPTR_PREFIX "Maximum memory in use during execution:    %d bytes\n", maxBytesInUse);
+	printf(CHKPTR_PREFIX "Number of calls to new:                    %d\n", numCallsToNew);
+	printf(CHKPTR_PREFIX "Number of calls to delete (non-null):      %d\n", numCallsToDelete);
+	printf(CHKPTR_PREFIX "Number of calls to new[]:                  %d\n", numCallsToArrayNew);
+	printf(CHKPTR_PREFIX "Number of calls to delete[] (non-null):    %d\n", numCallsToArrayDelete);
+	printf(CHKPTR_PREFIX "Number of calls to delete/delete[] (null): %d\n", numCallsToDeleteNull);
 }
 
 // ------------------------------------------------------------------
@@ -540,7 +545,7 @@ void __checked_pointer_table::reportAllocations()
 		}
 	}
 	
-	if(reportsLogged < numReportsToLog)
+	if(numLeaks > reportsLogged)
 	{
 		reporter->reportsTruncated(reportsLogged, numLeaks);
 	}	
