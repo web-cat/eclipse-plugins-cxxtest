@@ -767,7 +767,6 @@ void operator delete(void* address)
 	}
 	else
 	{
-		printf("delete null\n");
 		ChkPtr::__manager.numCallsToDeleteNull++;
 	}
 }
