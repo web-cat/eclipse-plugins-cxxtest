@@ -292,7 +292,7 @@ public:
  * raw type before it can be passed to a static_ or dynamic_cast.
  */
 #ifndef CHKPTR_OMIT_CAST_SUPPORT
-#include <chkptr_casts.h>
+#include "chkptr_casts.h"
 #endif
 
 #include "chkptr_impl.h"

@@ -25,7 +25,7 @@
  * CSE, ACM Press, March 2000.
  */
    
-#include <chkptr.h>
+#include "chkptr.h"
 #include <stdarg.h>
 
 #if defined(CXXTEST_TRACE_STACK) && !defined(CHKPTR_STACK_WINDOW_SIZE)
@@ -201,7 +201,7 @@ __checked_pointer_table::__checked_pointer_table()
 {
 	uninitHandle = malloc(4);
 
-	reportAtEnd = false;
+	reportAtEnd = true;
 	numReportsToLog = 20;
 
 	nextTag = 0;
