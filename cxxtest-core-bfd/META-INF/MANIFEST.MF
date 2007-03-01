@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CxxTest Extensions for Stack Tracing (BFD)
 Bundle-SymbolicName: net.sf.webcat.eclipse.cxxtest.bfd;singleton:=true
-Bundle-Version: 1.3.2
-Fragment-Host: net.sf.webcat.eclipse.cxxtest;bundle-version="1.3.2"
+Bundle-Version: 1.3.3
+Fragment-Host: net.sf.webcat.eclipse.cxxtest;bundle-version="1.3.3"
 Bundle-Localization: plugin
 Require-Bundle: net.sf.webcat.eclipse.cxxtest.framework,
  org.eclipse.core.resources,
