@@ -34,7 +34,7 @@ import org.eclipse.core.runtime.SubProgressMonitor;
  * Generates a CxxTest suite header file based on information chose in the
  * wizard by the user.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class CxxTestSuiteGenerator
 {
@@ -194,7 +194,7 @@ public class CxxTestSuiteGenerator
     
     private void appendFilePrologue(StringBuffer text)
     {
-    	String guardSymbol = suiteName.toUpperCase() + "_H";
+    	String guardSymbol = suiteName.toUpperCase() + "_H_";
     	text.append("#ifndef " + guardSymbol + "\n");
     	text.append("#define " + guardSymbol + "\n\n");
     	
@@ -257,7 +257,7 @@ public class CxxTestSuiteGenerator
 
     private void appendFileEpilogue(StringBuffer text)
     {
-    	String guardSymbol = suiteName.toUpperCase() + "_H";
-    	text.append("#endif // " + guardSymbol + "\n");
+    	String guardSymbol = suiteName.toUpperCase() + "_H_";
+    	text.append("#endif /*" + guardSymbol + "*/\n");
     }
 }

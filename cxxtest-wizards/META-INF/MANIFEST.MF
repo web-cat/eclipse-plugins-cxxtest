@@ -2,12 +2,12 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CxxTest New Item Wizards
 Bundle-SymbolicName: net.sf.webcat.eclipse.cxxtest.wizards; singleton:=true
-Bundle-Version: 1.3.3
+Bundle-Version: 1.4.0
 Bundle-ClassPath: cxxtest-wizards.jar
 Bundle-Activator: net.sf.webcat.eclipse.cxxtest.wizards.CxxTestWizardsPlugin
 Bundle-Vendor: Virginia Tech Computer Science
-Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
+ org.eclipse.ui.navigator,
  org.eclipse.core.runtime,
  org.eclipse.core.resources,
  org.eclipse.cdt.core,

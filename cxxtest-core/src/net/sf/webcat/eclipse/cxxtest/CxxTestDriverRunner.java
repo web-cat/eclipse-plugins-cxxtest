@@ -53,7 +53,7 @@ import org.eclipse.swt.widgets.Display;
  * markers to the source file for any failed test cases. It also populates the
  * CxxTest view with information about the executed tests.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class CxxTestDriverRunner extends IncrementalProjectBuilder
 {
@@ -181,6 +181,7 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 	/* (non-Javadoc)
 	 * @see org.eclipse.core.internal.events.InternalBuilder#build(int, java.util.Map, org.eclipse.core.runtime.IProgressMonitor)
 	 */
+	@SuppressWarnings("unchecked")
 	protected IProject[] build(int kind, Map args, IProgressMonitor monitor)
 			throws CoreException
 	{

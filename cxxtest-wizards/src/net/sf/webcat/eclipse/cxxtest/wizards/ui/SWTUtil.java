@@ -27,7 +27,6 @@ import org.eclipse.swt.widgets.Widget;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.resource.JFaceResources;
-import org.eclipse.jface.util.Assert;
 
 /**
  * Utility class to simplify access to some SWT resources. 
@@ -89,7 +88,7 @@ public class SWTUtil {
 	 * @param button	the button for which to set the dimension hint
 	 */		
 	public static void setButtonDimensionHint(Button button) {
-		Assert.isNotNull(button);
+		assert button != null;
 		Object gd= button.getLayoutData();
 		if (gd instanceof GridData) {
 			((GridData)gd).widthHint= getButtonWidthHint(button);	

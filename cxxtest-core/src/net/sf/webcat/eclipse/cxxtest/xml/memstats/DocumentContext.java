@@ -28,7 +28,7 @@ import net.sf.webcat.eclipse.cxxtest.xml.ElementContext;
 
 public class DocumentContext extends ElementContext
 {
-	private Vector leaks;
+	private Vector<IMemWatchLeak> leaks;
 	
 	private MemWatchInfo summary;
 
@@ -36,7 +36,7 @@ public class DocumentContext extends ElementContext
 	
 	public DocumentContext()
 	{
-		leaks = new Vector();
+		leaks = new Vector<IMemWatchLeak>();
 	}
 
 	public ElementContext startElement(String uri, String localName,
@@ -55,8 +55,7 @@ public class DocumentContext extends ElementContext
 
 	public IMemWatchLeak[] getLeaks()
 	{
-		return (IMemWatchLeak[])leaks.toArray(
-				new IMemWatchLeak[leaks.size()]);
+		return leaks.toArray(new IMemWatchLeak[leaks.size()]);
 	}
 
 	public void setSummary(MemWatchInfo info)

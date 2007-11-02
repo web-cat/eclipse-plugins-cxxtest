@@ -22,7 +22,7 @@ public class StackTraceAssertion implements ICxxTestAssertion
 	
 	private String message;
 	
-	private Vector stackTrace;
+	private Vector<ICxxTestStackFrame> stackTrace;
 	
 	private int lineNumber;
 
@@ -34,7 +34,7 @@ public class StackTraceAssertion implements ICxxTestAssertion
 
 		parent.addAssertion(this);
 		
-		stackTrace = new Vector();
+		stackTrace = new Vector<ICxxTestStackFrame>();
 	}
 
 	public String getMessage(boolean includeLine)
@@ -49,9 +49,9 @@ public class StackTraceAssertion implements ICxxTestAssertion
 			realArgs[0] = "";
 		
 		if(status == ICxxTestBase.STATUS_WARNING)
-			return MessageFormat.format(MSG_WARNING, realArgs);
+			return MessageFormat.format(MSG_WARNING, (Object[])realArgs);
 		else
-			return MessageFormat.format(MSG_FAILED_TEST, realArgs);
+			return MessageFormat.format(MSG_FAILED_TEST, (Object[])realArgs);
 	}
 
 	public void setMessage(String msg)

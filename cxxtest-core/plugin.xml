@@ -81,14 +81,13 @@
    <extension
          point="org.eclipse.ui.propertyPages">
       <page
-            adaptable="true"
             class="net.sf.webcat.eclipse.cxxtest.properties.CxxTestPropertyPage"
             id="net.sf.webcat.eclipse.cxxtest.properties"
-            name="CxxTest"
-            objectClass="org.eclipse.core.resources.IProject">
-         <filter
-               name="nature"
-               value="org.eclipse.cdt.core.ccnature"/>
+            name="CxxTest">
+			<enabledWhen>
+				<instanceof value="org.eclipse.core.resources.IProject" />
+			</enabledWhen>
+         <filter name="nature" value="org.eclipse.cdt.core.ccnature"/>
       </page>
    </extension>
    <extension
@@ -103,7 +102,54 @@
    </extension>
    <extension
          point="net.sf.webcat.eclipse.cxxtest.extraProjectOptions">
-      <extraProjectOptions class="net.sf.webcat.eclipse.cxxtest.internal.options.FrameworkProjectOptions"/>
+      <extraProjectOptions
+            id="net.sf.webcat.eclipse.cxxtest.frameworkIncludeOptions">
+         <optionSet
+               version="1.4.0">
+            <enablement>
+               <tool
+                     superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
+                  <includesOption
+                        id="gnu.cpp.compiler.option.include.paths">
+                     <path
+                           pluginId="net.sf.webcat.eclipse.cxxtest.framework"
+                           relativePath="cxxtest">
+                     </path>
+                  </includesOption>
+               </tool>
+            </enablement>
+         </optionSet>
+      </extraProjectOptions>
+   </extension>
+   <extension
+         point="org.eclipse.cdt.core.templates">
+      <template
+            filterPattern=".*"
+            id="net.sf.webcat.eclipse.cxxtest.templates.CxxTestProject"
+            location="$nl$/cdt-templates/CxxTestProject/template.xml"
+            projectType="org.eclipse.cdt.build.core.buildArtefactType.exe">
+      </template>
+   </extension>
+   <extension
+         point="org.eclipse.cdt.core.templateAssociations">
+      <template
+            id="net.sf.webcat.eclipse.cxxtest.templates.CxxTestProject">
+            <toolChain id="cdt.managedbuild.toolchain.gnu.mingw.base"/>
+            <toolChain id="cdt.managedbuild.toolchain.gnu.cygwin.base"/>
+            <toolChain id="cdt.managedbuild.toolchain.gnu.base"/>
+            <toolChain id="cdt.managedbuild.toolchain.gnu.macosx.base"/>
+            <toolChain id="cdt.managedbuild.toolchain.gnu.solaris.base"/>
+      </template>
+   </extension>
+   <extension
+         point="org.eclipse.cdt.core.templateProcessTypes">
+      <processType
+            name="AddCxxTestNature"
+            processRunner="net.sf.webcat.eclipse.cxxtest.templates.AddCxxTestNatureProcessRunner">
+         <simple
+               name="projectName">
+         </simple>
+      </processType>
    </extension>
 
 </plugin>

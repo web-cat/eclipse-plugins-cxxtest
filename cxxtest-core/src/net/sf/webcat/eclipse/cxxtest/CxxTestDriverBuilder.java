@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import net.sf.webcat.eclipse.cxxtest.options.IExtraOptionsUpdater;
+
 import org.eclipse.cdt.core.CCorePlugin;
 import org.eclipse.cdt.core.model.ICProject;
 import org.eclipse.cdt.managedbuilder.core.IConfiguration;
@@ -36,14 +38,16 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.swt.widgets.Display;
 
 /**
  * This builder iterates through the classes in the C++ project, determines
  * which ones represent CxxTest test suites, and generates the test runner
  * source file.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  * @author Stephen Edwards  (Virginia Tech Computer Science)
  */
 public class CxxTestDriverBuilder extends IncrementalProjectBuilder
@@ -53,10 +57,33 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 	 * project DOM, collects the test cases, and builds the test runner source
 	 * file.
 	 */
+	@SuppressWarnings("unchecked")
 	protected IProject[] build(int kind, Map args, IProgressMonitor monitor)
 			throws CoreException
 	{
-		IProject project = getProject();
+		final IProject project = getProject();
+		ICProject cproject = CCorePlugin.getDefault().getCoreModel().create(project);
+
+		// Check to see if the latest version of project options handlers
+		// currently loaded is more recent than the version of project options
+		// recorded in the project. If so, ask the user if the project should
+		// be upgraded.
+		final IExtraOptionsUpdater updater = CxxTestPlugin.getDefault().getExtraOptionsUpdater();
+
+		if(updater.isUpdateNeeded(project))
+		{
+			Display.getDefault().syncExec(new Runnable() {
+				public void run()
+                {
+					boolean result = MessageDialog.openQuestion(null,
+							"Upgrade Project Settings",
+							"This project was created with an older version of CxxTest. Would you like to upgrade its settings to the current version?\n\nIf you choose \"No\", the project will likely not compile properly.");
+
+					if(result)
+						updater.updateOptions(project);
+                }
+			});
+		}
 
 		if(!checkForRebuild())
 		{
@@ -64,8 +91,6 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 			monitor.done();
 			return null;
 		}
-
-		ICProject cproject = CCorePlugin.getDefault().getCoreModel().create(project);
 
 		monitor.beginTask("Generating CxxTest Driver", 3);
 

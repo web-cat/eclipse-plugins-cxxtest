@@ -3,32 +3,58 @@
 <plugin>
 
      <extension
-         point="org.eclipse.ui.newWizards">
-      <wizard
-            finalPerspective="net.sf.webcat.eclipse.perspective.cxx.VTCSCxxPerspective"
-            class="net.sf.webcat.eclipse.cxxtest.wizards.NewCxxTestProjectWizard"
-            icon="icons/newmngcc_app.gif"
-            category="org.eclipse.cdt.ui.newCCWizards"
-            project="true"
-            preferredPerspectives="net.sf.webcat.eclipse.perspective.cxx.VTCSCxxPerspective,org.eclipse.cdt.ui.CPerspective"
-            name="Managed Make C++ Project w/ CxxTest"
-            id="net.sf.webcat.eclipse.cxxtest.wizards.StdCCWizard"/>
-   </extension>
-     <extension
            point="org.eclipse.ui.newWizards">
         <wizard
               category="org.eclipse.cdt.ui.newCCWizards"
-              class="net.sf.webcat.eclipse.cxxtest.wizards.NewCxxTestSuiteWizard"
-              hasPages="true"
+              finalPerspective="org.eclipse.cdt.ui.CPerspective"
               icon="icons/new_testcase.gif"
               id="net.sf.webcat.eclipse.cxxtest.wizards.NewCxxTestSuiteWizard"
-              name="CxxTest Suite"
-              project="false"/>
+              name="CxxTest Suite">
+         <class class="net.sf.webcat.eclipse.cxxtest.wizards.NewCxxTestSuiteWizard">
+            <parameter
+                  name="cfile"
+                  value="true">
+            </parameter>
+         </class>
+         </wizard>
      </extension>
      <extension
            point="org.eclipse.ui.perspectiveExtensions">
         <perspectiveExtension targetID="org.eclipse.cdt.ui.CPerspective">
            <newWizardShortcut id="net.sf.webcat.eclipse.cxxtest.wizards.NewCxxTestSuiteWizard"/>
         </perspectiveExtension>
+     </extension>
+     <extension
+           point="org.eclipse.ui.navigator.viewer">
+        <viewerContentBinding
+              viewerId="org.eclipse.ui.navigator.ProjectExplorer">
+           <includes>
+              <contentExtension
+                    pattern="net.sf.webcat.eclipse.cxxtest.wizards.*">
+              </contentExtension>
+           </includes>
+        </viewerContentBinding>
+     </extension>
+     <extension
+           point="org.eclipse.ui.navigator.navigatorContent">
+        <commonWizard
+              associatedExtensionId="org.eclipse.cdt.ui.navigator.content"
+              menuGroupId="org.eclipse.cdt.ui"
+              type="new"
+              wizardId="net.sf.webcat.eclipse.cxxtest.wizards.NewCxxTestSuiteWizard">
+           <enablement>
+              <or>
+                 <instanceof
+                       value="org.eclipse.cdt.core.model.ICElement">
+                 </instanceof>
+                 <adapt
+                       type="org.eclipse.core.resources.IProject">
+                    <test
+                          property="org.eclipse.core.resources.projectNature"
+                          value="org.eclipse.cdt.core.ccnature">
+                    </test>
+                 </adapt>
+              </or></enablement>
+        </commonWizard>
      </extension>
 </plugin>

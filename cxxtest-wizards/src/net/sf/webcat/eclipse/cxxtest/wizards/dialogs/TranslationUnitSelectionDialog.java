@@ -28,10 +28,14 @@ import org.eclipse.ui.dialogs.ElementTreeSelectionDialog;
 
 public class TranslationUnitSelectionDialog extends ElementTreeSelectionDialog {
     
-    private static final Class[] VALIDATOR_CLASSES = new Class[] { ITranslationUnit.class };
+    private static final Class<?>[] VALIDATOR_CLASSES = new Class[] {
+    	ITranslationUnit.class };
+
     private static final TypedElementSelectionValidator fValidator = new TypedElementSelectionValidator(VALIDATOR_CLASSES, false);
     
-    private static final Class[] FILTER_CLASSES = new Class[] { ICModel.class, ICContainer.class, ICProject.class, ITranslationUnit.class };
+    private static final Class<?>[] FILTER_CLASSES = new Class[] {
+    	ICModel.class, ICContainer.class, ICProject.class, ITranslationUnit.class };
+
     private static final ViewerFilter fFilter = new TypedViewerFilter(FILTER_CLASSES) {
         public boolean select(Viewer viewer, Object parent, Object element) {
        		return super.select(viewer, parent, element);

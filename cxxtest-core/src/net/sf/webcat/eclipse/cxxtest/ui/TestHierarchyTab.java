@@ -98,7 +98,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * 
  * Greatly influenced by the same JUnit class.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class TestHierarchyTab extends TestRunTab
 	implements IMenuListener, ISelectionProvider
@@ -651,7 +651,8 @@ public class TestHierarchyTab extends TestRunTab
 	{
 		try
 		{
-			HashMap attrs = new HashMap();
+			HashMap<String, Object> attrs = new HashMap<String, Object>();
+
 			attrs.put(IMarker.MESSAGE, assertion.getMessage(false));
 			attrs.put(IMarker.LINE_NUMBER,
 					new Integer(assertion.getLineNumber()));

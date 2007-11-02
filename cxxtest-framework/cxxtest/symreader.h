@@ -21,7 +21,7 @@
 /**
  *  symreader.h
  *
- *  Created by Tony Allowatt on 7/23/06.
+ *  Created by Tony Allevato on 7/23/06.
  *
  *  Interface for the symbol reader. Since BFD is incomplete on MacOS X, we use
  *  a common interface with an appropriate implementation on OS X (using Mach-O
@@ -97,7 +97,7 @@ extern void symreader_cleanup();
 /**
  *  symreader.h
  *
- *  Created by Tony Allowatt on 7/23/06.
+ *  Created by Tony Allevato on 7/23/06.
  *
  *  Interface for the symbol reader. Since BFD is incomplete on MacOS X, we use
  *  a common interface with an appropriate implementation on OS X (using Mach-O

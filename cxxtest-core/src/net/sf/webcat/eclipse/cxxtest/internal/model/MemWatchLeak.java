@@ -32,7 +32,7 @@ public class MemWatchLeak implements IMemWatchLeak
 	
 	private boolean array;
 
-	private Vector stackTrace;
+	private Vector<ICxxTestStackFrame> stackTrace;
 
 	public MemWatchLeak(Attributes attributes)
 	{
@@ -44,7 +44,7 @@ public class MemWatchLeak implements IMemWatchLeak
 		else
 			array = false;
 		
-		stackTrace = new Vector();
+		stackTrace = new Vector<ICxxTestStackFrame>();
 	}
 
 	public void addStackFrame(ICxxTestStackFrame frame)

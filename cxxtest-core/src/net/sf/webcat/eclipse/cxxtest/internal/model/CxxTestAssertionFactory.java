@@ -29,7 +29,7 @@ import org.xml.sax.Attributes;
  * Creates an appropriate object of type ICxxTestAssertion based on the tag
  * type and attributes from the XML results file.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class CxxTestAssertionFactory
 {
@@ -58,14 +58,14 @@ public class CxxTestAssertionFactory
 
 		public String getMessage(boolean includeLine)
 		{
-			String[] realArgs = (String[])args.clone();
+			String[] realArgs = args.clone();
 
 			if(includeLine)
 				realArgs[0] = " (line " + realArgs[0] + ")";
 			else
 				realArgs[0] = "";
 
-			return MessageFormat.format(message, realArgs);
+			return MessageFormat.format(message, (Object[])realArgs);
 		}
 
 		public ICxxTestBase getParent()

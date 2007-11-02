@@ -20,7 +20,7 @@ package net.sf.webcat.eclipse.cxxtest.model;
 /**
  * Represents a CxxTest suite method.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public interface ICxxTestMethod extends ICxxTestSuiteChild
 {

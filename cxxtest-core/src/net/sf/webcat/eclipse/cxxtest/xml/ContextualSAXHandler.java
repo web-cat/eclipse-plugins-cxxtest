@@ -34,7 +34,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * document and put appropriate attributes/children/content handling in that
  * context class.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class ContextualSAXHandler extends DefaultHandler
 {
@@ -60,7 +60,7 @@ public class ContextualSAXHandler extends DefaultHandler
 		}
 	}
 
-	private Stack contextStack;
+	private Stack<ContextEntry> contextStack;
 	
 	private Locator locator;
 	
@@ -70,7 +70,7 @@ public class ContextualSAXHandler extends DefaultHandler
 	{
 		this.initialContext = initialContext;
 
-		contextStack = new Stack();
+		contextStack = new Stack<ContextEntry>();
 	}
 
 	public void setDocumentLocator(Locator locator)
@@ -109,7 +109,7 @@ public class ContextualSAXHandler extends DefaultHandler
 	public void startElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException
 	{
-		ContextEntry entry = (ContextEntry)contextStack.peek();
+		ContextEntry entry = contextStack.peek();
 		ElementContext newContext = null;
 		
 		try
@@ -142,10 +142,10 @@ public class ContextualSAXHandler extends DefaultHandler
 
 		boolean first = true;
 
-		Enumeration e = contextStack.elements();
+		Enumeration<ContextEntry> e = contextStack.elements();
 		while(e.hasMoreElements())
 		{
-			ContextEntry entry = (ContextEntry)e.nextElement();
+			ContextEntry entry = e.nextElement();
 			
 			if(first)
 				first = false;
@@ -166,7 +166,7 @@ public class ContextualSAXHandler extends DefaultHandler
 			throw new SAXParseException(E_PREMATURE_EMPTY, locator);
 		}
 
-		ContextEntry entry = (ContextEntry)contextStack.pop();
+		ContextEntry entry = contextStack.pop();
 		
 		try
 		{
@@ -181,7 +181,7 @@ public class ContextualSAXHandler extends DefaultHandler
 	public void characters(char[] chars, int start, int length)
 	throws SAXException
 	{
-		ContextEntry entry = (ContextEntry)contextStack.peek();
+		ContextEntry entry = contextStack.peek();
 		
 		try
 		{

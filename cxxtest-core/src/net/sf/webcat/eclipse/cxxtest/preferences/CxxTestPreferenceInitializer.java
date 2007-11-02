@@ -25,7 +25,7 @@ import org.eclipse.jface.preference.IPreferenceStore;
 /**
  * Provides default values for all the preferences used in this plug-in.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  * @author Stephen Edwards (Virginia Tech Computer Science)
  */
 public class CxxTestPreferenceInitializer extends AbstractPreferenceInitializer

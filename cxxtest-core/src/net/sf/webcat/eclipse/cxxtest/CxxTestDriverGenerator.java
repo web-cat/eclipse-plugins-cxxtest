@@ -53,7 +53,7 @@ import org.eclipse.core.runtime.Path;
  *  - user-specified header files to be included by the generated source
  *  - generating the source from a template file
  *
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class CxxTestDriverGenerator
 {

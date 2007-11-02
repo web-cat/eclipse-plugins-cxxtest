@@ -29,7 +29,7 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 /**
  * The preference page used to edit CxxTest settings.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class CxxTestPreferencePage extends FieldEditorPreferencePage
 	implements IWorkbenchPreferencePage

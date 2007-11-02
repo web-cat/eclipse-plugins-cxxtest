@@ -24,7 +24,7 @@ package net.sf.webcat.eclipse.cxxtest.model;
  * raising a signal, for instance), but it could be expanded to other
  * types of errors in the future.
  *  
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public interface ICxxTestSuiteError extends ICxxTestSuiteChild
 {

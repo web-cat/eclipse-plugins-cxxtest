@@ -76,7 +76,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * A tab that displays a summary of memory allocation and leaks that occurred
  * during the program execution. 
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class TestMemoryTab extends TestRunTab
 	implements ISelectionProvider

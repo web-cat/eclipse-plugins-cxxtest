@@ -26,11 +26,11 @@ import net.sf.webcat.eclipse.cxxtest.xml.ElementContext;
 
 public class DocumentContext extends ElementContext
 {
-	private Vector suites;
+	private Vector<ICxxTestSuite> suites;
 	
 	public DocumentContext()
 	{
-		suites = new Vector();
+		suites = new Vector<ICxxTestSuite>();
 	}
 
 	public ElementContext startElement(String uri, String localName,
@@ -49,7 +49,6 @@ public class DocumentContext extends ElementContext
 
 	public ICxxTestSuite[] getSuites()
 	{
-		return (ICxxTestSuite[])suites.toArray(
-				new ICxxTestSuite[suites.size()]);
+		return suites.toArray(new ICxxTestSuite[suites.size()]);
 	}
 }

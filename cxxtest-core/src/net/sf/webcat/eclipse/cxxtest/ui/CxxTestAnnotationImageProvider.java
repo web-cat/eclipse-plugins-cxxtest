@@ -35,7 +35,7 @@ import org.eclipse.ui.texteditor.MarkerAnnotation;
  * A class that provides the left margin images for CxxTest markers/annotations
  * based on the status code of the assertion they represent.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class CxxTestAnnotationImageProvider implements IAnnotationImageProvider
 {

@@ -3,7 +3,54 @@
 <fragment>
    <extension
          point="net.sf.webcat.eclipse.cxxtest.extraProjectOptions">
-      <extraProjectOptions class="net.sf.webcat.eclipse.cxxtest.macosx.ExtraProjectOptions"/>
+      <extraProjectOptions
+            id="net.sf.webcat.eclipse.cxxtest.macosx.stackTracingOptions">
+         <optionSet
+               version="1.4.0">
+            <enablement
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledCondition"
+                  configurationFilter="Debug">
+               <tool
+                     superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
+                  <splitStringOption
+                        id="gnu.cpp.compiler.option.other.other">
+                     <item
+                           value="-finstrument-functions">
+                     </item>
+                  </splitStringOption>
+               </tool>
+               <tool
+                     superClassId="cdt.managedbuild.tool.macosx.cpp.linker">
+                  <pathListOption
+                        id="macosx.cpp.link.option.paths">
+                     <path
+                           pluginId="net.sf.webcat.eclipse.cxxtest.macosx"
+                           relativePath="lib">
+                     </path>
+                  </pathListOption>
+                  <librariesOption
+                        id="macosx.cpp.link.option.libs">
+                     <item
+                           value="objc">
+                     </item>
+                     <item
+                           value="symreader">
+                     </item>
+                  </librariesOption>
+                  <splitStringOption
+                        id="macosx.cpp.link.option.flags">
+                     <path
+                           prefix="-F"
+                           relativePath="/System/Library/PrivateFrameworks">
+                     </path>
+                     <item
+                           value="-framework vmutils">
+                     </item>
+                  </splitStringOption>
+               </tool>
+            </enablement>
+         </optionSet>
+      </extraProjectOptions>
    </extension>
 
 </fragment>

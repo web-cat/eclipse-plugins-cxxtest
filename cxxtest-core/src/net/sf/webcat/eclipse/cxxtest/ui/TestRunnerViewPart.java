@@ -77,7 +77,7 @@ import org.eclipse.ui.part.ViewPart;
  * 
  * Influenced greatly by the same JUnit class.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class TestRunnerViewPart extends ViewPart
 {
@@ -252,7 +252,7 @@ public class TestRunnerViewPart extends ViewPart
 
 	private ICProject launchedProject;
 
-	protected Vector testRunTabs = new Vector();
+	protected Vector<TestRunTab> testRunTabs = new Vector<TestRunTab>();
 
 	private TestRunTab activeRunTab;
 	
@@ -460,7 +460,7 @@ public class TestRunnerViewPart extends ViewPart
 		if(tabFolder.getItemCount() > 0)
 		{
 			tabFolder.setSelection(0);				
-			activeRunTab = (TestRunTab)testRunTabs.firstElement();
+			activeRunTab = testRunTabs.firstElement();
 		}
 				
 		tabFolder.addSelectionListener(new SelectionAdapter() {
@@ -475,9 +475,9 @@ public class TestRunnerViewPart extends ViewPart
 
 	private void testTabChanged(SelectionEvent event)
 	{
-		for(Enumeration e = testRunTabs.elements(); e.hasMoreElements(); )
+		for(Enumeration<TestRunTab> e = testRunTabs.elements(); e.hasMoreElements(); )
 		{
-			TestRunTab v = (TestRunTab)e.nextElement();
+			TestRunTab v = e.nextElement();
 			if(((CTabFolder)event.widget).getSelection().getText() == v.getName())
 			{
 //				v.setSelectedTest(activeRunTab.getSelectedTestObject());
@@ -617,9 +617,9 @@ public class TestRunnerViewPart extends ViewPart
 	{
 		launchedProject = project;
 
-		for(Enumeration e = testRunTabs.elements(); e.hasMoreElements(); )
+		for(Enumeration<TestRunTab> e = testRunTabs.elements(); e.hasMoreElements(); )
 		{
-			TestRunTab v = (TestRunTab)e.nextElement();
+			TestRunTab v = e.nextElement();
 			v.testRunStarted(project, launch);
 		}
 
@@ -652,9 +652,9 @@ public class TestRunnerViewPart extends ViewPart
 		currentLaunch = null;
 		stopTest();
 
-		for(Enumeration e = testRunTabs.elements(); e.hasMoreElements(); )
+		for(Enumeration<TestRunTab> e = testRunTabs.elements(); e.hasMoreElements(); )
 		{
-			TestRunTab v = (TestRunTab)e.nextElement();
+			TestRunTab v = e.nextElement();
 			v.testRunEnded();
 		}
 	}

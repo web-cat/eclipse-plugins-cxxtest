@@ -23,7 +23,7 @@ import net.sf.webcat.eclipse.cxxtest.model.ICxxTestStackFrame;
  * Implementers of this interface are tag contexts that need to consume
  * (contain) CxxTest stack trace objects.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public interface IStackFrameConsumer
 {

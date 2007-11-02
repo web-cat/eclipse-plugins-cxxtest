@@ -20,7 +20,7 @@ package net.sf.webcat.eclipse.cxxtest;
 /**
  * Various constants used throughout the CxxTest plug-in.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public interface ICxxTestConstants
 {

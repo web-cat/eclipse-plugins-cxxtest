@@ -20,7 +20,7 @@ package net.sf.webcat.eclipse.cxxtest.model;
 /**
  * The base class for all CxxTest results.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public interface ICxxTestBase
 {

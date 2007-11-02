@@ -3,7 +3,53 @@
 <fragment>
    <extension
          point="net.sf.webcat.eclipse.cxxtest.extraProjectOptions">
-      <extraProjectOptions class="net.sf.webcat.eclipse.cxxtest.bfd.ExtraProjectOptions"/>
+      <extraProjectOptions
+            id="net.sf.webcat.eclipse.cxxtest.bfd.stackTracingOptions">
+         <optionSet
+               version="1.4.0">
+            <enablement
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.bfd.StackTraceEnabledCondition"
+                  configurationFilter="Debug">
+               <tool
+                     superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
+                  <includesOption
+                        id="gnu.cpp.compiler.option.include.paths">
+                     <path
+                           pluginId="net.sf.webcat.eclipse.cxxtest.bfd"
+                           relativePath="symreader-src">
+                     </path>
+                  </includesOption>
+                  <splitStringOption
+                        id="gnu.cpp.compiler.option.other.other">
+                     <item
+                           value="-finstrument-functions">
+                     </item>
+                  </splitStringOption>
+                  <definedSymbolsOption
+                        id="gnu.cpp.compiler.option.preprocessor.def">
+                     <item
+                           value="CXXTEST_INCLUDE_SYMREADER_DIRECTLY">
+                     </item>
+                  </definedSymbolsOption>
+               </tool>
+               <tool
+                     superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
+                  <librariesOption
+                        id="gnu.cpp.link.option.libs">
+                     <item
+                           value="bfd">
+                     </item>
+                     <item
+                           value="iberty">
+                     </item>
+                     <item
+                           value="intl">
+                     </item>
+                  </librariesOption>
+               </tool>
+            </enablement>
+         </optionSet>
+      </extraProjectOptions>
    </extension>
 
 </fragment>

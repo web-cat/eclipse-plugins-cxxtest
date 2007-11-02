@@ -46,7 +46,7 @@ import org.eclipse.core.runtime.CoreException;
  * information about the CxxTest test suites that are implemented in the
  * project.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class TestCaseVisitor implements ICElementVisitor
 {
@@ -58,7 +58,7 @@ public class TestCaseVisitor implements ICElementVisitor
 	/**
 	 * A vector containing all the test suites processed.
 	 */
-	private Vector testSuites = new Vector();
+	private Vector<CxxTestSuiteInfo> testSuites = new Vector<CxxTestSuiteInfo>();
 
 	/**
 	 * A regular expression that matches the name of the CxxTest suite
@@ -89,9 +89,9 @@ public class TestCaseVisitor implements ICElementVisitor
 	 * (sometimes the tree traversal will encounter the same element twice,
 	 * may have to do with resource deltas?)
 	 */
-	private Set generatedSuites = new HashSet();
+	private Set<IStructure> generatedSuites = new HashSet<IStructure>();
 
-	private Set possibleTestFiles = new HashSet();
+	private Set<ITranslationUnit> possibleTestFiles = new HashSet<ITranslationUnit>();
 
 	private String driverFileName = null;
 
@@ -213,14 +213,12 @@ public class TestCaseVisitor implements ICElementVisitor
 	 */
 	public CxxTestSuiteInfo[] getTestSuites()
 	{
-		return (CxxTestSuiteInfo[])testSuites.toArray(
-				new CxxTestSuiteInfo[testSuites.size()]);
+		return testSuites.toArray(new CxxTestSuiteInfo[testSuites.size()]);
 	}
 
 	public ITranslationUnit[] getPossibleTestFiles()
 	{
-		return (ITranslationUnit[])possibleTestFiles.toArray(
-				new ITranslationUnit[possibleTestFiles.size()]);
+		return possibleTestFiles.toArray(new ITranslationUnit[possibleTestFiles.size()]);
 	}
 
 	/**

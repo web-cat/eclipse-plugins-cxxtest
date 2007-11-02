@@ -302,7 +302,7 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 
 		private ICElement[] getChildrenOfElement(IParent element)
 		{
-			Vector vec = new Vector();
+			Vector<ICElement> vec = new Vector<ICElement>();
 			
 			try
 			{
@@ -336,8 +336,7 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 				e.printStackTrace();
 			}
 
-			return (ICElement[])vec.toArray(
-					new ICElement[vec.size()]);			
+			return vec.toArray(new ICElement[vec.size()]);			
 		}
 
 		/*

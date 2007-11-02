@@ -35,12 +35,12 @@ public class CxxTestSuiteError implements ICxxTestSuiteError
 
 	private String msg;
 	
-	private Vector stackTrace;
+	private Vector<ICxxTestStackFrame> stackTrace;
 
 	public CxxTestSuiteError(CxxTestSuite suite, Attributes attributes)
 	{
 		this.suite = suite;
-		stackTrace = new Vector();
+		stackTrace = new Vector<ICxxTestStackFrame>();
 
 		errorType = attributes.getValue("type");
 		

@@ -28,7 +28,7 @@ import org.xml.sax.Attributes;
 
 public class CxxTestSuite implements ICxxTestSuite
 {
-	private Vector children;
+	private Vector<ICxxTestSuiteChild> children;
 
 	private String name;
 	
@@ -38,7 +38,7 @@ public class CxxTestSuite implements ICxxTestSuite
 
 	public CxxTestSuite(Attributes attributes)
 	{
-		children = new Vector();
+		children = new Vector<ICxxTestSuiteChild>();
 
 		name = attributes.getValue("name");
 		file = attributes.getValue("file");
@@ -66,20 +66,18 @@ public class CxxTestSuite implements ICxxTestSuite
 	{
 		if(!onlyTests)
 		{
-			return (ICxxTestSuiteChild[])children.toArray(
-					new ICxxTestSuiteChild[children.size()]);
+			return children.toArray(new ICxxTestSuiteChild[children.size()]);
 		}
 		else
 		{
-			Vector vec = new Vector();
+			Vector<ICxxTestSuiteChild> vec = new Vector<ICxxTestSuiteChild>();
 			for(int i = 0; i < children.size(); i++)
 			{
 				if(children.get(i) instanceof ICxxTestMethod)
 					vec.add(children.get(i));
 			}
 			
-			return (ICxxTestSuiteChild[])vec.toArray(
-					new ICxxTestSuiteChild[vec.size()]);
+			return vec.toArray(new ICxxTestSuiteChild[vec.size()]);
 		}
 	}
 	
@@ -99,7 +97,7 @@ public class CxxTestSuite implements ICxxTestSuite
 
 		for(int i = 0; i < children.size(); i++)
 		{
-			ICxxTestSuiteChild child = (ICxxTestSuiteChild)children.get(i);
+			ICxxTestSuiteChild child = children.get(i);
 			if(child.getStatus() > maxStatus)
 				maxStatus = child.getStatus();
 		}

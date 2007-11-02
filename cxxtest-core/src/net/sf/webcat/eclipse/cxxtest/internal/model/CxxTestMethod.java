@@ -30,7 +30,7 @@ public class CxxTestMethod implements ICxxTestMethod
 {
 	private ICxxTestSuite suite;
 
-	private Vector assertions;
+	private Vector<ICxxTestAssertion> assertions;
 	
 	private String name;
 
@@ -39,7 +39,7 @@ public class CxxTestMethod implements ICxxTestMethod
 	public CxxTestMethod(CxxTestSuite suite, Attributes attributes)
 	{
 		this.suite = suite;
-		assertions = new Vector();
+		assertions = new Vector<ICxxTestAssertion>();
 		
 		suite.addChild(this);
 
@@ -66,7 +66,7 @@ public class CxxTestMethod implements ICxxTestMethod
 
 	public ICxxTestAssertion[] getFailedAssertions()
 	{
-		return (ICxxTestAssertion[])assertions.toArray(new ICxxTestAssertion[assertions.size()]);
+		return assertions.toArray(new ICxxTestAssertion[assertions.size()]);
 	}
 	
 	protected void addAssertion(ICxxTestAssertion assertion)
@@ -80,7 +80,7 @@ public class CxxTestMethod implements ICxxTestMethod
 
 		for(int i = 0; i < assertions.size(); i++)
 		{
-			ICxxTestAssertion test = (ICxxTestAssertion)assertions.get(i);
+			ICxxTestAssertion test = assertions.get(i);
 			if(test.getStatus() > maxStatus)
 				maxStatus = test.getStatus();
 		}

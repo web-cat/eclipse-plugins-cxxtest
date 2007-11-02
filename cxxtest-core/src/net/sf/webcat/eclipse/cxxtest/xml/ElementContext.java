@@ -23,7 +23,7 @@ import org.xml.sax.SAXException;
 /**
  * Represents a tag context used by the stack-based contextual SAX parser.
  *  
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public abstract class ElementContext
 {

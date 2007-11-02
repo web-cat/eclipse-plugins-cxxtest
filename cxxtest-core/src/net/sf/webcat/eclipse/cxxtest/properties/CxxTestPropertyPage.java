@@ -37,7 +37,7 @@ import org.eclipse.ui.IWorkbenchPropertyPage;
  * Future enhancements may allow the user to include/exclude individual tests
  * from execution on this page.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class CxxTestPropertyPage extends PreferencePage implements
 		IWorkbenchPropertyPage

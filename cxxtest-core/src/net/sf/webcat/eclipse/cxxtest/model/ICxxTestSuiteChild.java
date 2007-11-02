@@ -22,7 +22,7 @@ package net.sf.webcat.eclipse.cxxtest.model;
  * child of a CxxTest test suite. Currently this is used to represent test
  * methods and test suite initialization errors.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public interface ICxxTestSuiteChild extends ICxxTestBase
 {

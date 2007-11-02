@@ -11,30 +11,32 @@
 
 <h1>Creating a New CxxTest Project</h1>
 
-<p><img class="right" src="images/NewProjectWizard.gif" alt="New Project
-Wizard"/>With the CxxTest plug-ins properly installed, you should see a new
-entry available in the <b>New Project</b> wizard (you may need to expand the
-<b>C/C++</b> branch):</p>
+<p><img class="right" src="images/NewProjectWizard.gif" alt="New C++ Project
+Wizard"/>To create a CxxTest project in Eclipse, select <b>File / New / Project...</b>
+from the main menu, expand the <b>C++</b> branch of the tree, then select
+<b>C++ Project</b> and click <b>Next</b>.</p>
 
-<p>To create a project that supports CxxTest test case development, choose the <b>Managed Make
-C++ Project w/ CxxTest</b> option and click <b>Next</b>.</p>
+<p>If the CxxTest plug-ins are properly
+installed, you should be able to expand the <b>Executable</b> branch under 
+"Project types:" and see an entry labeled <b>Empty Project w/ CxxTest</b>.
+Select this option, and enter the name of the new project in the field at the
+top of the wizard &mdash; for this tutorial, enter <code>BankAccount</code>.</p>
 
-<div class="caution"><b>NOTE:</b> If you create a project without the CxxTest
-option, it is still possible to enable CxxTest for the project later by viewing
-the project properties page, selecting the <b>CxxTest</b> category, and then
-checking the box labeled "Enable CxxTest for this project".</div>
-
-<p>Enter the name of the new project on the next page&mdash;for this tutorial, enter
-<code>BankAccount</code>.  You can click <b>Finish</b> at this point&mdash;the following pages
-of the wizard have advanced options, and we will want to keep the default settings.</p>
+<p>You can now click <b>Finish</b> at this point to create the project &mdash;
+the remaining pages of the wizard have advanced options, and we will want to
+keep the default settings.</p>
 
 <p>After the project has been created, Eclipse may ask you, <i>"This kind of project is associated
-with the VT CS C/C++ Perspective. Do you want to switch to this perspective now?"</i>  Click <b>Yes</b>
-here&mdash;the VT CS C/C++ Perspective is a modified version of the standard Eclipse C/C++
-Perspective that removes much of the clutter from the workspace.</p>
+with the C/C++ Perspective. Do you want to switch to this perspective now?"</i>  Click <b>Yes</b>
+here.</p>
+
+<p class="caution"><b>NOTE:</b> If you create a project without the CxxTest
+option, it is still possible to enable CxxTest for the project later by viewing
+the project properties page, selecting the <b>CxxTest</b> category, and then
+checking the box labeled "Enable CxxTest for this project".</p>
 
 <h1>Creating the Class to Test</h1>
-<p>The new project should appear in your Eclipse workspace, in the <b>C/C++ Projects</b> tab.
+<p>The new project should appear in your Eclipse workspace, in the <b>Project Explorer</b> tab.
 Before we can start writing test cases, clearly we need a class that we want to test.  For
 this tutorial, consider a simple bank account class that holds a name and a dollar amount, and
 supports the following operations:</p>
@@ -48,7 +50,7 @@ supports the following operations:</p>
 	<li>Access a value specifying whether the account is <b>overdrawn</b> (negative balance)</li>
 </ul>
 
-<p><img class="right" src="images/NewFile.gif" alt="Creating a new file from the context menu"/>
+<p><img class="right" src="images/NewHeaderFile.gif" alt="Creating a new header file from the context menu"/>
 The bank account class we will be using is very limited.  We store an integer dollar amount instead
 of dollars and cents or fractions of a dollar, because a floating-point type would have problems
 when checking for equality, which we need to be able to do in our test cases to verify that the
@@ -57,131 +59,140 @@ information on floating-point types and the comparison problems that are associa
 </p>
 
 <p>Let's begin by adding the <code>BankAccount</code> class that
-we wish to use in our tests.  Right-click on the top-level project ("BankAccount") in the project
-view, and choose <b>New / File</b> from the popup menu.  In the dialog that appears, type
+we wish to use in our tests.  Right-click on the top-level project ("BankAccount") in the Project
+Explorer, and choose <b>New / Header File</b> from the popup menu.  In the dialog that appears, type
 <code>BankAccount.h</code> as the name of the file and click <b>Finish</b>.</p>
 
 <p>This has created a new <code>BankAccount.h</code> file in the main directory of our project, and
-the file was automatically opened in the editor.  Add the interface for our class by copying and
-pasting the code below into the new file.</p>
+the file was automatically opened in the editor.  You will see that Eclipse has already added a
+few lines of code to the file. These "inclusion guards" are used to prevent a header file from
+being included multiple times while compiling a single C++ source file. Now, add the interface for our
+bank account class by copying and pasting the code below into the new file.</p>
 
 <div class="block"><pre>
 <span class="comment">// BankAccount.h</span>
 
-<span class="keyword">#ifndef</span> BANKACCOUNT_H
-<span class="keyword">#define</span> BANKACCOUNT_H
+<span class="keyword">#ifndef</span> BANKACCOUNT_H_
+<span class="keyword">#define</span> BANKACCOUNT_H_
 
-<span class="keyword">#include</span> &lt;string&gt;
+<span class="keyword">#include</span> <span class="header">&lt;string&gt;</span>
 
-<span class="keyword">class</span> BankAccount
+<span class="keyword">class</span> <span class="classname">BankAccount</span>
 {
 <span class="keyword">private:</span>
-    std::string accountHolder;
-    <span class="keyword">int</span> balance;
+    std::string <span class="field">accountHolder</span>;
+    <span class="keyword">int</span> <span class="field">balance</span>;
     
 <span class="keyword">public:</span>
     <span class="comment">// Constructors</span>
-    BankAccount( <span class="keyword">const char</span>* holder, <span class="keyword">int</span> initialBalance = 0 );
+    <span class="method">BankAccount</span>( <span class="keyword">const char</span>* holder, <span class="keyword">int</span> initialBalance = 0 );
 
     <span class="comment">// Accessors</span>
-    <span class="keyword">int</span> getBalance() <span class="keyword">const</span>;
-    <span class="keyword">bool</span> isOverdrawn() <span class="keyword">const</span>;
+    <span class="keyword">int</span> <span class="method">getBalance</span>() <span class="keyword">const</span>;
+    <span class="keyword">bool</span> <span class="method">isOverdrawn</span>() <span class="keyword">const</span>;
 
     <span class="comment">// Modifiers</span>
-    <span class="keyword">void</span> deposit( <span class="keyword">int</span> value );
-    <span class="keyword">void</span> withdraw( <span class="keyword">int</span> value );
+    <span class="keyword">void</span> <span class="method">deposit</span>( <span class="keyword">int</span> value );
+    <span class="keyword">void</span> <span class="method">withdraw</span>( <span class="keyword">int</span> value );
 };
 
-<span class="keyword">#endif</span> <span class="comment">// BANKACCOUNT_H</span>
+<span class="keyword">#endif</span> <span class="comment">/*BANKACCOUNT_H_*/</span>
 </pre></div>
-<p>Next, we need to add the implementation of these functions.  Create another new file in the
-root of the project, this time called <code>BankAccount.cpp</code>.  Copy the following code
+<p>Next, we need to add the implementation of these functions.  Create new source file in the
+root of the project by right-clicking on the project and choosing <b>New / Source File</b>, and
+call the new file <code>BankAccount.cpp</code>.  Copy the following code
 into this new file.</p>
 <div class="block"><pre>
 <span class="comment">// BankAccount.cpp</span>
 
 <span class="keyword">#include</span> <span class="string">"BankAccount.h"</span>
 
-<span class="keyword">#include</span> &lt;string&gt;
+<span class="keyword">#include</span> <span class="header">&lt;string&gt;</span>
 
 <span class="keyword">using namespace</span> std;
 
 <span class="comment">// Initializes a new account with the specified account holder name
 // and initial balance.  If the initial balance is omitted, it defaults
 // to zero.</span>
-BankAccount::BankAccount( <span class="keyword">const char</span>* holder, <span class="keyword">int</span> initialBalance )
+<span class="method">BankAccount::BankAccount</span>( <span class="keyword">const char</span>* holder, <span class="keyword">int</span> initialBalance )
 {
-    accountHolder = holder;
-    balance = initialBalance;
+    <span class="field">accountHolder</span> = holder;
+    <span class="field">balance</span> = initialBalance;
 }
 
 <span class="comment">// Returns the current balance in the account.</span>
-<span class="keyword">int</span> BankAccount::getBalance() <span class="keyword">const</span>
+<span class="keyword">int</span> <span class="method">BankAccount::getBalance</span>() <span class="keyword">const</span>
 {
-    <span class="keyword">return</span> balance;
+    <span class="keyword">return</span> <span class="field">balance</span>;
 }
 
 <span class="comment">// Returns true if the account is overdrawn (has a negative balance);
 // otherwise, it returns false.</span>
-<span class="keyword">bool</span> BankAccount::isOverdrawn() <span class="keyword">const</span>
+<span class="keyword">bool</span> <span class="method">BankAccount::isOverdrawn</span>() <span class="keyword">const</span>
 {
-    return (balance &lt; 0);
+    return (<span class="field">balance</span> &lt; 0);
 }
 
 <span class="comment">// Adds the specified amount to the balance in the account.</span>
-<span class="keyword">void</span> BankAccount::deposit( <span class="keyword">int</span> value )
+<span class="keyword">void</span> <span class="method">BankAccount::deposit</span>( <span class="keyword">int</span> value )
 {
-    balance += value;
+    <span class="field">balance</span> += value;
 }
 
 <span class="comment">// Subtracts the specified amount from the balance in the account.</span>
-<span class="keyword">void</span> BankAccount::withdraw( <span class="keyword">int</span> value )
+<span class="keyword">void</span> <span class="method">BankAccount::withdraw</span>( <span class="keyword">int</span> value )
 {
-    balance -= value;
+    <span class="field">balance</span> -= value;
 }
 </pre></div>
 
-<div class="caution"><b>CAUTION:</b> As you create and work with your source files, you will notice that
-Eclipse builds your project automatically, and then executes the CxxTest runner, which may result in
-memory-related statistics in the Console view.  This is normal behavior&mdash;Eclipse
-will rebuild your source files on its own as you make changes and save them.</div>
+<p><img class="right" src="images/BuildButton.gif" alt="Build a project by clicking this button on the toolbar"/>
+We now have a complete <code>BankAccount</code> class that we can compile and test.
+Unlike working on Java projects in Eclipse, you must explicitly compile your C++ projects
+each time you make a change to one of your source files. To do this, click on the <b>Build</b>
+button (shaped like a hammer, shown right) in the toolbar.</p>
 
-<p>We now have a complete <code>BankAccount</code> class that we can test.  If you copied the
-code correctly, it should compile without errors, except for the missing <code>_WinMain</code>
-reference mentioned above.</p>
+<p>If you followed this instructions correctly, your project should build without
+errors. Since the test cases in a project are executed each time the project is
+built, the <b>CxxTest</b> view should appear and be empty, reflecting that
+no test cases have yet been written. We will write a test class in the next step.</p>
 
 <h1>Creating the Test Cases</h1>
 
 <p>To create our test cases, we need to add a new <code>.h</code> header file to our
 project that will contain a special class that derives from one in the CxxTest library.
-Right-click on the project root folder and use <b>New / File</b> to create a header named
-<code>BankAccountTest.h</code>.</p>
+A special wizard exists to create test suites; right-click on the project root folder and
+select <b>New / CxxTest Suite</b>.</p>
 
-<p>This new header file will define a class that contains a set of methods that contain
-different test assertions.  There are no set rules on how to organize the tests, but good
-practice would be to define a separate test-case class for each class that you want to test,
-and then group commonly related tests into methods of their own.  The examples below will
-illustrate this.</p>
+<p>In the New CxxTest Suite Wizard, enter <code>BankAccountTests</code> as the name of
+the test suite class that will be generated. You can also choose the header file, if
+any, that contains the class or classes that you wish to test. Click the <b>Browse...</b>
+button to the right of the "Header under test:" field, then expand the <code>BankAccount</code>
+project, select <code>BankAccount.h</code>, and click <b>OK</b>.</p>
 
-<p>There are a couple coding conventions that you must follow when writing test cases.
-A method that is intended to be executed as a test case must have a name that begins with
-<code>test</code>, a return type of <code class="keyword">void</code>, and takes no
-arguments.</p>
+<p>If you click <b>Next</b> at this point, you will be presented with a tree view of
+all of the global functions, classes, and methods that are declared in the header file
+that you chose to test. This allows you to automatically generated function placeholders
+for all of the functions that you wish to write test cases for.  For the purposes of
+this tutorial, we will be writing test cases manually, so click <b>Finish</b> to dismiss
+the wizard.</p>
 
-<p>Begin by adding the following boilerplate code to the new header file.</p>
+<p>The newly generated test suite file should look like the following snippet:</p>
 
 <div class="block"><pre>
-<span class="comment">// BankAccountTest.h</span>
+<span class="keyword">#ifndef</span> BANKACCOUNTTESTS_H_
+<span class="keyword">#define</span> BANKACCOUNTTESTS_H_
 
-<span class="keyword">#include</span> &lt;cxxtest/TestSuite.h&gt;
+<span class="keyword">#include</span> <span class="header">&lt;cxxtest/TestSuite.h&gt;</span>
 
-<span class="keyword">#include</span> <span class="string">"BankAccount.h"</span>
+<span class="keyword">#include</span> <span class="header">"BankAccount.h"</span>
 
-<span class="keyword">class</span> BankAccountTest : <span class="keyword">public</span> CxxTest::TestSuite
+<span class="keyword">class</span> <span class="classname">BankAccountTest</span> : <span class="keyword">public</span> CxxTest::<span class="classname">TestSuite</span>
 {
 <span class="keyword">public</span>:
-    <span class="comment">// Methods will go here</span>
 };
+
+<span class="keyword">#endif</span> <span class="comment">/*BANKACCOUNTTESTS_H_*/</span>
 </pre></div>
 
 <p>There are several points of interest here.  We include the <code>&lt;cxxtest/TestSuite.h&gt;</code>
@@ -189,13 +200,20 @@ header to make available the definition of the <code>CxxTest::TestSuite</code> c
 which all test case classes must inherit.  Additionally, we must obviously include the
 header for the <code>BankAccount</code> class that we are testing.</p>
 
+<p>Before we begin to add test cases to this class, there are a couple coding conventions
+that you must follow when writing test cases.
+A method that is intended to be executed as a test case must have a name that begins with
+<code>test</code>, a return type of <code class="keyword">void</code>, and takes no
+arguments. If you do not follow these rules, the function will not be recognized as a
+test case by CxxTest and it will not be executed.</p>
+
 <p>Now we will add a series of methods to the class that perform various operations and
 tests.  First we will create a simple test that verifies that the <code>BankAccount</code>
 constructor works as expected.  Add the following method under the
 <code class="keyword">public</code> modifier:</p>
 
 <div class="block"><pre>
-    <span class="keyword">void</span> testInitialBalances()
+    <span class="keyword">void</span> <span class="method">testInitialBalances</span>()
     {
         <span class="comment">// An account initialized with a name only should start
         // empty.</span>
@@ -217,10 +235,16 @@ both are equal.</p>
 <p>The second half of the function creates an account with an initial balance and verifies
 that the balance was set properly.</p>
 
+<p>Notice that we defined this method inside the header file, instead of creating a separate
+source file to contain the method bodies. This is an example of <i>inlining</i> a function,
+and we do it here for simplicity &mdash; typically when writing test cases, there is no need
+to introduce extra complexity into the project by separating them into <code>.h</code> and
+<code>.cpp</code> files.
+
 <p><img class="right" src="images/SuccessfulRun.gif" alt="Successful Test Run"/>
-If you save the file, you will find that Eclipse will automatically build your project
-and execute the tests.  If everything performed properly, the <b>CxxTest</b> view should
-appear and display something similar to the example to the right.</p>
+Save the file and build the project.  If everything performed properly, the
+test cases should run automatically and the <b>CxxTest</b> view will appear as
+shown to the right.</p>
 
 <p>The green progress bar indicates that all tests executed successfully. The
 <b>BankAccountTest</b> test suite is collapsed because only tests with errors are
@@ -229,7 +253,7 @@ expanded by default.
 <p>We can now add a few more test cases to the file.  Try adding the following methods:</p>
 
 <div class="block"><pre>
-    <span class="keyword">void</span> testDeposits()
+    <span class="keyword">void</span> <span class="method">testDeposits</span>()
     {
         <span class="comment">// Start Joe out poor, with $0.00.</span>
         BankAccount account( <span class="string">"Joe Hokie"</span> );
@@ -245,7 +269,7 @@ expanded by default.
         TS_ASSERT_EQUALS( account.getBalance(), 105 );
     }
     
-    <span class="keyword">void</span> testWithdrawals()
+    <span class="keyword">void</span> <span class="method">testWithdrawals</span>()
     {
         <span class="comment">// Start Francois out moderately wealthy.</span>
         BankAccount account( <span class="string">"Francois Hokie"</span>, 5000 );
@@ -261,7 +285,7 @@ expanded by default.
         TS_ASSERT_EQUALS(account.getBalance(), 3500);
     }
     
-    <span class="keyword">void</span> testVariousActivity()
+    <span class="keyword">void</span> <span class="method">testVariousActivity</span>()
     {
         <span class="comment">// Start Sabrina out with $75, and then monitor her
         // account over some deposits and withdrawals.</span>
@@ -297,7 +321,7 @@ will be most relevant to you in this course are:</p>
 <p>Let's create a test case that uses some of these.</p>
 
 <div class="block"><pre>
-    <span class="keyword">void</span> testOverdrawn()
+    <span class="keyword">void</span> <span class="method">testOverdrawn</span>()
     {
         <span class="comment">// Hiroyuki isn't very responsible with his money, so
         // he is going to withdraw more than he has available.</span>
@@ -342,6 +366,10 @@ text editor, on the line containing the failure.</p>
 
 <p><img src="images/FailedTest.gif" alt="An example of a failed test case"/></p>
 
+<p>You can also click on the item in "Details" labeled "Failed assertion" and
+Eclipse will open the source file and highlight the line containing the particular
+assertion that caused the test case to fail.</p>
+
 <a name="Troubleshooting"></a>
 <h1>Troubleshooting</h1>
 <p>There are several issues that can arise in trying to run the
@@ -354,7 +382,7 @@ checking on the following steps, the CxxTest test scripts should work:</p>
 
   <li><b>Verify that you have an appropriate Java version</b></p>
   <p>Open a command window and execute the command <code>java
-  -version</code>.  It should list a version of 1.4.2 or newer.  If it
+  -version</code>.  It should list a version of 1.5.0 or newer.  If it
   lists an older version, make sure that you have properly installed a
   recent version of the Java SDK, and that its bin directory has been
   properly added to your path (see next item for path instructions).</p>
@@ -406,43 +434,19 @@ gcc version 3.3.3 (cygwin special)
     of error (e.g., "'g++' is not recognized ..."), then repeat
     the cygwin setup in Step 2 above, ensuring that all of the
     items in Step 2.9 are selected before completing the installation.
-</p>
-  <li><p><b>Make sure that Build Automatically is Checked:</b></p>
-    <p>At the moment, it is necessary for "Build Automatically" to be
-    turned on for your project in order for CxxTest support to work
-    properly.  Within Eclipse, go to the Project menu and be sure that
-    the "Build Automatically" has a check mark in front of it.
-    Select it to toggle the check mark. Go back to the Project menu to
-    confirm that the "Build Automatically" selection is now checked.</p></li>
+</p></li>
   <li><p><b>Confirm that you have a runAllTests.cpp file:</b></p>
     <p>The CxxTest builder generates a file called
     <code>runAllTests.cpp</code> within your project each time it
     detects any changes to your test cases.  If you don't have any
     test cases, then add a test class.
-    Without any tests, CxxTest won't produce anything.</li>
-  <li><p><b>Verify project settings are correct:</b></p>
-    <p>If your CxxTest install path setting was incorrect and you have
-    changed it, that setting should fix CxxTest for future projects,
-    but it may not completely fix the problem on any existing C++
-    projects you have already created. If you have an existing C++
-    project already, and CxxTest still is not working, select the
-    project's root in the C/C++ Projects window pane on the left side.
-    Right-click, then select Properties from the menu.  When the
-    properties window opens, select the C/C++ Build option.  Look at
-    the "All Options" text box on the right.  The following g++ command
-    line option should be included in the list:</p>
-<pre>
--I"C:\eclipse\plugins\edu.vt.cs.cxxtest_1.1.0\cxxtest"
-</pre>
-    <p>Here, <code>C:\eclipse</code> at the front of the path
-    represents the directory where you have installed Eclipse.
-    This <code>-I</code> option tells g++ where it can find the
-    #include'd header files for CxxTest classes at compile time,
-    and its value is set from the CxxTest preferences when the project
-    is created.  If this option does not appear in the project's C/C++
-    Build properties, add it to the front of the list of options and
-    click "Ok".  Make a change to one of your project's source files
-    and then click the save button to regenerate your project.</li>
+    Without any tests, CxxTest won't produce anything.</p></li>
+  <li><p><b>Verify that CxxTest is enabled for the project:</b></p>
+    <p>Right-click on the project's root folder and choose <b>Properties</b>.
+    Select the <b>CxxTest</b> branch from the tree and verify that
+    "Enable CxxTest for this project" is checked. If it is not, check it,
+    click <b>OK</b>, and rebuild your project.</p>
+</li>
 </ol>
 </body>
 </html>

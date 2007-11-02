@@ -29,13 +29,13 @@ import org.eclipse.core.runtime.IPath;
  * traversal of the project DOM tree.  The test runner source code is then
  * generated for a list of these objects.
  * 
- * @author Tony Allowatt (Virginia Tech Computer Science)
+ * @author Tony Allevato (Virginia Tech Computer Science)
  */
 public class CxxTestSuiteInfo
 {
 	private IStructure element;
 
-	private Vector testMethods;
+	private Vector<IMethodDeclaration> testMethods;
 
 	private int createLineNumber;
 	
@@ -51,7 +51,7 @@ public class CxxTestSuiteInfo
 	{
 		this.element = element;
 		
-		testMethods = new Vector();
+		testMethods = new Vector<IMethodDeclaration>();
 		
 		createLineNumber = 0;
 		destroyLineNumber = 0;
@@ -104,8 +104,7 @@ public class CxxTestSuiteInfo
 	
 	public IMethodDeclaration[] getTestMethods()
 	{
-		return (IMethodDeclaration[])testMethods.toArray(
-				new IMethodDeclaration[testMethods.size()]);
+		return testMethods.toArray(new IMethodDeclaration[testMethods.size()]);
 	}
 	
 	public void setCreateLineNumber(int value)
