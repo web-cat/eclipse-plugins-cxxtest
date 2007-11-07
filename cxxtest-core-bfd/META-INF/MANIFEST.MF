@@ -10,3 +10,4 @@ Require-Bundle: net.sf.webcat.eclipse.cxxtest.framework,
  org.eclipse.ui
 Bundle-Vendor: Virginia Tech Computer Science
 Eclipse-PlatformFilter: (!(osgi.os=macosx))
+Bundle-ClassPath: cxxtest-bfd.jar
