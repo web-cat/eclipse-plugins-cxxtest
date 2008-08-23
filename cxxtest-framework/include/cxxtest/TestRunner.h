@@ -15,8 +15,8 @@
 
 namespace CxxTest 
 {
-	void addSuiteToFailures(const std::string&, const std::string&);
-	bool didSuiteFailInitialization(const std::string&, std::string&);
+	void addSuiteToFailures(const char*, const char*);
+	bool didSuiteFailInitialization(const char*, std::string&);
 
     class TestRunner
     {

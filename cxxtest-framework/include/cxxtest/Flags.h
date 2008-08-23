@@ -5,6 +5,16 @@
 // These are the flags that control CxxTest
 //
 
+
+#ifdef _MSC_VER
+#	define CXXTEST_EARLIEST_INIT(decl) decl
+#endif
+
+#ifdef __GNUC__
+#	define CXXTEST_EARLIEST_INIT(decl) decl __attribute__((init_priority(101)))
+#endif
+
+
 #if defined(CXXTEST_HAVE_EH) && !defined(_CXXTEST_HAVE_EH)
 #   define _CXXTEST_HAVE_EH
 #endif // CXXTEST_HAVE_EH
@@ -53,7 +63,7 @@
 #endif // _CXXTEST_HAVE_EH && !CXXTEST_DEFAULT_ABORT
 
 #if defined(_CXXTEST_ABORT_TEST_ON_FAIL) && !defined(_CXXTEST_HAVE_EH)
-#   warning "CXXTEST_ABORT_TEST_ON_FAIL is meaningless without CXXTEST_HAVE_EH"
+//#   warning "CXXTEST_ABORT_TEST_ON_FAIL is meaningless without CXXTEST_HAVE_EH"
 #   undef _CXXTEST_ABORT_TEST_ON_FAIL
 #endif // _CXXTEST_ABORT_TEST_ON_FAIL && !_CXXTEST_HAVE_EH
 
@@ -61,9 +71,9 @@
 //#   define CXXTEST_TRACE_STACK
 //#endif // CXXTEST_STACK_TRACE_EXE
 
-#if defined(CXXTEST_TRACE_STACK) && !defined(__GNUC__)
-#undef CXXTEST_TRACE_STACK
-#endif
+//#if defined(CXXTEST_TRACE_STACK) && !defined(__GNUC__)
+//#undef CXXTEST_TRACE_STACK
+//#endif
 
 #if defined(__GNUC__)
 // This definition is always on, even when stack tracing is disabled
@@ -71,6 +81,7 @@
 #else
 #    define _CXXTEST_NO_INSTR
 #endif
+
 
 //
 // Some minimal per-compiler configuration to allow us to compile
@@ -105,5 +116,6 @@
 #   pragma warning( disable : 4512 )
 #   pragma warning( disable : 4514 )
 #endif // _MSC_VER
+
 
 #endif // __CXXTEST__FLAGS_H

@@ -47,16 +47,17 @@ namespace CxxTest
         {
 	    _TS_TRY_WITH_SIGNAL_PROTECTION
 	    {
-                _TS_TRY
+            _TS_TRY
 	        {
-		  runTest();
+				runTest();
 	        }
-                _TS_CATCH_ABORT( {} )
-                ___TSM_CATCH( file(), line(), "Exception thrown from test" );
+			_TS_PROPAGATE_SIGNAL
+            _TS_CATCH_ABORT( {} )
+            ___TSM_CATCH( file(), line(), "Exception thrown from test" );
 	    }
 	    _TS_CATCH_SIGNAL({
 	        tracker().failedTest(
-	      	    file(), line(), __cxxtest_sigmsg.c_str() );
+	      	    file(), line(), __cxxtest_sigmsg.str() );
 	    });
         }
 
@@ -241,6 +242,7 @@ namespace CxxTest
                 _TSM_ASSERT_THROWS_NOTHING( file(), _createLine,
 		    "Exception thrown from createSuite()", createSuite() );
             }
+			_TS_PROPAGATE_SIGNAL
             _TS_CATCH_ABORT( { setSuite( 0 ); } );
 	}
 	_TS_CATCH_SIGNAL({
@@ -264,6 +266,7 @@ namespace CxxTest
                 _TSM_ASSERT_THROWS_NOTHING( file(), _destroyLine,
 		    "destroySuite() failed", destroySuite() );
 	    }
+			_TS_PROPAGATE_SIGNAL
             _TS_CATCH_ABORT( { result = false; } );
         }
 	_TS_CATCH_SIGNAL({
