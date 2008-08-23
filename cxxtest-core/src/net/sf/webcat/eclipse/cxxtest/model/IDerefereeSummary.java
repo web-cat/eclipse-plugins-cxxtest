@@ -17,13 +17,13 @@
  */
 package net.sf.webcat.eclipse.cxxtest.model;
 
-public interface IMemWatchInfo
+public interface IDerefereeSummary
 {
 	int getTotalBytesAllocated();
 
 	int getMaxBytesInUse();
 
-	IMemWatchLeak[] getLeaks();
+	IDerefereeLeak[] getLeaks();
 	
 	int getActualLeakCount();
 	

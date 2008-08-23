@@ -6,7 +6,12 @@
       <extraProjectOptions
             id="net.sf.webcat.eclipse.cxxtest.macosx.stackTracingOptions">
          <optionSet
-               version="1.4.0">
+               version="1.5.0">
+            <runnerIncludes
+                  path="/runner-include">
+               <includePath
+                     path="dereferee-src/gcc_macosx_platform.cpp">
+               </includePath></runnerIncludes>
             <enablement
                   conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledCondition"
                   configurationFilter="Debug">
@@ -17,34 +22,8 @@
                      <item
                            value="-finstrument-functions">
                      </item>
-                  </splitStringOption>
-               </tool>
-               <tool
-                     superClassId="cdt.managedbuild.tool.macosx.cpp.linker">
-                  <pathListOption
-                        id="macosx.cpp.link.option.paths">
-                     <path
-                           pluginId="net.sf.webcat.eclipse.cxxtest.macosx"
-                           relativePath="lib">
-                     </path>
-                  </pathListOption>
-                  <librariesOption
-                        id="macosx.cpp.link.option.libs">
                      <item
-                           value="objc">
-                     </item>
-                     <item
-                           value="symreader">
-                     </item>
-                  </librariesOption>
-                  <splitStringOption
-                        id="macosx.cpp.link.option.flags">
-                     <path
-                           prefix="-F"
-                           relativePath="/System/Library/PrivateFrameworks">
-                     </path>
-                     <item
-                           value="-framework vmutils">
+                           value="-gstabs">
                      </item>
                   </splitStringOption>
                </tool>

@@ -36,6 +36,7 @@ import org.eclipse.core.runtime.SubProgressMonitor;
  * 
  * @author Tony Allevato (Virginia Tech Computer Science)
  */
+@SuppressWarnings("restriction")
 public class CxxTestSuiteGenerator
 {
 	private String suiteName;

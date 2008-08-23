@@ -17,7 +17,7 @@
  */
 package net.sf.webcat.eclipse.cxxtest.model;
 
-public interface IMemWatchLeak
+public interface IDerefereeLeak
 {
 	String getAddress();
 	

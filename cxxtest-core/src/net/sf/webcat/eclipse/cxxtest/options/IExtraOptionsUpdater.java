@@ -67,4 +67,8 @@ public interface IExtraOptionsUpdater
 	 *            the IProject resource whose settings should be removed
 	 */
 	void removeAllOptions(IProject project);
+	
+	
+	// ------------------------------------------------------------------------
+	String[] getLatestCxxTestRunnerIncludes(IProject project);
 }

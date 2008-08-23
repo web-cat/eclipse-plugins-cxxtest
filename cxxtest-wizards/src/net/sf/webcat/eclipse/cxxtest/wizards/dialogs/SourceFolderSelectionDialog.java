@@ -25,6 +25,7 @@ import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.dialogs.ElementTreeSelectionDialog;
 
+@SuppressWarnings("restriction")
 public class SourceFolderSelectionDialog extends ElementTreeSelectionDialog {
     
     private static final Class<?>[] VALIDATOR_CLASSES = new Class[] {
@@ -46,7 +47,8 @@ public class SourceFolderSelectionDialog extends ElementTreeSelectionDialog {
     private static final ILabelProvider fLabelProvider = new CElementLabelProvider(CElementLabelProvider.SHOW_DEFAULT);
     private static final ViewerSorter fSorter = new CElementSorter();
     
-    public SourceFolderSelectionDialog(Shell parent) {
+    @SuppressWarnings("deprecation")
+	public SourceFolderSelectionDialog(Shell parent) {
         super(parent, fLabelProvider, fContentProvider);
         setValidator(fValidator);
         setSorter(fSorter);

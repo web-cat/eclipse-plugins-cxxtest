@@ -17,14 +17,14 @@
  */
 package net.sf.webcat.eclipse.cxxtest.xml.memstats;
 
-import net.sf.webcat.eclipse.cxxtest.internal.model.MemWatchInfo;
+import net.sf.webcat.eclipse.cxxtest.internal.model.DerefereeSummary;
 import net.sf.webcat.eclipse.cxxtest.xml.ElementContext;
 
 import org.xml.sax.Attributes;
 
 public class SummaryContext extends ElementContext
 {
-	public SummaryContext(MemStatsContext parent, Attributes attributes)
+	public SummaryContext(DerefereeContext parent, Attributes attributes)
 	{
 		int totalBytes = getAttrInt(attributes, "total-bytes-allocated");
 		int maxBytes = getAttrInt(attributes, "max-bytes-in-use");
@@ -35,7 +35,7 @@ public class SummaryContext extends ElementContext
 		int callsArrayDelete = getAttrInt(attributes, "calls-to-array-delete");
 		int callsDeleteNull = getAttrInt(attributes, "calls-to-delete-null");
 		
-		MemWatchInfo info = new MemWatchInfo(totalBytes, maxBytes,
+		DerefereeSummary info = new DerefereeSummary(totalBytes, maxBytes,
 				callsNew, callsDelete, callsArrayNew,
 				callsArrayDelete, callsDeleteNull);
 		parent.setSummary(info);

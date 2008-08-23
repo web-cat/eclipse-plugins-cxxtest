@@ -21,11 +21,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import net.sf.webcat.eclipse.cxxtest.internal.generator.TestCaseVisitor;
+import net.sf.webcat.eclipse.cxxtest.internal.generator.TestRunnerGenerator;
+import net.sf.webcat.eclipse.cxxtest.internal.generator.TestSuiteCollection;
 import net.sf.webcat.eclipse.cxxtest.options.IExtraOptionsUpdater;
 
 import org.eclipse.cdt.core.CCorePlugin;
 import org.eclipse.cdt.core.model.ICProject;
-import org.eclipse.cdt.managedbuilder.core.IConfiguration;
 import org.eclipse.cdt.managedbuilder.core.IManagedBuildInfo;
 import org.eclipse.cdt.managedbuilder.core.ManagedBuildManager;
 import org.eclipse.core.resources.IFile;
@@ -105,7 +107,7 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		cproject.accept(visitor);
 		monitor.worked(1);
 
-		CxxTestSuiteInfo[] suites = visitor.getTestSuites();
+		TestSuiteCollection suites = visitor.getSuites();
 
 		IPreferenceStore store = CxxTestPlugin.getDefault().getPreferenceStore();
 
@@ -115,7 +117,7 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 			File projectDir = getProject().getLocation().toFile();
 			String fullPath = projectDir.toString() + "/" + outputFile;
 
-			IPath exePath = getExecutableFile().getProjectRelativePath();
+			//IPath exePath = getExecutableFile().getProjectRelativePath();
 
 			boolean trackHeap = store.getBoolean(
 						CxxTestPlugin.CXXTEST_PREF_TRACK_HEAP);
@@ -124,18 +126,19 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 			boolean traceStack = store.getBoolean(
 					CxxTestPlugin.CXXTEST_PREF_TRACE_STACK);
 
-			CxxTestDriverGenerator generator = new CxxTestDriverGenerator(
-					cproject, fullPath, suites);
-			generator.setUsingStandardLibrary(visitor.isUsingStandardLibrary());
+			String[] extraIncludes = CxxTestPlugin.getDefault().
+				getExtraOptionsUpdater().getLatestCxxTestRunnerIncludes(project);
+
+			TestRunnerGenerator generator = new TestRunnerGenerator(
+					cproject, fullPath, suites, null);
 			generator.setTrackHeap(trackHeap);
 			generator.setTrapSignals(trapSignals);
 			generator.setTraceStack(traceStack);
-			generator.setCompiledExePath(exePath.toString());
-			generator.setMemWatchFile(ICxxTestConstants.MEMWATCH_RESULTS_FILE);
 			generator.setMainProvided(visitor.getMainExists());
 			generator.setPossibleTestFiles(visitor.getPossibleTestFiles());
+			generator.setExtraIncludes(extraIncludes);
 
-			generator.buildDriver();
+			generator.generate();
 		}
 		catch(IOException e)
 		{
@@ -156,7 +159,7 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		return null;
 	}
 
-	private IFile getExecutableFile()
+/*	private IFile getExecutableFile()
 	{
 		IProject project = getProject();
 
@@ -174,7 +177,7 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 
 		IFile file = project.getFile(configuration.getName() + "/" + exeName);
 		return file;
-	}
+	}*/
 
 	public boolean checkForRebuild()
 	{

@@ -1,16 +1,21 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!-- Schema file written by PDE -->
-<schema targetNamespace="net.sf.webcat.eclipse.cxxtest">
+<schema targetNamespace="net.sf.webcat.eclipse.cxxtest" xmlns="http://www.w3.org/2001/XMLSchema">
 <annotation>
-      <appInfo>
+      <appinfo>
          <meta.schema plugin="net.sf.webcat.eclipse.cxxtest" id="extraProjectOptions" name="Extra Project Options Handler"/>
-      </appInfo>
+      </appinfo>
       <documentation>
          This extension point allows users to provide additional compiler options to a project when CxxTest is enabled on it. Each option set is associated with a version that matches some version of the CxxTest core plug-in. When a project is created, the version of the CxxTest core plug-in that created it is saved as a persistent property of the project. If the CxxTest plug-in is updated, these versioned option sets allow the plug-in to update the compiler options for projects created with older versions of the plug-in.
       </documentation>
    </annotation>
 
    <element name="extension">
+      <annotation>
+         <appinfo>
+            <meta.element />
+         </appinfo>
+      </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
             <element ref="extraProjectOptions"/>
@@ -34,9 +39,9 @@
                <documentation>
                   
                </documentation>
-               <appInfo>
+               <appinfo>
                   <meta.attribute translatable="true"/>
-               </appInfo>
+               </appinfo>
             </annotation>
          </attribute>
       </complexType>
@@ -44,9 +49,9 @@
 
    <element name="extraProjectOptions">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="class"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
@@ -62,15 +67,38 @@
       </complexType>
    </element>
 
+   <element name="runnerIncludes">
+      <complexType>
+         <sequence minOccurs="0" maxOccurs="unbounded">
+            <element ref="includePath"/>
+         </sequence>
+         <attribute name="pluginId" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="path" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
    <element name="optionSet">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="version"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
             <element ref="enablement"/>
+            <element ref="runnerIncludes"/>
          </sequence>
          <attribute name="version" type="string" use="required">
             <annotation>
@@ -84,9 +112,9 @@
 
    <element name="enablement">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="conditionClass"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
@@ -104,9 +132,9 @@
                <documentation>
                   
                </documentation>
-               <appInfo>
+               <appinfo>
                   <meta.attribute kind="java" basedOn=":net.sf.webcat.eclipse.cxxtest.options.IExtraOptionsEnablement"/>
-               </appInfo>
+               </appinfo>
             </annotation>
          </attribute>
       </complexType>
@@ -114,9 +142,9 @@
 
    <element name="tool">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="superClassId"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
@@ -143,9 +171,9 @@
 
    <element name="includesOption">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="id"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
@@ -163,9 +191,9 @@
 
    <element name="librariesOption">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="id"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
@@ -183,9 +211,9 @@
 
    <element name="definedSymbolsOption">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="id"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
@@ -203,9 +231,9 @@
 
    <element name="stringListOption">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="id"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
@@ -223,9 +251,9 @@
 
    <element name="pathListOption">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="id"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
@@ -243,9 +271,9 @@
 
    <element name="splitStringOption">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="id"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
@@ -266,9 +294,9 @@
 
    <element name="booleanOption">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="id"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <attribute name="id" type="string" use="required">
@@ -297,9 +325,9 @@
 
    <element name="stringOption">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="id"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <attribute name="id" type="string" use="required">
@@ -328,9 +356,9 @@
 
    <element name="path">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="relativePath"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <attribute name="prefix" type="string">
@@ -359,9 +387,9 @@
 
    <element name="item">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element labelAttribute="value"/>
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <attribute name="value" type="string" use="required">
@@ -374,49 +402,53 @@
       </complexType>
    </element>
 
+   <element name="includePath">
+      <complexType>
+         <attribute name="path" type="string" use="required">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
    <annotation>
-      <appInfo>
+      <appinfo>
          <meta.section type="since"/>
-      </appInfo>
+      </appinfo>
       <documentation>
          [Enter the first release in which this extension point appears.]
       </documentation>
    </annotation>
 
    <annotation>
-      <appInfo>
+      <appinfo>
          <meta.section type="examples"/>
-      </appInfo>
+      </appinfo>
       <documentation>
          [Enter extension point usage example here.]
       </documentation>
    </annotation>
 
    <annotation>
-      <appInfo>
+      <appinfo>
          <meta.section type="apiInfo"/>
-      </appInfo>
+      </appinfo>
       <documentation>
          [Enter API information here.]
       </documentation>
    </annotation>
 
    <annotation>
-      <appInfo>
+      <appinfo>
          <meta.section type="implementation"/>
-      </appInfo>
+      </appinfo>
       <documentation>
          [Enter information about supplied implementation of this extension point.]
       </documentation>
    </annotation>
 
-   <annotation>
-      <appInfo>
-         <meta.section type="copyright"/>
-      </appInfo>
-      <documentation>
-         
-      </documentation>
-   </annotation>
 
 </schema>

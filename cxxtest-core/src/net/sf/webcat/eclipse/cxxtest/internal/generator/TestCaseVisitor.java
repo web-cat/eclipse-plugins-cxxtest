@@ -23,11 +23,10 @@
  *         main() function was encountered. (aallowat)
  * 1.1.0:  Initial public release.
  */
-package net.sf.webcat.eclipse.cxxtest;
+package net.sf.webcat.eclipse.cxxtest.internal.generator;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +39,7 @@ import org.eclipse.cdt.core.model.IStructure;
 import org.eclipse.cdt.core.model.ITranslationUnit;
 import org.eclipse.cdt.core.model.IUsing;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 
 /**
  * A visitor class that traverses the DOM tree of a C++ project, collecting
@@ -53,12 +53,12 @@ public class TestCaseVisitor implements ICElementVisitor
 	/**
 	 * The current suite being processed.
 	 */
-	private CxxTestSuiteInfo currentSuite = null;
+	private TestSuite currentSuite = null;
 
 	/**
 	 * A vector containing all the test suites processed.
 	 */
-	private Vector<CxxTestSuiteInfo> testSuites = new Vector<CxxTestSuiteInfo>();
+	private TestSuiteCollection suites = new TestSuiteCollection();
 
 	/**
 	 * A regular expression that matches the name of the CxxTest suite
@@ -211,9 +211,9 @@ public class TestCaseVisitor implements ICElementVisitor
 	 * @return An array of CxxTestSuiteInfo objects that represent the test
 	 *     suites in the project.
 	 */
-	public CxxTestSuiteInfo[] getTestSuites()
+	public TestSuiteCollection getSuites()
 	{
-		return testSuites.toArray(new CxxTestSuiteInfo[testSuites.size()]);
+		return suites;
 	}
 
 	public ITranslationUnit[] getPossibleTestFiles()
@@ -275,8 +275,11 @@ public class TestCaseVisitor implements ICElementVisitor
 			{
 				generatedSuites.add(element);
 
-				currentSuite = new CxxTestSuiteInfo(element);
-				testSuites.add(currentSuite);
+				IPath path = element.getTranslationUnit().getResource().getLocation();
+				
+				currentSuite = new TestSuite(element.getElementName(),
+						path.toOSString(), getLineNumber(element));
+				suites.addSuite(currentSuite);
 
 				ITranslationUnit containingUnit = element.getTranslationUnit();
 				if(containingUnit != null)
@@ -325,8 +328,13 @@ public class TestCaseVisitor implements ICElementVisitor
 
 		if(name.startsWith("Test") || name.startsWith("test"))
 		{
-			if("void".equals(element.getReturnType()) && isMethodParameterless(element))
-					currentSuite.addTestMethod(element);
+			if("void".equals(element.getReturnType())
+					&& isMethodParameterless(element))
+			{
+				currentSuite.addTestCase(
+						new TestCase(element.getElementName(),
+								getLineNumber(element)));
+			}
 		}
 		else if(name.equals("createSuite"))
 		{
@@ -386,6 +394,18 @@ public class TestCaseVisitor implements ICElementVisitor
 		try
 		{
 			return method.getSourceRange().getStartLine();
+		}
+		catch (CModelException e)
+		{
+			return 1;
+		}
+	}
+
+	private int getLineNumber(IStructure structure)
+	{
+		try
+		{
+			return structure.getSourceRange().getStartLine();
 		}
 		catch (CModelException e)
 		{

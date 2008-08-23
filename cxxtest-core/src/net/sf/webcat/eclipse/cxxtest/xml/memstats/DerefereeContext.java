@@ -17,17 +17,17 @@
  */
 package net.sf.webcat.eclipse.cxxtest.xml.memstats;
 
-import net.sf.webcat.eclipse.cxxtest.internal.model.MemWatchInfo;
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchLeak;
+import net.sf.webcat.eclipse.cxxtest.internal.model.DerefereeSummary;
+import net.sf.webcat.eclipse.cxxtest.model.IDerefereeLeak;
 import net.sf.webcat.eclipse.cxxtest.xml.ElementContext;
 
 import org.xml.sax.Attributes;
 
-public class MemStatsContext extends ElementContext
+public class DerefereeContext extends ElementContext
 {
 	private DocumentContext document;
 
-	public MemStatsContext(DocumentContext document, Attributes attributes)
+	public DerefereeContext(DocumentContext document, Attributes attributes)
 	{
 		this.document = document;
 		
@@ -45,12 +45,12 @@ public class MemStatsContext extends ElementContext
 			return null;
 	}
 	
-	public void addLeak(IMemWatchLeak leak)
+	public void addLeak(IDerefereeLeak leak)
 	{
 		document.addLeak(leak);
 	}
 	
-	public void setSummary(MemWatchInfo info)
+	public void setSummary(DerefereeSummary info)
 	{
 		document.setSummary(info);
 	}

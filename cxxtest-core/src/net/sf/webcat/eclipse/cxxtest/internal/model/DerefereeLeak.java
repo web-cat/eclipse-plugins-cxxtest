@@ -22,9 +22,9 @@ import java.util.Vector;
 import org.xml.sax.Attributes;
 
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestStackFrame;
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchLeak;
+import net.sf.webcat.eclipse.cxxtest.model.IDerefereeLeak;
 
-public class MemWatchLeak implements IMemWatchLeak
+public class DerefereeLeak implements IDerefereeLeak
 {
 	private String address;
 	
@@ -34,7 +34,7 @@ public class MemWatchLeak implements IMemWatchLeak
 
 	private Vector<ICxxTestStackFrame> stackTrace;
 
-	public MemWatchLeak(Attributes attributes)
+	public DerefereeLeak(Attributes attributes)
 	{
 		address = attributes.getValue("address");
 		size = Integer.parseInt(attributes.getValue("size"));

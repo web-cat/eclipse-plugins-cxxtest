@@ -100,6 +100,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * 
  * @author Tony Allevato (Virginia Tech Computer Science)
  */
+@SuppressWarnings("restriction")
 public class TestHierarchyTab extends TestRunTab
 	implements IMenuListener, ISelectionProvider
 {

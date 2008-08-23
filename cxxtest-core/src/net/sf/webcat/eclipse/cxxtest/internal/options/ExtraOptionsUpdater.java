@@ -122,6 +122,44 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
+	public String[] getLatestCxxTestRunnerIncludes(IProject project)
+	{
+		ArrayList<String> includeList = new ArrayList<String>();
+
+		for(String loadedId : optionSets.keySet())
+		{
+			SortedMap<Version, IConfigurationElement> optionsForId =
+		        optionSets.get(loadedId);
+
+			if(optionsForId == null)
+				break;
+	
+			Version latestVersion = getLatestVersion(loadedId);
+			if(latestVersion == null)
+				break;
+	
+			IConfigurationElement optionSet = optionsForId.get(latestVersion);
+	
+			IConfigurationElement[] includeElems =
+				optionSet.getChildren("runnerIncludes");
+
+			for(IConfigurationElement includeElem : includeElems)
+			{
+				IConfigurationElement[] pathElems =
+					includeElem.getChildren("includePath");
+				
+				for(IConfigurationElement pathElem : pathElems)
+				{
+					String path = pathElem.getAttribute("path");
+					includeList.add(path);
+				}
+			}
+		}
+		
+		return includeList.toArray(new String[includeList.size()]);
+	}
+	
+
 	// ------------------------------------------------------------------------
 	public void removeAllOptions(IProject project)
 	{
@@ -177,6 +215,31 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 
 		for(IConfiguration config : configs)
 		{
+			IConfigurationElement[] includeElems =
+				optionSet.getChildren("runnerIncludes");
+			
+			for(IConfigurationElement includeElem : includeElems)
+			{
+				String pluginId = includeElem.getAttribute("pluginId");
+				String path = includeElem.getAttribute("path");
+
+				if(pluginId == null)
+					pluginId = optionSet.getContributor().getName();
+
+				String includePath =
+					getBundleEntryPath(pluginId, path);
+
+				try
+				{
+					addCxxTestRunnerInclude(config, includePath);
+				}
+				catch (BuildException e)
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+
 			for(IConfigurationElement enablementElem : enablementElems)
 			{
 				if(doesConfigurationMatch(project, config, enablementElem))
@@ -261,6 +324,24 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 				{
 				}
 			}
+		}
+	}
+
+
+	private void addCxxTestRunnerInclude(IConfiguration config,
+			String path) throws BuildException
+	{
+		String superClassId = "cdt.managedbuild.tool.gnu.cpp.compiler";
+		ITool[] tools = config.getToolsBySuperClassId(superClassId);
+
+		String optionId = "gnu.cpp.compiler.option.include.paths";
+
+		for(ITool tool : tools)
+		{
+			path = "\"" + path.replace('\\', '/') + "\"";
+
+			String[] newEntries = new String[] { path };
+			ProjectOptionsUtil.addToIncludes(tool, optionId, newEntries);
 		}
 	}
 
@@ -424,10 +505,14 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 			fullPath = getBundleEntryPath(pluginId, relPath);
 
 		if(fullPath != null)
+		{
+			fullPath = fullPath.replace('\\', '/');
+
 			if(quoted)
 				return (prefix + "\"" + fullPath + "\"");
 			else
 				return (prefix + fullPath);
+		}
 
 		return null;
 	}

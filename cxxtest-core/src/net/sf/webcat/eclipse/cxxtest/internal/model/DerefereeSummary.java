@@ -17,10 +17,10 @@
  */
 package net.sf.webcat.eclipse.cxxtest.internal.model;
 
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchInfo;
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchLeak;
+import net.sf.webcat.eclipse.cxxtest.model.IDerefereeSummary;
+import net.sf.webcat.eclipse.cxxtest.model.IDerefereeLeak;
 
-public class MemWatchInfo implements IMemWatchInfo
+public class DerefereeSummary implements IDerefereeSummary
 {
 	private int totalBytesAllocated;
 	private int maxBytesInUse;
@@ -30,9 +30,9 @@ public class MemWatchInfo implements IMemWatchInfo
 	private int callsArrayNew;
 	private int callsArrayDelete;
 	private int callsDeleteNull;
-	private IMemWatchLeak[] leaks;
+	private IDerefereeLeak[] leaks;
 
-	public MemWatchInfo(int totalBytes, int maxBytes,
+	public DerefereeSummary(int totalBytes, int maxBytes,
 			int callsNew, int callsDelete, int callsArrayNew,
 			int callsArrayDelete, int callsDeleteNull)
 	{
@@ -53,11 +53,11 @@ public class MemWatchInfo implements IMemWatchInfo
 		return maxBytesInUse;
 	}
 
-	public IMemWatchLeak[] getLeaks() {
+	public IDerefereeLeak[] getLeaks() {
 		return leaks;
 	}
 
-	public void setLeaks(IMemWatchLeak[] leaks) {
+	public void setLeaks(IDerefereeLeak[] leaks) {
 		this.leaks = leaks;
 	}
 	

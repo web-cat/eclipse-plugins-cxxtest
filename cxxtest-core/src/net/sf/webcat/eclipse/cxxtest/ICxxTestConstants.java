@@ -53,11 +53,11 @@ public interface ICxxTestConstants
 	static final String TEST_RESULTS_FILE = ".cxxtest.log";
 
 	/**
-	 * The hard-coded filename of the results file that the Memwatch heap
-	 * tracker will generate. By default it is a dot-file, to prevent it from
+	 * The hard-coded filename of the results file that Dereferee
+	 * will generate. By default it is a dot-file, to prevent it from
 	 * cluttering the student's project workspace in Eclipse.
 	 */
-	static final String MEMWATCH_RESULTS_FILE = ".memwatch.log";
+	static final String MEMWATCH_RESULTS_FILE = ".dereferee.log";
 
 	static final String BINARY_LOG_FILE = ".execution.log";
 }

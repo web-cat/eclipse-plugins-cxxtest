@@ -30,8 +30,8 @@ import net.sf.webcat.eclipse.cxxtest.model.ICxxTestStackFrame;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuite;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuiteChild;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestSuiteError;
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchInfo;
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchLeak;
+import net.sf.webcat.eclipse.cxxtest.model.IDerefereeSummary;
+import net.sf.webcat.eclipse.cxxtest.model.IDerefereeLeak;
 
 import org.eclipse.cdt.core.model.ICProject;
 import org.eclipse.cdt.debug.core.ICDTLaunchConfigurationConstants;
@@ -87,9 +87,9 @@ public class TestRunnerViewPart extends ViewPart
 		{
 			if(inputElement == null)
 				return new Object[0];
-			else if(inputElement instanceof IMemWatchInfo)
+			else if(inputElement instanceof IDerefereeSummary)
 			{
-				IMemWatchInfo info = (IMemWatchInfo)inputElement;
+				IDerefereeSummary info = (IDerefereeSummary)inputElement;
 				String[] array = new String[7];
 				array[0] = "Total bytes allocated: " + info.getTotalBytesAllocated();
 				array[1] = "Maximum bytes in use: " + info.getMaxBytesInUse();
@@ -121,9 +121,9 @@ public class TestRunnerViewPart extends ViewPart
 				ICxxTestSuiteError cta = (ICxxTestSuiteError)parentElement;
 				return cta.getStackTrace();
 			}
-			else if(parentElement instanceof IMemWatchLeak)
+			else if(parentElement instanceof IDerefereeLeak)
 			{
-				IMemWatchLeak mwl = (IMemWatchLeak)parentElement;
+				IDerefereeLeak mwl = (IDerefereeLeak)parentElement;
 				return mwl.getStackTrace();
 			}
 			else
@@ -147,6 +147,11 @@ public class TestRunnerViewPart extends ViewPart
 				ICxxTestSuiteError cta = (ICxxTestSuiteError)element;
 				return cta.getStackTrace() != null;
 			}
+			else if(element instanceof IDerefereeLeak)
+			{
+				IDerefereeLeak leak = (IDerefereeLeak)element;
+				return leak.getStackTrace() != null;
+			}
 			else
 				return false;
 		}
@@ -166,9 +171,9 @@ public class TestRunnerViewPart extends ViewPart
 				ICxxTestSuiteError assertion = (ICxxTestSuiteError)element;
 				return assertion.getMessage();
 			}
-			else if(element instanceof IMemWatchLeak)
+			else if(element instanceof IDerefereeLeak)
 			{
-				IMemWatchLeak leak = (IMemWatchLeak)element;
+				IDerefereeLeak leak = (IDerefereeLeak)element;
 				if(leak.getStackTrace() != null && leak.getStackTrace().length > 0)
 					return leak.toString() + ", allocated using:";
 				else
@@ -209,7 +214,7 @@ public class TestRunnerViewPart extends ViewPart
 				}
 			}
 			else if(element instanceof ICxxTestStackFrame ||
-					element instanceof IMemWatchLeak)	
+					element instanceof IDerefereeLeak)	
 			{
 				return stackFrameIcon;
 			}
@@ -581,12 +586,12 @@ public class TestRunnerViewPart extends ViewPart
 				ICxxTestSuiteError test = (ICxxTestSuiteError)obj;
 				detailViewer.setInput(new Object[] { test });
 			}
-			else if(obj instanceof IMemWatchLeak)
+			else if(obj instanceof IDerefereeLeak)
 			{
-				IMemWatchLeak leak = (IMemWatchLeak)obj;
+				IDerefereeLeak leak = (IDerefereeLeak)obj;
 				detailViewer.setInput(new Object[] { leak });
 			}
-			else if(obj instanceof IMemWatchInfo)
+			else if(obj instanceof IDerefereeSummary)
 			{
 				detailViewer.setInput(obj);
 			}

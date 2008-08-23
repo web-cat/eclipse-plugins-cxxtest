@@ -47,6 +47,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
+@SuppressWarnings("restriction")
 public class NewCxxTestSuiteWizardPageOne extends WizardPage
 {
 	private static final String PAGE_NAME = "NewCxxTestSuiteWizardPageOne";

@@ -23,8 +23,8 @@ import java.io.IOException;
 
 import net.sf.webcat.eclipse.cxxtest.ICxxTestConstants;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchInfo;
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchLeak;
+import net.sf.webcat.eclipse.cxxtest.model.IDerefereeSummary;
+import net.sf.webcat.eclipse.cxxtest.model.IDerefereeLeak;
 import net.sf.webcat.eclipse.cxxtest.xml.ContextualSAXHandler;
 import net.sf.webcat.eclipse.cxxtest.xml.memstats.DocumentContext;
 
@@ -78,12 +78,13 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * 
  * @author Tony Allevato (Virginia Tech Computer Science)
  */
+@SuppressWarnings("restriction")
 public class TestMemoryTab extends TestRunTab
 	implements ISelectionProvider
 {
 	private TreeViewer viewer;
 
-	private IMemWatchInfo memWatchInfo;
+	private IDerefereeSummary memWatchInfo;
 
 	private MemWatchContentProvider viewerContent;
 
@@ -105,9 +106,9 @@ public class TestMemoryTab extends TestRunTab
 
 	private class MemWatchInfoInput
 	{
-		public IMemWatchInfo info;
+		public IDerefereeSummary info;
 		
-		public MemWatchInfoInput(IMemWatchInfo info)
+		public MemWatchInfoInput(IDerefereeSummary info)
 		{
 			this.info = info;
 		}
@@ -117,8 +118,8 @@ public class TestMemoryTab extends TestRunTab
 	{
 		public Object[] getChildren(Object parent)
 		{
-			if(parent instanceof IMemWatchInfo)
-				return ((IMemWatchInfo)parent).getLeaks();
+			if(parent instanceof IDerefereeSummary)
+				return ((IDerefereeSummary)parent).getLeaks();
 			else
 				return null;
 		}
@@ -130,7 +131,7 @@ public class TestMemoryTab extends TestRunTab
 
 		public boolean hasChildren(Object element)
 		{
-			if(element instanceof IMemWatchInfo)
+			if(element instanceof IDerefereeSummary)
 				return true;
 			else
 				return false;
@@ -156,7 +157,7 @@ public class TestMemoryTab extends TestRunTab
 	{
 		public String getText(Object element)
 		{
-			if(element instanceof IMemWatchInfo)
+			if(element instanceof IDerefereeSummary)
 			{
 				int leaksShown = memWatchInfo.getLeaks().length;
 				int actualLeaks = memWatchInfo.getActualLeakCount();
@@ -175,9 +176,9 @@ public class TestMemoryTab extends TestRunTab
 
 				return msg;
 			}
-			else if(element instanceof IMemWatchLeak)
+			else if(element instanceof IDerefereeLeak)
 			{
-				IMemWatchLeak leak = (IMemWatchLeak)element;
+				IDerefereeLeak leak = (IDerefereeLeak)element;
 				return leak.toString();
 			}
 			else
@@ -186,13 +187,13 @@ public class TestMemoryTab extends TestRunTab
 		
 		public Image getImage(Object element)
 		{
-			if(element instanceof IMemWatchInfo)
+			if(element instanceof IDerefereeSummary)
 			{
 				return memoryTabIcon;
 			}
-			else if(element instanceof IMemWatchLeak)
+			else if(element instanceof IDerefereeLeak)
 			{
-				IMemWatchLeak leak = (IMemWatchLeak)element;
+				IDerefereeLeak leak = (IDerefereeLeak)element;
 				
 				if(leak.isArray())
 					return leakArrayIcon;
@@ -350,7 +351,7 @@ public class TestMemoryTab extends TestRunTab
 		});
 	}
 	
-	public void setMemWatchInfo(IMemWatchInfo mwInfo)
+	public void setMemWatchInfo(IDerefereeSummary mwInfo)
 	{
 		this.memWatchInfo = mwInfo;
 
@@ -503,7 +504,7 @@ public class TestMemoryTab extends TestRunTab
 				stream.close();
 			}
 	
-			IMemWatchInfo mwInfo = docContext.getSummary();
+			IDerefereeSummary mwInfo = docContext.getSummary();
 			setMemWatchInfo(mwInfo);
 		}
 		catch(IOException e) { }

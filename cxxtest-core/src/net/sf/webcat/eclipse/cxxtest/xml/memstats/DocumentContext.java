@@ -21,49 +21,49 @@ import java.util.Vector;
 
 import org.xml.sax.Attributes;
 
-import net.sf.webcat.eclipse.cxxtest.internal.model.MemWatchInfo;
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchInfo;
-import net.sf.webcat.eclipse.cxxtest.model.IMemWatchLeak;
+import net.sf.webcat.eclipse.cxxtest.internal.model.DerefereeSummary;
+import net.sf.webcat.eclipse.cxxtest.model.IDerefereeSummary;
+import net.sf.webcat.eclipse.cxxtest.model.IDerefereeLeak;
 import net.sf.webcat.eclipse.cxxtest.xml.ElementContext;
 
 public class DocumentContext extends ElementContext
 {
-	private Vector<IMemWatchLeak> leaks;
+	private Vector<IDerefereeLeak> leaks;
 	
-	private MemWatchInfo summary;
+	private DerefereeSummary summary;
 
 	private int actualLeakCount;
 	
 	public DocumentContext()
 	{
-		leaks = new Vector<IMemWatchLeak>();
+		leaks = new Vector<IDerefereeLeak>();
 	}
 
 	public ElementContext startElement(String uri, String localName,
 			String qName, Attributes attributes)
 	{
-		if(localName.equals("memwatch"))
-			return new MemStatsContext(this, attributes);
+		if(localName.equals("dereferee"))
+			return new DerefereeContext(this, attributes);
 		else
 			return null;
 	}
 
-	public void addLeak(IMemWatchLeak leak)
+	public void addLeak(IDerefereeLeak leak)
 	{
 		leaks.add(leak);
 	}
 
-	public IMemWatchLeak[] getLeaks()
+	public IDerefereeLeak[] getLeaks()
 	{
-		return leaks.toArray(new IMemWatchLeak[leaks.size()]);
+		return leaks.toArray(new IDerefereeLeak[leaks.size()]);
 	}
 
-	public void setSummary(MemWatchInfo info)
+	public void setSummary(DerefereeSummary info)
 	{
 		summary = info;
 	}
 	
-	public IMemWatchInfo getSummary()
+	public IDerefereeSummary getSummary()
 	{
 		summary.setLeaks(getLeaks());
 		summary.setActualLeakCount(actualLeakCount);

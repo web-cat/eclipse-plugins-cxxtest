@@ -19,7 +19,7 @@ package net.sf.webcat.eclipse.cxxtest.xml.memstats;
 
 import org.xml.sax.Attributes;
 
-import net.sf.webcat.eclipse.cxxtest.internal.model.MemWatchLeak;
+import net.sf.webcat.eclipse.cxxtest.internal.model.DerefereeLeak;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestStackFrame;
 import net.sf.webcat.eclipse.cxxtest.xml.ElementContext;
 import net.sf.webcat.eclipse.cxxtest.xml.common.IStackFrameConsumer;
@@ -28,11 +28,11 @@ import net.sf.webcat.eclipse.cxxtest.xml.common.StackFrameContext;
 public class LeakContext extends ElementContext implements
 	IStackFrameConsumer
 {
-	private MemWatchLeak leak;
+	private DerefereeLeak leak;
 
-	public LeakContext(MemStatsContext memStats, Attributes attributes)
+	public LeakContext(DerefereeContext memStats, Attributes attributes)
 	{
-		leak = new MemWatchLeak(attributes);
+		leak = new DerefereeLeak(attributes);
 		memStats.addLeak(leak);
 	}
 

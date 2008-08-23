@@ -6,31 +6,24 @@
       <extraProjectOptions
             id="net.sf.webcat.eclipse.cxxtest.bfd.stackTracingOptions">
          <optionSet
-               version="1.4.0">
+               version="1.5.0">
+           <runnerIncludes
+                 path="/runner-include">
+              <includePath
+                    path="dereferee-src/gcc_bfd_platform.cpp">
+              </includePath>
+           </runnerIncludes>
             <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.bfd.StackTraceEnabledCondition"
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledCondition"
                   configurationFilter="Debug">
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
-                  <includesOption
-                        id="gnu.cpp.compiler.option.include.paths">
-                     <path
-                           pluginId="net.sf.webcat.eclipse.cxxtest.bfd"
-                           relativePath="symreader-src">
-                     </path>
-                  </includesOption>
                   <splitStringOption
                         id="gnu.cpp.compiler.option.other.other">
                      <item
                            value="-finstrument-functions">
                      </item>
                   </splitStringOption>
-                  <definedSymbolsOption
-                        id="gnu.cpp.compiler.option.preprocessor.def">
-                     <item
-                           value="CXXTEST_INCLUDE_SYMREADER_DIRECTLY">
-                     </item>
-                  </definedSymbolsOption>
                </tool>
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.linker">

@@ -105,7 +105,26 @@
       <extraProjectOptions
             id="net.sf.webcat.eclipse.cxxtest.frameworkIncludeOptions">
          <optionSet
-               version="1.4.0">
+               version="1.5.0">
+           <runnerIncludes
+                 path="/runner-include"
+                 pluginId="net.sf.webcat.eclipse.cxxtest.framework">
+              <includePath
+                    path="dereferee-src/allocation_info_impl.cpp">
+              </includePath>
+              <includePath
+                    path="dereferee-src/cxxtest_listener.cpp">
+              </includePath>
+              <includePath
+                    path="dereferee-src/manager.cpp">
+              </includePath>
+              <includePath
+                    path="dereferee-src/memtab.cpp">
+              </includePath>
+              <includePath
+                    path="dereferee-src/usage_stats_impl.cpp">
+              </includePath>
+           </runnerIncludes>
             <enablement>
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
@@ -113,7 +132,7 @@
                         id="gnu.cpp.compiler.option.include.paths">
                      <path
                            pluginId="net.sf.webcat.eclipse.cxxtest.framework"
-                           relativePath="cxxtest">
+                           relativePath="include">
                      </path>
                   </includesOption>
                </tool>
