@@ -78,12 +78,6 @@ public class TestCaseVisitor implements ICElementVisitor
 	private boolean usesStandardLibrary = true;
 
 	/**
-	 * Keeps track of whether a main() function was encountered during
-	 * the traversal.
-	 */
-	private boolean mainExists = false;
-
-	/**
 	 * Contains the IStructure handles of all the test suites encountered,
 	 * for quick lookup, such that each suite will only be generated once
 	 * (sometimes the tree traversal will encounter the same element twice,
@@ -233,17 +227,6 @@ public class TestCaseVisitor implements ICElementVisitor
 	}
 
 	/**
-	 * Gets a value indicating whether or not a main() function was
-	 * encountered in the traversal.
-	 * 
-	 * @return true if main() was declared; otherwise, false.
-	 */
-	public boolean getMainExists()
-	{
-		return mainExists;
-	}
-
-	/**
 	 * Check the specified "using" directive to see if it matches "std".
 	 * 
 	 * @param element The IUsing directive to check.
@@ -362,7 +345,7 @@ public class TestCaseVisitor implements ICElementVisitor
 	private void checkForMain(IFunctionDeclaration element)
 	{
 		if("main".equals(element.getElementName()))
-			mainExists = true;
+			suites.setMainProvided(true);
 	}
 	
 	/**

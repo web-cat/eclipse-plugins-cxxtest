@@ -91,7 +91,7 @@ public class TestRunnerGenerator
         options.put("root", true);
         options.put("part", false);
         options.put("abortOnFail", true);
-        options.put("mainProvided", suites.doesMainFunctionExist());
+        options.put("mainProvided", suites.isMainProvided());
         options.put("runner", "XmlStdioPrinter");
         options.put("xmlOutput", true);
         options.put("testResultsFilename", ICxxTestConstants.TEST_RESULTS_FILE);
@@ -138,16 +138,6 @@ public class TestRunnerGenerator
 		traceStack = value;
 	}
 
-	public boolean isMainProvided()
-	{
-		return mainProvided;
-	}
-
-	public void setMainProvided(boolean value)
-	{
-		mainProvided = value;
-	}
-	
 	public ITranslationUnit[] getPossibleTestFiles()
 	{
 		return possibleTestFiles;
@@ -231,7 +221,6 @@ public class TestRunnerGenerator
 	private boolean trapSignals;
 	private boolean traceStack;
 
-	private boolean mainProvided;
 	private ITranslationUnit[] possibleTestFiles;
 	private String[] extraIncludes;
 }

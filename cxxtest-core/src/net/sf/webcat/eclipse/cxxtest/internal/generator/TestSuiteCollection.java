@@ -41,9 +41,15 @@ public class TestSuiteCollection
     }
 
 
-    public boolean doesMainFunctionExist()
+    public boolean isMainProvided()
     {
-        return mainExists;
+        return mainProvided;
+    }
+    
+    
+    public void setMainProvided(boolean value)
+    {
+    	mainProvided = value;
     }
 
     
@@ -69,5 +75,5 @@ public class TestSuiteCollection
 
     private List<String> possibleTestFiles;
 
-    private boolean mainExists;
+    private boolean mainProvided;
 }
