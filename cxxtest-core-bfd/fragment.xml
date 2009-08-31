@@ -100,5 +100,11 @@
          </optionSet>
       </extraProjectOptions>
    </extension>
+   <extension
+         point="net.sf.webcat.eclipse.cxxtest.platformSpecificStartup">
+      <startup
+            class="net.sf.webcat.eclipse.cxxtest.bfd.CheckForRequiredLibraries">
+      </startup>
+   </extension>
 
 </fragment>

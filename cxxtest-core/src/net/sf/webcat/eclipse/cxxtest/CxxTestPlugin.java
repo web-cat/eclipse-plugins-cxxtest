@@ -32,6 +32,10 @@ import net.sf.webcat.eclipse.cxxtest.internal.options.ExtraOptionsUpdater;
 import net.sf.webcat.eclipse.cxxtest.options.IExtraOptionsUpdater;
 import net.sf.webcat.eclipse.cxxtest.ui.TestRunnerViewPart;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IConfigurationElement;
+import org.eclipse.core.runtime.IExtensionPoint;
+import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.ConfigurationScope;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -118,9 +122,43 @@ public class CxxTestPlugin extends AbstractUIPlugin
 	{
 		super.start(context);
 		
-		checkSystemForLibIntl();
+		runPlatformSpecificStartups();
 	}
 
+
+	private void runPlatformSpecificStartups()
+	{
+		IExtensionRegistry registry = Platform.getExtensionRegistry();
+		IExtensionPoint extensionPoint =
+		        registry.getExtensionPoint(CxxTestPlugin.PLUGIN_ID
+		                + ".platformSpecificStartup");
+
+		IConfigurationElement[] elements =
+		        extensionPoint.getConfigurationElements();
+
+		for(IConfigurationElement element : elements)
+		{
+			if ("startup".equals(element.getName()))
+			{
+				try
+				{
+					Object obj = element.createExecutableExtension("class");
+					if (obj instanceof IPlatformSpecificStartup)
+					{
+						IPlatformSpecificStartup startup =
+							(IPlatformSpecificStartup) obj;
+						
+						startup.startup();
+					}
+				}
+				catch (CoreException e)
+				{
+					// Do nothing.
+				}
+			}
+		}
+	}
+	
 
 	/**
 	 * This method is called when the plug-in is stopped
