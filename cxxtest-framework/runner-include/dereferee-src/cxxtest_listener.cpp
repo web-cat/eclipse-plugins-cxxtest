@@ -23,18 +23,16 @@
 #include <string>
 #include <dereferee/listener.h>
 
-#define CXXTEST_TRAP_SIGNALS
-#define CXXTEST_TRACE_STACK
-
-#include <cxxtest/Appender.h>
-#include <cxxtest/Signals.h>
+#include <cxxtest/MemoryTrackingListener.h>
+#include <cxxtest/SafeString.h>
 
 // ===========================================================================
 /**
- * The cxxtest_listener class is an implementation of the
- * Dereferee::listener class that either sends its output to the current
- * debugger (if one is present) or to stdout/stderr (if the process is not
- * being debugged).
+ * The cxxtest_xml_listener class is an implementation of the
+ * Dereferee::listener class that maps Dereferee errors to CxxTest test case
+ * failures, and generates its summary output to a hidden XML file in
+ * the process's working directory which can then be processed by an IDE
+ * (such as Eclipse or Visual Studio) to display the feedback to the user.
  *
  * To affect runtime behavior, the following options can be used:
  *
@@ -114,12 +112,12 @@ static const char* corruption_messages[] =
 
 // ===========================================================================
 /**
- * Interface and implementation of the msvc_win32_listener class.
+ * Interface and implementation of the cxxtest_xml_listener class.
  */
 namespace DerefereeSupport
 {
 
-class cxxtest_listener : public Dereferee::listener
+class cxxtest_xml_listener : public Dereferee::listener
 {
 private:
 	const Dereferee::usage_stats* usage_stats;
@@ -127,15 +125,24 @@ private:
 	size_t max_leaks;
 	Dereferee::platform* platform;
 
+    void output_backtrace(void** bt, CxxTest::SafeString& str);
+    
+    CxxTest::SafeString escape(const char* str);
+
 public:
-	cxxtest_listener(const Dereferee::option* options,
+	cxxtest_xml_listener(const Dereferee::option* options,
 		Dereferee::platform* platform);
 
-	~cxxtest_listener();
+	~cxxtest_xml_listener();
 
 	size_t maximum_leaks_to_report();
 
+    void* get_allocation_user_info(
+        const Dereferee::allocation_info& alloc_info);
+
 	void begin_report(const Dereferee::usage_stats& stats);
+
+	bool should_report_leak(const Dereferee::allocation_info& leak);
 
 	void report_leak(const Dereferee::allocation_info& leak);
 
@@ -148,8 +155,8 @@ public:
 	void warning(Dereferee::warning_code code, va_list args);
 };
 
-// ---------------------------------------------------------------------------
-cxxtest_listener::cxxtest_listener(
+// ------------------------------------------------------------------
+cxxtest_xml_listener::cxxtest_xml_listener(
 	const Dereferee::option* options, Dereferee::platform* platform)
 {
 	// Initialize defaults.
@@ -169,20 +176,28 @@ cxxtest_listener::cxxtest_listener(
 	}
 }
 
-// ---------------------------------------------------------------------------
-cxxtest_listener::~cxxtest_listener()
+// ------------------------------------------------------------------
+cxxtest_xml_listener::~cxxtest_xml_listener()
 {
 	fclose(memory_log);
 }
 
 // ------------------------------------------------------------------
-size_t cxxtest_listener::maximum_leaks_to_report()
+void* cxxtest_xml_listener::get_allocation_user_info(
+    const Dereferee::allocation_info& alloc_info)
+{
+    return (void*) CxxTest::MemoryTrackingListener::tagAction(
+        CxxTest::MemoryTrackingListener::GET);
+}
+
+// ------------------------------------------------------------------
+size_t cxxtest_xml_listener::maximum_leaks_to_report()
 {
 	return max_leaks;
 }
 
 // ------------------------------------------------------------------
-void cxxtest_listener::begin_report(const Dereferee::usage_stats& stats)
+void cxxtest_xml_listener::begin_report(const Dereferee::usage_stats& stats)
 {
 	usage_stats = &stats;
 
@@ -192,7 +207,15 @@ void cxxtest_listener::begin_report(const Dereferee::usage_stats& stats)
 }
 
 // ------------------------------------------------------------------
-void cxxtest_listener::report_leak(
+bool cxxtest_xml_listener::should_report_leak(
+	const Dereferee::allocation_info& leak)
+{
+    unsigned int tag = (unsigned int) leak.user_info();    
+    return (tag & 0x80000000) == 0;
+}
+
+// ------------------------------------------------------------------
+void cxxtest_xml_listener::report_leak(
 	const Dereferee::allocation_info& leak)
 {
 	fprintf(memory_log, "    <leak address=\"%p\"", leak.address());
@@ -211,21 +234,93 @@ void cxxtest_listener::report_leak(
 	fprintf(memory_log, " size=\"%lu\">\n",
 		(unsigned long)leak.block_size());
 
-	CxxTest::FileAppender appender(memory_log);
-	CxxTest::__append_backtrace_xml(leak.backtrace(), true, appender);
-
+    CxxTest::SafeString btStr;
+    output_backtrace(leak.backtrace(), btStr);
+    fputs(btStr.c_str(), memory_log);
+    
 	fprintf(memory_log, "    </leak>\n");
 }
 
 // ------------------------------------------------------------------
-void cxxtest_listener::report_truncated(size_t /* reports_logged */,
-											  size_t /* actual_leaks */)
+CxxTest::SafeString cxxtest_xml_listener::escape(const char* str)
+{
+    CxxTest::SafeString result;
+    
+    while (*str)
+    {
+        switch (*str)
+        {
+            case '<': result += "&lt;"; break;
+            case '>': result += "&gt;"; break;
+            case '"': result += "&quot;"; break;
+            case '\'': result += "&apos;"; break;
+            case '&': result += "&amp;"; break;
+            default: result += *str;
+        }
+
+        str++;
+    }
+    
+    return result;
+}
+
+// ------------------------------------------------------------------
+void cxxtest_xml_listener::output_backtrace(void** bt, CxxTest::SafeString& str)
+{
+    if (bt)
+    {
+        char function[DEREFEREE_MAX_FUNCTION_LEN];
+        char filename[DEREFEREE_MAX_FILENAME_LEN];
+        int line_number;
+        char line_num_buffer[32];
+
+        while(*bt)
+        {
+            if(platform->get_backtrace_frame_info(*bt,
+                function, filename, &line_number))
+            {
+                if(CxxTest::filter_backtrace_frame(function))
+                {
+                    str += "<stack-frame function=\"";
+                    str += escape(function).c_str();
+                    str += "\" ";
+
+                    if(line_number)
+                    {
+                        str += "location=\"";
+                        str += escape(filename).c_str();
+                        str += ":";
+
+                        snprintf(line_num_buffer, 32, "%d", line_number);
+                        str += line_num_buffer;
+
+                        str += "\" ";
+                    }
+
+                    str += "/>\n";
+
+                    if (strcmp(function, "main") == 0 ||
+                        strstr(function, "CxxTestMain") == function)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            bt++;
+        }
+    }
+}
+
+// ------------------------------------------------------------------
+void cxxtest_xml_listener::report_truncated(size_t /* reports_logged */,
+										size_t /* actual_leaks */)
 {
 	// Do nothing.
 }
 
 // ------------------------------------------------------------------
-void cxxtest_listener::end_report()
+void cxxtest_xml_listener::end_report()
 {
 	fprintf(memory_log, "    <summary "
 		"total-bytes-allocated=\"%d\" max-bytes-in-use=\"%d\" "
@@ -245,12 +340,11 @@ void cxxtest_listener::end_report()
 }
 
 // ------------------------------------------------------------------
-void cxxtest_listener::error(Dereferee::error_code code, va_list args)
+void cxxtest_xml_listener::error(Dereferee::error_code code, va_list args)
 {
 	char text[513];
 	vsprintf(text, error_messages[code], args);
-	CxxTest::__cxxtest_assertmsg.clear();
-	CxxTest::__cxxtest_assertmsg.append_str(text);
+    CxxTest::__cxxtest_assertmsg = text;
 
 #ifdef __CYGWIN__
 	// Can't use abort() here because it hard-kills the process on Windows,
@@ -265,10 +359,10 @@ void cxxtest_listener::error(Dereferee::error_code code, va_list args)
 }
 
 // ------------------------------------------------------------------
-void cxxtest_listener::warning(Dereferee::warning_code code,
+void cxxtest_xml_listener::warning(Dereferee::warning_code code,
 									 va_list args)
 {
-	CxxTest::StringAppender appender;
+	CxxTest::SafeString str;
 
 	char msg[512];
 
@@ -284,17 +378,11 @@ void cxxtest_listener::warning(Dereferee::warning_code code,
 		vsprintf(msg, warning_messages[code], args);
 	}
 
-	appender.append_str(msg);
-	appender.append('\n');
-
-	void** bt = platform->get_backtrace(NULL, NULL);
-
-	CxxTest::__append_backtrace_xml(bt, true, appender);
-	platform->free_backtrace(bt);
+	str += msg;
 
 	if(!CxxTest::__cxxtest_runCompleted)
 	{
-		CxxTest::doWarn("", 0, appender.str());
+		CxxTest::doWarn("", 0, str.c_str());
 	}
 }
 
@@ -309,7 +397,7 @@ void cxxtest_listener::warning(Dereferee::warning_code code,
 Dereferee::listener* Dereferee::create_listener(
 	const Dereferee::option* options, Dereferee::platform* platform)
 {
-	return new DerefereeSupport::cxxtest_listener(options, platform);
+	return new DerefereeSupport::cxxtest_xml_listener(options, platform);
 }
 
 void Dereferee::destroy_listener(Dereferee::listener* listener)

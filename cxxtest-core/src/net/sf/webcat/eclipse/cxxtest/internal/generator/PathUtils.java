@@ -22,123 +22,242 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+//--------------------------------------------------------------------------
 /**
- * This class provides functions used to generate a relative path from two
- * absolute paths.
+ * Utility functions for working with relative paths.
+ * 
+ * @author Tony ALlevato
+ * @version $Id$
  */
 public class PathUtils
 {
+    //~ Methods ...............................................................
+
+    // ----------------------------------------------------------
     /**
-     * get relative path of File 'f' with respect to 'home' directory example :
-     * home = /a/b/c f = /a/d/e/x.txt s = getRelativePath(home,f) =
-     * ../../d/e/x.txt
+     * Gets a relative path from the file or directory "source" to the file or
+     * directory "destination". For example, if source is "/a/b/c" and
+     * destination is "/a/d/e/x.txt" (assuming that "/a/b/c" is a directory),
+     * then this function returns the string "../../d/e/x.txt".
      * 
-     * @param home
-     *            base path, should be a directory, not a file, or it doesn't
-     *            make sense
-     * @param f
-     *            file to generate path for
-     * @return path from home to f as a string
+     * @param source the source path, as a String. If null, the process's
+     *     current directory is used. The source can be either a directory or a
+     *     file.
+     * @param destination the destination path, as a String. Cannot be null.
+     *
+     * @return the relative path from source to destination, as a String
      */
-    public static String relativePathTo(String home, String f)
+    public static String relativizePath(String source, String destination)
     {
-        return relativePathTo(new File(home), new File(f));
-    }
-
-
-    public static String relativePathTo(File home, File f)
-    {
-        List<String> homelist;
-        List<String> filelist;
-        String s;
-
-        if (!home.isDirectory())
-            home = home.getParentFile();
+        File sourceFile;
         
-        if (home == null)
-            home = new File(".");
-
-        homelist = getPathList(home);
-        filelist = getPathList(f);
-        s = matchPathLists(homelist, filelist);
-
-        return s;
+        if (source == null)
+        {
+            sourceFile = new File(".");
+        }
+        else
+        {
+            sourceFile = new File(source);
+        }
+        
+        return relativizePath(sourceFile, new File(destination));
     }
 
 
+    // ----------------------------------------------------------
     /**
-     * break a path down into individual elements and add to a list. example :
-     * if a path is /a/b/c/d.txt, the breakdown will be [d.txt,c,b,a]
+     * Gets a relative path from the file or directory "source" to the file or
+     * directory "destination". For example, if source is "/a/b/c" and
+     * destination is "/a/d/e/x.txt", then this function returns the string
+     * "../../d/e/x.txt".
      * 
-     * @param f
-     *            input file
-     * @return a List collection with the individual elements of the path in
-     *         reverse order
+     * @param source the source path, as a File. If null, the process's current
+     *     directory is used
+     * @param destination the destination path, as a File. Cannot be null.
+     *
+     * @return the relative path from source to destination, as a String
      */
-    private static List<String> getPathList(File f)
+    public static String relativizePath(File source, File destination)
     {
-        List<String> l = new ArrayList<String>();
-        File r;
+        if (destination == null)
+        {
+            throw new IllegalArgumentException("The destination path cannot "
+                    + "be null.");
+        }
+
+        if (source != null && !source.isDirectory())
+        {
+            // If the source is a file, use the directory that contains it.
+
+            source = source.getParentFile();
+        }
+
+        if (source == null)
+        {
+            // Use the process's current working directory if the source is
+            // null.
+            
+            source = new File(".");
+        }
+
+        String[] srcSegments = reversedPathSegments(source);
+        String[] destSegments = reversedPathSegments(destination);
+
+        if (srcSegments == null || destSegments == null)
+        {
+            // If there was a problem segmenting either of the paths, just
+            // play it safe and return the full destination path.
+
+            return destination.getAbsolutePath();
+        }
+        else
+        {
+            // This is a special check for Windows systems, to make sure that
+            // both paths are on the same volume (if they don't, then there is
+            // no relative path between them). If the paths are not on the same
+            // volume, just return the full destination path.
+            
+            if (IS_WINDOWS)
+            {
+                String srcVolume = srcSegments[srcSegments.length - 1];
+                String destVolume = destSegments[destSegments.length - 1];
+
+                if (!srcVolume.equals(destVolume))
+                {
+                    return destination.getAbsolutePath();
+                }
+            }
+
+            return relativizePathSegments(srcSegments, destSegments);
+        }
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Separates a path into its individual segments and returns these segments
+     * in a list, in reverse order. For example, the path "/a/b/c/d.txt" will
+     * be returned as the list [ "d.txt", "c", "b", "a" ].
+     * 
+     * @param path the input path
+     * @return a List containing the path segments in reverse order
+     */
+    private static String[] reversedPathSegments(File path)
+    {
+        List<String> segments = new ArrayList<String>();
 
         try
         {
-            r = f.getCanonicalFile();
-            while (r != null)
+            // Canonicalize the path so that both will compare with string
+            // equality later.
+
+            File currentFile = path.getCanonicalFile();
+
+            // Navigate up to the root, pruning off each segment of the path.
+
+            while (currentFile != null)
             {
-                l.add(r.getName());
-                r = r.getParentFile();
+                segments.add(currentFile.getName());
+                currentFile = currentFile.getParentFile();
             }
         }
         catch (IOException e)
         {
             e.printStackTrace();
-            l = null;
+            segments = null;
         }
-        return l;
+
+        if (segments != null)
+        {
+            return segments.toArray(new String[segments.size()]);
+        }
+        else
+        {
+            return null;
+        }
     }
 
 
+    // ----------------------------------------------------------
     /**
-     * figure out a string representing the relative path of 'f' with respect to
-     * 'r'
+     * Computes a string containing the relative path from the directory or
+     * file represented by the source segments to the directory or file
+     * represented by the destination segments.
      * 
-     * @param r
-     *            home path
-     * @param f
-     *            path of file
+     * @param srcSegments the segments of the source path
+     * @param destSegments the segments of the destination path
      */
-    private static String matchPathLists(List<String> r, List<String> f)
+    private static String relativizePathSegments(String[] srcSegments,
+            String[] destSegments)
     {
-        int i;
-        int j;
-        String s;
-        // start at the beginning of the lists
-        // iterate while both lists are equal
-        s = "";
-        i = r.size() - 1;
-        j = f.size() - 1;
+        int srcIndex = srcSegments.length - 1;
+        int destIndex = destSegments.length - 1;
 
-        // first eliminate common root
-        while ((i >= 0) && (j >= 0) && (r.get(i).equals(f.get(j))))
+        StringBuffer relativePath = new StringBuffer();
+
+        // Skip past the parts of the paths that both have in common. String
+        // equality suffices here since the paths are canonicalized before
+        // being passed into this function.
+        
+        while (srcIndex >= 0 && destIndex >= 0 &&
+                srcSegments[srcIndex].equals(destSegments[destIndex]))
         {
-            i--;
-            j--;
+            srcIndex--;
+            destIndex--;
         }
 
-        // for each remaining level in the home path, add a ..
-        for (; i >= 0; i--)
+        // For each remaining segment in the source path, add a reference to
+        // the parent directory.
+        
+        for (; srcIndex >= 0; srcIndex--)
         {
-            s += ".." + File.separator;
+            relativePath.append("..");
+            relativePath.append(File.separator);
         }
 
-        // for each level in the file path, add the path
-        for (; j >= 1; j--)
+        // Then, now that we're at the location where the remainder of the
+        // destination path starts, append those segments to the end of the
+        // path.
+        
+        for (; destIndex > 0; destIndex--)
         {
-            s += f.get(j) + File.separator;
+            relativePath.append(destSegments[destIndex]);
+            relativePath.append(File.separator);
         }
 
-        // file name
-        s += f.get(j);
-        return s;
+        // Finally, append the filename, if there is one.
+        
+        if (destIndex == 0)
+        {
+            relativePath.append(destSegments[destIndex]);
+        }
+
+        // Remove a final trailing slash if it is there.
+        
+        if (relativePath.charAt(relativePath.length() - 1) ==
+            File.separatorChar)
+        {
+            relativePath.deleteCharAt(relativePath.length() - 1);
+        }
+
+        return relativePath.toString();
     }
+    
+
+    //~ Static initialization .................................................
+    
+    // ----------------------------------------------------------
+    static
+    {
+        // Determine if we're running on Windows, so we can do a volume check
+        // if necessary.
+        
+        String osName = System.getProperty("os.name").toLowerCase();
+        IS_WINDOWS = osName.contains("windows");
+    }
+    
+
+    //~ Static/instance variables .............................................
+
+    private static final boolean IS_WINDOWS; 
 }

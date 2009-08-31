@@ -1,5 +1,5 @@
-#ifndef __CXXTEST__X11GUI_H
-#define __CXXTEST__X11GUI_H
+#ifndef __cxxtest__X11Gui_h__
+#define __cxxtest__X11Gui_h__
 
 //
 // X11Gui displays a simple progress bar using X11
@@ -324,4 +324,4 @@ namespace CxxTest
     };
 };
 
-#endif //__CXXTEST__X11GUI_H
+#endif //__cxxtest__X11Gui_h__

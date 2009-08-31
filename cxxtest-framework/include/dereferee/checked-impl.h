@@ -523,6 +523,7 @@ bool operator==(const checked_ptr<U>& lhs, const checked_ptr<V>& rhs)
 		__DMI->error(error_compare_dead_uninitialized);
 	}
 
+	// Post error behavior: Do nothing, this is not an unrecoverable error.
 	return (lhs.pointer == rhs.pointer);
 }
 
@@ -569,7 +570,7 @@ bool operator>=(const checked_ptr<U>& lhs, const checked_ptr<V>& rhs)
 template <typename T>
 checked_ptr<T>& checked_ptr<T>::operator++()
 {
-	const mem_info* addr_info = __DMI->address_info(pointer);
+	mem_info* addr_info = __DMI->address_info(pointer);
 
 	pointer++;
 
@@ -577,12 +578,14 @@ checked_ptr<T>& checked_ptr<T>::operator++()
 	{
 		__DMI->error(error_pointer_not_found);
 	}
-	else if(!bounds_checker<T>(addr_info).contains(pointer))
+	else if(!calculating_bounds_checker<value_type>(addr_info)
+		.contains(pointer, true))
 	{
 		out_of_bounds = true;
 		__DMI->error(error_arithmetic_moved_out_of_bounds);
 	}
 
+	// Post error behavior: Do nothing, this is not an unrecoverable error.
 	return *this;
 }
 
@@ -599,7 +602,7 @@ checked_ptr<T> checked_ptr<T>::operator++(int)
 template <typename T>
 checked_ptr<T>& checked_ptr<T>::operator--()
 {
-	const mem_info* addr_info = __DMI->address_info(pointer);
+	mem_info* addr_info = __DMI->address_info(pointer);
 	
 	pointer--;
 	
@@ -607,12 +610,14 @@ checked_ptr<T>& checked_ptr<T>::operator--()
 	{
 		__DMI->error(error_pointer_not_found);
 	}
-	else if(!bounds_checker<T>(addr_info).contains(pointer))
+	else if(!calculating_bounds_checker<value_type>(addr_info)
+		.contains(pointer, true))
 	{
 		out_of_bounds = true;
 		__DMI->error(error_arithmetic_moved_out_of_bounds);
 	}
 	
+	// Post error behavior: Do nothing, this is not an unrecoverable error.
 	return *this;
 }
 
@@ -629,7 +634,7 @@ checked_ptr<T> checked_ptr<T>::operator--(int)
 template <typename U>
 checked_ptr<U> operator+(const checked_ptr<U>& ptr, ptrdiff_t delta)
 {
-	const mem_info* addr_info = __DMI->address_info(ptr.pointer);
+	mem_info* addr_info = __DMI->address_info(ptr.pointer);
 	bool out_of_bounds = false;
 
 	U new_pointer = ptr.pointer + delta;
@@ -638,12 +643,14 @@ checked_ptr<U> operator+(const checked_ptr<U>& ptr, ptrdiff_t delta)
 	{
 		__DMI->error(error_pointer_not_found);
 	}
-	else if(!bounds_checker<U>(addr_info).contains(new_pointer))
+	else if(!calculating_bounds_checker<typename checked_ptr<U>::value_type>
+		(addr_info).contains(new_pointer, true))
 	{
 		out_of_bounds = true;
 		__DMI->error(error_arithmetic_moved_out_of_bounds);
 	}
 	
+	// Post error behavior: Do nothing, this is not an unrecoverable error.
 	checked_ptr<U> result(new_pointer);
 	result.out_of_bounds = out_of_bounds;
 	return result;
@@ -706,6 +713,7 @@ ptrdiff_t operator-(const checked_ptr<U>& lhs, const checked_ptr<V>& rhs)
 		}
 	}
 
+	// Post error behavior: Do nothing, this is not an unrecoverable error.
 	return (lhs.pointer - rhs.pointer);
 }
 
@@ -713,7 +721,7 @@ ptrdiff_t operator-(const checked_ptr<U>& lhs, const checked_ptr<V>& rhs)
 template <typename T>
 checked_ptr<T>& checked_ptr<T>::operator+=(ptrdiff_t delta)
 {
-	const mem_info* addr_info = __DMI->address_info(pointer);
+	mem_info* addr_info = __DMI->address_info(pointer);
 	
 	pointer += delta;
 	
@@ -721,12 +729,14 @@ checked_ptr<T>& checked_ptr<T>::operator+=(ptrdiff_t delta)
 	{
 		__DMI->error(error_pointer_not_found);
 	}
-	else if(!bounds_checker<T>(addr_info).contains(pointer))
+	else if(!calculating_bounds_checker<value_type>(addr_info)
+		.contains(pointer, true))
 	{
 		out_of_bounds = true;
 		__DMI->error(error_arithmetic_moved_out_of_bounds);
 	}
 	
+	// Post error behavior: Do nothing, this is not an unrecoverable error.
 	return *this;
 }
 
@@ -762,18 +772,15 @@ typename checked_ptr<T>::reference_type checked_ptr<T>::operator*()
 		__DMI->error(error_deref_out_of_bounds_star_op);
 		break;
 	}
-/*
+	
 	const mem_info* addr_info = __DMI->address_info(pointer);
-
-	if(addr_info)
+	if(!noncalculating_bounds_checker<T>(addr_info).contains(pointer, false))
 	{
-		if((char*)pointer < addr_info->user_begin() ||
-			(char*)pointer >= addr_info->user_end())
-		{
-			__DMI->error(error_deref_out_of_bounds_star_op);
-		}		
+		__DMI->error(error_deref_out_of_bounds_star_op);
 	}
-*/
+
+	// Post error behavior: There is nothing we can do here, we have to
+	// return a valid reference. Just let the unrecoverable error occur.
 	return *pointer;
 }
 
@@ -803,17 +810,14 @@ typename checked_ptr<T>::pointer_type checked_ptr<T>::operator->() const
 		break;
 	}
 
-/*	const mem_info* addr_info = __DMI->address_info(pointer);
-
-	if(addr_info)
+	const mem_info* addr_info = __DMI->address_info(pointer);
+	if(!noncalculating_bounds_checker<T>(addr_info).contains(pointer, false))
 	{
-		if((char*)pointer < addr_info->user_begin() ||
-			(char*)pointer >= addr_info->user_end())
-		{
-			__DMI->error(error_deref_out_of_bounds_arrow_op);
-		}		
+		__DMI->error(error_deref_out_of_bounds_star_op);
 	}
-*/
+
+	// Post error behavior: There is nothing we can do here, we have to
+	// return a valid pointer. Just let the unrecoverable error occur.
 	return pointer;
 }
 
@@ -840,6 +844,8 @@ checked_ptr<T>::operator pointer_type() const
 		break;
 	}
 
+	// Post error behavior: This cast isn't an error in itself. Do nothing
+	// and let the caller deal with it.
 	return pointer;
 }
 
@@ -880,7 +886,7 @@ typename checked_ptr<T>::reference_type checked_ptr<T>::operator[](int index)
 
 	pointer_type new_pointer = pointer + index;
 
-	const mem_info* addr_info = __DMI->address_info(pointer);
+	mem_info* addr_info = __DMI->address_info(pointer);
 
 	if(addr_info)
 	{
@@ -890,17 +896,18 @@ typename checked_ptr<T>::reference_type checked_ptr<T>::operator[](int index)
 		}
 		else
 		{
-			bounds_checker<T> checker(addr_info);
+			calculating_bounds_checker<T> checker(addr_info);
 			
-			if(!checker.contains(new_pointer))
+			if(!checker.contains(new_pointer, false))
 			{
-				size_t size = checker.array_size();
-		
+				size_t size = addr_info->array_size;
 				__DMI->error(error_index_out_of_bounds, index, size - 1);
 			}
 		}		
 	}
 
+	// Post error behavior: There is nothing we can do here, we have to
+	// return a valid reference. Just let the unrecoverable error occur.
 	return *new_pointer;
 }
 
@@ -942,7 +949,15 @@ void checked_ptr<T>::store_type_info(mem_info* addr_info)
 	// Initialize supplemental information for the memory block that could
 	// not be computed in operator new.
 
-	const char* type_name = typeid(value_type).name();
+	char type_name[DEREFEREE_MAX_SYMBOL_LEN];
+#ifdef _MSC_VER
+	strncpy_s(type_name, DEREFEREE_MAX_SYMBOL_LEN, typeid(value_type).name(),
+		_TRUNCATE);
+#else
+	strncpy(type_name, typeid(value_type).name(), DEREFEREE_MAX_SYMBOL_LEN);
+#endif
+	current_platform()->demangle_type_name(type_name);
+
 	size_t bufsize = strlen(type_name) + 1;
 	addr_info->type_name = (char*)malloc(bufsize);
 #ifdef _MSC_VER
@@ -950,6 +965,10 @@ void checked_ptr<T>::store_type_info(mem_info* addr_info)
 #else
 	strcpy(addr_info->type_name, type_name);
 #endif
+
+	addr_info->cookie_size = 0;
+	addr_info->array_size = 0;
+	addr_info->cookie_size_is_known = false;
 }
 
 // ------------------------------------------------------------------
@@ -989,6 +1008,8 @@ void do_relational_check(const checked_ptr<U>& lhs, const checked_ptr<V>& rhs)
 			__DMI->error(error_relational_different_blocks);
 		}
 	}
+
+	// Post error behavior: Do nothing, this is not an unrecoverable error.
 }
 
 } // namespace Dereferee

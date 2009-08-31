@@ -27,20 +27,53 @@ namespace Dereferee
 {
 
 // ===========================================================================
+/**
+ * A concrete implementation of the Dereferee::allocation_info interface.
+ * This class is not intended to be used by clients.
+ */
 class allocation_info_impl : public allocation_info
 {
 private:
-	const mem_info* info;
+	/**
+	 * The internal mem_info structure that contains the information that
+	 * will be exposed by this class.
+	 */
+	mem_info* info;
 
 public:
-	allocation_info_impl(const mem_info& i);
+	// -----------------------------------------------------------------------
+	/**
+	 * Initializes a new allocation_info_impl object with the specified
+	 * mem_info.
+	 *
+	 * @param i the mem_info object containing the information about the
+	 *     memory block
+	 */
+	allocation_info_impl(mem_info& i);
 	
+	// -----------------------------------------------------------------------
 	const void* address() const;
+
+	// -----------------------------------------------------------------------
 	size_t block_size() const;
+
+	// -----------------------------------------------------------------------
 	bool is_array() const;
+
+	// -----------------------------------------------------------------------
 	size_t array_size() const;
+
+	// -----------------------------------------------------------------------
 	const char* type_name() const;
+
+	// -----------------------------------------------------------------------
 	void** backtrace() const;
+	
+	// -----------------------------------------------------------------------
+    void* user_info() const;
+    
+	// -----------------------------------------------------------------------
+    void set_user_info(void* value);
 };
 
 } // namespace Dereferee

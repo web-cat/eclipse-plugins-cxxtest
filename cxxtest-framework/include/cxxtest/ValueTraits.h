@@ -1,5 +1,5 @@
-#ifndef __CXXTEST__VALUETRAITS_H
-#define __CXXTEST__VALUETRAITS_H
+#ifndef __cxxtest__ValueTraits_h__
+#define __cxxtest__ValueTraits_h__
 
 //
 // ValueTraits are used by CxxTest to convert arbitrary
@@ -28,27 +28,44 @@ namespace CxxTest
     //
     // Char representation of a digit
     //
-    inline char digitToChar( unsigned digit )
-    {
-        if ( digit < 10 )
-            return (char)('0' + digit);
-        if ( digit <= 10 + 'Z' - 'A' )
-            return (char)('A' + digit - 10);
-        return '?';
-    }
+    char digitToChar( unsigned digit );
 
     //
     // Convert byte value to hex digits
     // Returns pointer to internal buffer
     //
-    inline const char *byteToHex( unsigned char byte )
-    {
-        static char asHex[3];
-        asHex[0] = digitToChar( byte >> 4 );
-        asHex[1] = digitToChar( byte & 0x0F );
-        asHex[2] = '\0';
-        return asHex;
-    }
+    const char *byteToHex( unsigned char byte );
+
+    //
+    // Convert byte values to string
+    // Returns one past the copied data
+    //
+    char *bytesToString( const unsigned char *bytes, unsigned numBytes, unsigned maxBytes, char *s );
+
+    //
+    // Copy a string.
+    // Returns one past the end of the destination string
+    // Remember -- we can't use the standard library!
+    //
+    char *copyString( char *dst, const char *src );
+
+    //
+    // Compare two strings.
+    // Remember -- we can't use the standard library!
+    //
+    bool stringsEqual( const char *s1, const char *s2 );
+
+    //
+    // Represent a character value as a string
+    // Returns one past the end of the string
+    // This will be the actual char if printable or '\xXXXX' otherwise
+    //
+    char *charToString( unsigned long c, char *s );
+
+    //
+    // Prevent problems with negative (signed char)s
+    //
+    char *charToString( char c, char *s );
 
     //
     // The default ValueTraits class dumps up to 8 bytes as hex values
@@ -60,30 +77,8 @@ namespace CxxTest
         char _asString[sizeof("{ ") + sizeof("XX ") * MAX_BYTES + sizeof("... }")];
         
     public:
-        ValueTraits( const T &t )
-        {
-            unsigned numBytes = (sizeof(T) <= (unsigned)MAX_BYTES) ? sizeof(T) : (unsigned)MAX_BYTES;
-            const unsigned char *p = (const unsigned char *)&t;
-            char *s = _asString;
-            *s++ = '{';
-            *s++ = ' ';
-            for ( unsigned i = 0; i < numBytes; ++ i, ++ p ) {
-                *s++ = digitToChar( *p >> 4 );
-                *s++ = digitToChar( *p & 0x0F );
-                *s++ = ' ';
-            }
-            if ( sizeof(T) > MAX_BYTES ) {
-                *s++ = '.';
-                *s++ = '.';
-                *s++ = '.';
-                *s++ = ' ';
-            }
-            *s++ = ' ';
-            *s++ = '}';
-            *s = '\0';
-        }
-        
-        const char *asString( void ) const { return _asString;}
+        ValueTraits( const T &t ) { bytesToString( (const unsigned char *)&t, sizeof(T), MAX_BYTES, _asString ); }
+        const char *asString( void ) const { return _asString; }
     };    
 
     //
@@ -145,10 +140,10 @@ namespace CxxTest
     // Remember -- we can't use the standard library!
     //
     template<class N>
-    inline char *numberToString( N n, char *s,
-                                 N base = 10,
-                                 unsigned skipDigits = 0,
-                                 unsigned maxDigits = (unsigned)-1 )
+    char *numberToString( N n, char *s,
+                          N base = 10,
+                          unsigned skipDigits = 0,
+                          unsigned maxDigits = (unsigned)-1 )
     {
         if ( negative(n) ) {
             *s++ = '-';
@@ -166,75 +161,6 @@ namespace CxxTest
 
         *s = '\0';
         return s;
-    }
-
-    //
-    // Copy a string.
-    // Returns one past the end of the destination string
-    // Remember -- we can't use the standard library!
-    //
-    inline char *copyString( char *dst, const char *src )
-    {
-        while ( (*dst = *src) != '\0' ) {
-            ++ dst;
-            ++ src;
-        }
-        return dst;
-    }
-
-    //
-    // Compare two strings.
-    // Remember -- we can't use the standard library!
-    //
-    inline bool stringsEqual( const char *s1, const char *s2 )
-    {
-        char c;
-        while ( (c = *s1++) == *s2++ )
-            if ( c == '\0' )
-                return true;
-        return false;
-    }
-
-    //
-    // Represent a character value as a string
-    // Returns one past the end of the string
-    // This will be the actual char if printable or '\xXXXX' otherwise
-    //
-    inline char *charToString( unsigned long c, char *s )
-    {
-        switch( c ) {
-        case '\\': return copyString( s, "\\\\" );
-        case '\"': return copyString( s, "\\\"" );
-        case '\'': return copyString( s, "\\\'" );
-        case '\0': return copyString( s, "\\0" );
-        case '\a': return copyString( s, "\\a" );
-        case '\b': return copyString( s, "\\b" );
-        case '\n': return copyString( s, "\\n" );
-        case '\r': return copyString( s, "\\r" );
-        case '\t': return copyString( s, "\\t" );
-        }
-        if ( c >= 32 && c <= 127 ) {
-            s[0] = (char)c;
-            s[1] = '\0';
-            return s + 1;
-        }
-        else {
-            s[0] = '\\';
-            s[1] = 'x';
-            if ( c < 0x10 ) {
-                s[2] = '0';
-                ++ s;
-            }
-            return numberToString( c, s + 2, 16UL );
-        }
-    }
-
-    //
-    // Prevent negative numbers
-    //
-    inline char *charToString( char c, char *s )
-    {
-        return charToString( (unsigned long)(unsigned char)c, s );
     }
 
     //
@@ -364,13 +290,7 @@ namespace CxxTest
     {
         char _asString[sizeof("'\\xXX'")];
     public:
-        ValueTraits( char c )
-        {
-            _asString[0] = '\'';
-            char *suffix = charToString( c, _asString + 1 );
-            suffix[0] = '\'';
-            suffix[1] = '\0';
-        }
+        ValueTraits( char c ) { copyString( charToString( c, copyString( _asString, "'" ) ), "'" ); }
         const char *asString( void ) const { return _asString; }
     };
 
@@ -389,53 +309,25 @@ namespace CxxTest
     CXXTEST_TEMPLATE_INSTANTIATION
     class ValueTraits<const double>
     {
-        enum { maxDigitsOnLeft = 24, digitsOnRight = 4, base = 10 };
-        char _asString[1 + maxDigitsOnLeft + 1 + digitsOnRight + 1];
-
-        static unsigned requiredDigitsOnLeft( double t )
-        {
-            unsigned digits = 1;
-            for ( t = (t < 0.0) ? -t : t; t > 1.0; t /= base )
-                ++ digits;
-            return digits;
-        }
-
-        char *doNegative( double &t )
-        {
-            if ( t >= 0 )
-                return _asString;
-            _asString[0] = '-';
-            t = -t;
-            return _asString + 1;
-        }
-
-        void hugeNumber( double t )
-        {
-            char *s = doNegative( t );
-            s = numberToString<double>( t, s, base, 0, 1 );
-            *s++ = '.';
-            s = numberToString<double>( t, s, base, 1, digitsOnRight );
-            *s++ = 'E';
-            s = numberToString<double>( requiredDigitsOnLeft( t ) - 1, s );
-        }
-        
-        void normalNumber( double t )
-        {
-            char *s = doNegative( t );
-            s = numberToString( t, s );
-            *s++ = '.';
-            for ( unsigned i = 0; i < digitsOnRight; ++ i )
-                s = numberToString( (unsigned)(t *= base) % base, s );
-        }
-        
     public:
-        ValueTraits( double t )
+        ValueTraits( double t ) 
         {
-            (requiredDigitsOnLeft( t ) > maxDigitsOnLeft) ?
-                hugeNumber( t ) : normalNumber( t );
+            ( requiredDigitsOnLeft( t ) > MAX_DIGITS_ON_LEFT ) ?
+                hugeNumber( t ) :
+                normalNumber( t );
         }
 
         const char *asString( void ) const { return _asString; }
+        
+    private:
+        enum { MAX_DIGITS_ON_LEFT = 24, DIGITS_ON_RIGHT = 4, BASE = 10 };
+        char _asString[1 + MAX_DIGITS_ON_LEFT + 1 + DIGITS_ON_RIGHT + 1];
+
+        static unsigned requiredDigitsOnLeft( double t );
+        char *doNegative( double &t );
+        void hugeNumber( double t );
+        void normalNumber( double t );
+        char *doubleToString( double t, char *s, unsigned skip = 0, unsigned max = (unsigned)-1 );
     };
 
     CXXTEST_COPY_CONST_TRAITS( double );
@@ -452,5 +344,34 @@ namespace CxxTest
 #   include <cxxtest/StdValueTraits.h>
 #endif // _CXXTEST_HAVE_STD
 
+//
+// CXXTEST_ENUM_TRAITS
+//
+#define CXXTEST_ENUM_TRAITS( TYPE, VALUES ) \
+    namespace CxxTest \
+    { \
+        CXXTEST_TEMPLATE_INSTANTIATION \
+        class ValueTraits<TYPE> \
+        { \
+            TYPE _value; \
+            char _fallback[sizeof("(" #TYPE ")") + 3 * sizeof(TYPE)]; \
+        public: \
+            ValueTraits( TYPE value ) { \
+                _value = value; \
+                numberToString<unsigned long int>( _value, copyString( _fallback, "(" #TYPE ")" ) ); \
+            } \
+            const char *asString( void ) const \
+            { \
+                switch ( _value ) \
+                { \
+                    VALUES \
+                    default: return _fallback; \
+                } \
+            } \
+        }; \
+    }
 
-#endif // __CXXTEST__VALUETRAITS_H
+#define CXXTEST_ENUM_MEMBER( MEMBER ) \
+    case MEMBER: return #MEMBER;
+
+#endif // __cxxtest__ValueTraits_h__

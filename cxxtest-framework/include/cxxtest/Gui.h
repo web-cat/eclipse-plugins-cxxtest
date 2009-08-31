@@ -162,7 +162,7 @@ namespace CxxTest
         GuiTuiRunner( int &argc, char **argv ) :
             _argc( argc ),
             _argv( argv )
-        {   
+        {  
             setFirst( _gui );
             setSecond( _tui );
         }

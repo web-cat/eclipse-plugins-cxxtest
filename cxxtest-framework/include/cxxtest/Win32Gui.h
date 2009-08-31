@@ -1,5 +1,5 @@
-#ifndef __CXXTEST__WIN32GUI_H
-#define __CXXTEST__WIN32GUI_H
+#ifndef __cxxtest__Win32Gui_h__
+#define __cxxtest__Win32Gui_h__
 
 //
 // The Win32Gui displays a simple progress bar using the Win32 API.
@@ -97,7 +97,6 @@ namespace CxxTest
             STATUS_TOTAL_PARTS 
         };
         int _statusWidths[STATUS_TOTAL_PARTS];
-        unsigned _statusRatios[STATUS_TOTAL_PARTS];
         unsigned _statusOffsets[STATUS_TOTAL_PARTS];
         unsigned _statusTotal;
         char _statusTestsDone[sizeof("1000000000 of  (100%)") + WorldDescription::MAX_STRLEN_TOTAL_TESTS];
@@ -223,12 +222,12 @@ namespace CxxTest
                         unsigned testsDoneRatio, unsigned worldTimeRatio )
         {
             _statusTotal = 0;
-            _statusRatios[STATUS_SUITE_NAME] = (_statusTotal += suiteNameRatio);
-            _statusRatios[STATUS_SUITE_TIME] = (_statusTotal += suiteTimeRatio);
-            _statusRatios[STATUS_TEST_NAME] = (_statusTotal += testNameRatio);
-            _statusRatios[STATUS_TEST_TIME] = (_statusTotal += testTimeRatio);
-            _statusRatios[STATUS_TESTS_DONE] = (_statusTotal += testsDoneRatio);
-            _statusRatios[STATUS_WORLD_TIME] = (_statusTotal += worldTimeRatio);
+            _statusOffsets[STATUS_SUITE_NAME] = (_statusTotal += suiteNameRatio);
+            _statusOffsets[STATUS_SUITE_TIME] = (_statusTotal += suiteTimeRatio);
+            _statusOffsets[STATUS_TEST_NAME] = (_statusTotal += testNameRatio);
+            _statusOffsets[STATUS_TEST_TIME] = (_statusTotal += testTimeRatio);
+            _statusOffsets[STATUS_TESTS_DONE] = (_statusTotal += testsDoneRatio);
+            _statusOffsets[STATUS_WORLD_TIME] = (_statusTotal += worldTimeRatio);
         }
 
         HWND createWindow( LPCTSTR className, DWORD style, HWND parent = (HWND)NULL )
@@ -373,7 +372,7 @@ namespace CxxTest
         void setStatusParts( LONG width )
         {
             for ( unsigned i = 0; i < STATUS_TOTAL_PARTS; ++ i )
-                _statusWidths[i] = (width * _statusRatios[i]) / _statusTotal;
+                _statusWidths[i] = (width * _statusOffsets[i]) / _statusTotal;
 
             statusBarMessage( SB_SETPARTS, STATUS_TOTAL_PARTS, _statusWidths );
         }
@@ -529,4 +528,4 @@ namespace CxxTest
     };
 };
 
-#endif // __CXXTEST__WIN32GUI_H
+#endif // __cxxtest__Win32Gui_h__

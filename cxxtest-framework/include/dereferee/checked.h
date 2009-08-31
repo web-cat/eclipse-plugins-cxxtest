@@ -22,9 +22,9 @@
 #include <cstdio>
 #include <memory>
 #include <typeinfo>
-#include "types.h"
-#include "manager.h"
-#include "pointer_traits.h"
+#include <dereferee/types.h>
+#include <dereferee/manager.h>
+#include <dereferee/pointer_traits.h>
 
 namespace Dereferee
 {
@@ -555,7 +555,7 @@ public:
  * Include the implementations of the enhanced dynamic_cast operator.
  */
 #ifndef DEREFEREE_NO_DYNAMIC_CAST
-#include "dynamic_cast.h"
+#include <dereferee/dynamic_cast.h>
 #endif
 
 
@@ -563,14 +563,14 @@ public:
  * Include the implementations of the enhanced const_cast operator.
  */
 #ifndef DEREFEREE_NO_CONST_CAST
-#include "const_cast.h"
+#include <dereferee/const_cast.h>
 #endif
 
 
 /*
  * Include the implementations of the checked_ptr methods. 
  */
-#include "checked-impl.h"
+#include <dereferee/checked-impl.h>
 
 
 #endif // DEREFEREE_CHECKED_H

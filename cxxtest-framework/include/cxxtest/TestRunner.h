@@ -1,5 +1,5 @@
-#ifndef __CXXTEST_TESTRUNNER_H
-#define __CXXTEST_TESTRUNNER_H
+#ifndef __cxxtest__TestRunner_h__
+#define __cxxtest__TestRunner_h__
 
 //
 // TestRunner is the class that runs all the tests.
@@ -11,28 +11,36 @@
 #include <cxxtest/RealDescriptions.h>
 #include <cxxtest/TestSuite.h>
 #include <cxxtest/TestTracker.h>
-#include <string>
+#include <cxxtest/SuiteInitFailureTable.h>
 
 namespace CxxTest 
 {
-	void addSuiteToFailures(const char*, const char*);
-	bool didSuiteFailInitialization(const char*, std::string&);
-
     class TestRunner
     {
     public:
         static void runAllTests( TestListener &listener )
         {
             tracker().setListener( &listener );
-            _TS_TRY { TestRunner().runWorld(); }
-            _TS_LAST_CATCH( { tracker().failedTest( __FILE__, __LINE__, "Exception thrown from world" ); } );
+
+            _TS_TRY
+            {
+                TestRunner().runWorld();
+            }
+            _TS_LAST_CATCH( {
+                tracker().failedTest( __FILE__, __LINE__,
+                    "Exception thrown from world" );
+            } );
+
             tracker().setListener( 0 );
         }
 
         static void runAllTests( TestListener *listener )
         {
-            if ( listener ) {
-                listener->warning( __FILE__, __LINE__, "Deprecated; Use runAllTests( TestListener & )" );
+            if ( listener )
+            {
+                listener->warning( __FILE__, __LINE__,
+                    "Deprecated; Use runAllTests( TestListener & )" );
+
                 runAllTests( *listener );
             }
         }        
@@ -60,19 +68,21 @@ namespace CxxTest
             
             tracker().enterSuite( sd );
 
-        	// 2006-10-05 (aallowat): The signal handler keeps track of all
-        	// test suites that fail at static initialization time (i.e., a
-			// field constructor raises a signal). If this suite is one of
-			// those that failed, bail out, but dump a message to the
-			// listener that notifies the user.
-			std::string reason;
-			bool failed = didSuiteFailInitialization(sd.suiteName(), reason);
-			if(failed)
-			{
-				tracker().suiteInitError(sd.file(), sd.line(), reason.c_str());
-	            tracker().leaveSuite( sd );
-				return;
-			}
+            // 2006-10-05 (aallowat): The signal handler keeps track of all
+            // test suites that fail at static initialization time (i.e., a
+            // field constructor raises a signal). If this suite is one of
+            // those that failed, bail out, but dump a message to the
+            // listener that notifies the user.
+            const char* reason =
+                CxxTest::__cxxtest_failed_init_suites.didSuiteFail(
+                    sd.suiteName());
+
+            if(reason)
+            {
+                tracker().suiteInitError(sd.file(), sd.line(), reason);
+                tracker().leaveSuite( sd );
+                return;
+            }
 
             if ( sd.setUp() ) {
                 for ( TestDescription *td = sd.firstTest(); td; td = td->next() )
@@ -81,6 +91,7 @@ namespace CxxTest
 
                 sd.tearDown();
             }
+
             tracker().leaveSuite( sd );
         }
 
@@ -89,10 +100,12 @@ namespace CxxTest
             StateGuard sg;
             
             tracker().enterTest( td );
+
             if ( td.setUp() ) {
                 td.run();
                 td.tearDown();
             }
+
             tracker().leaveTest( td );
         }
         
@@ -141,4 +154,4 @@ namespace CxxTest
 };
 
 
-#endif // __CXXTEST_TESTRUNNER_H
+#endif // __cxxtest__TestRunner_h__

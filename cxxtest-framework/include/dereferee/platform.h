@@ -22,7 +22,7 @@
 #include <cstdarg>
 #include <memory>
 
-#include "option.h"
+#include <dereferee/option.h>
 
 // ===========================================================================
 
@@ -36,46 +36,46 @@ class platform;
 /*
  * USING A CUSTOM PLATFORM WITH DEREFEREE
  *
- * If you wish to use a listener other than one of those provided in this
- * package, then you must implement a subclass of Dereferee::listener as well
+ * If you wish to use a platform other than one of those provided in this
+ * package, then you must implement a subclass of Dereferee::platform as well
  * as the following two functions, which are called when the Dereferee manager
- * is created and destroyed, respectively, in order to initialize the listener.
+ * is created and destroyed, respectively, in order to initialize the platform.
  * This allows clients to customize the notification behavior of Dereferee
- * by linking in a different listener implementation, without requiring any
+ * by linking in a different platform implementation, without requiring any
  * modification to client code using the library.
  *
- * Since the listener class is used internally by the Dereferee memory manager,
- * you should refrain from using the new/delete operators in a custom listener
- * that you write. A listener method can be called in the context of the
+ * Since the platform class is used internally by the Dereferee memory manager,
+ * you should refrain from using the new/delete operators in a custom platform
+ * that you write. A platform method can be called in the context of the
  * global new/delete operators, which could cause infinite recursion. This
  * implies that using STL containers is unsafe; instead, prefer managing
  * memory using the C functions malloc(), calloc(), realloc() and free(), if
  * necessary. If you absolutely must use any STL containers, then use custom
  * allocators to ensure that they don't use new/delete.
  *
- * The exception to this rule is when creating the listener itself; since the
- * listener abstract base class overloads the class new/delete operators to
+ * The exception to this rule is when creating the platform itself; since the
+ * platform abstract base class overloads the class new/delete operators to
  * bypass Dereferee's tracking versions, you can safely use new/delete to
- * create/destroy the listener.
+ * create/destroy the platform.
  */
 
 // ---------------------------------------------------------------------------
 /**
- * Creates a new listener object that will be notified of various memory and
+ * Creates a new platform object that will be notified of various memory and
  * pointer-related events by the Dereferee memory manager.
  *
- * @param options an array of options to pass to the listener; the last entry
+ * @param options an array of options to pass to the platform; the last entry
  *     in this array contains NULL in the key and value fields
  * 
- * @returns a pointer to the newly created listener object
+ * @returns a pointer to the newly created platform object
  */
 extern platform* create_platform(const option* options);
 
 // ---------------------------------------------------------------------------
 /**
- * Releases any resources associated with the specified listener.
+ * Releases any resources associated with the specified platform.
  *
- * @param listener the listener to be destroyed
+ * @param platform the platform to be destroyed
  */
 extern void destroy_platform(platform* platform);
 
@@ -83,9 +83,10 @@ extern void destroy_platform(platform* platform);
 // ===========================================================================
 /**
  * This abstract base class represents the interface used by Dereferee to
- * send notifications about memory usage to a listener object.  Implementors
- * should derive their custom listener from this class if they wish to provide
- * different behavior than the default.
+ * request platform-specific information, such as backtraces.  Implementors
+ * should derive their custom platform from this class to support compilers
+ * and operating systems not already supported by the provided platform
+ * modules.
  */
 class platform
 {
@@ -105,13 +106,21 @@ public:
 	 * main, at index N). If for some reason a backtrace is not able to be
 	 * determined, this method should return NULL.
 	 * 
-	 * It is the responsibility of the listener to try its best to filter
-	 * backtraces returned by this method to remove entries corresponding to
-	 * internal Dereferee functions and methods -- this is for the user's
-	 * benefit. Since every component of Dereferee is wrapped in the Dereferee
-	 * namespace, this filtering is easy to do based on the names of the
-	 * symbols at each address in the backtrace.
+	 * It is the responsibility of the platform module to try its best to
+	 * filter backtraces returned by this method to remove entries
+	 * corresponding to internal Dereferee functions and methods -- this is
+	 * for the user's benefit. Since every component of Dereferee is wrapped
+	 * in the Dereferee namespace, this filtering is easy to do based on the
+	 * names of the symbols at each address in the backtrace.
 	 *
+	 * This method accepts an instruction pointer and frame pointer as "hints"
+	 * for indicating where to begin the backtrace. They can be safely ignored
+	 * by platforms for which it would be useful to use this information, and
+	 * indeed, Dereferee's internal components always pass NULL for these
+	 * arguments. The gcc_*_platform modules do not use these values, but the
+	 * msvc_win32_platform does use them when they are passed in by methods in
+	 * the corresponding msvc_debugger_Listener module.
+	 * 
 	 * @param instr_ptr the current instruction pointer from which to start
 	 *     the backtrace; use NULL to start from the current location
 	 * @param frame_ptr the current frame pointer from which to start the
@@ -129,7 +138,8 @@ public:
 	 * This method is used to free the memory that was allocated to store the
 	 * backtrace returned by the get_backtrace method.
 	 *
-	 * This method should gracefully handle NULL as its argument.
+	 * This method should gracefully handle NULL as its argument, in which it
+	 * should do nothing.
 	 *
 	 * @param backtrace a pointer to a backtrace that was obtained by calling
 	 *     get_backtrace
@@ -145,7 +155,7 @@ public:
 	 * @param frame an entry in a backtrace
 	 * @param function a buffer that will hold the name of the function
 	 *     associated with this frame. This buffer must be large enough to
-	 *     hold DEREFEREE_MAX_FUNCTION_LEN characters, including a terminating
+	 *     hold DEREFEREE_MAX_SYMBOL_LEN characters, including a terminating
 	 *     NULL.
 	 * @param filename a buffer that will hold the name of the source file
 	 *     associated with this frame. This buffer must be large enough to
@@ -163,6 +173,56 @@ public:
 
 	// -----------------------------------------------------------------------
 	/**
+	 * Converts a mangled C++ type name to a human-readable name. This method
+	 * is called _only_ in the context of retrieving the name of a checked
+	 * pointer's type, using the RTTI construct typeid(T).name().
+	 *
+	 * Some compilers, such as GCC, return this as a mangled name, so this
+	 * method should be implemented to demangle them on those platforms. Other
+	 * compilers, such as Microsoft Visual C++, return a human-readable name
+	 * directly, so the default (empty) implementation of this method can be
+	 * used.
+	 *
+	 * @param symbol on input, the name of the symbol to be demangled. On
+	 *     output, this should contain the demangled version of the symbol.
+	 *     If the symbol is not mangled or could not be demangled, the buffer
+	 *     contents should be left unaltered. The buffer must be large enough
+	 *     to hold DEREFEREE_MAX_SYMBOL_LEN characters, including a
+	 *     terminating NULL.
+	 */
+	virtual void demangle_type_name(char* /* type_name */) { }
+
+	// -----------------------------------------------------------------------
+	/**
+	 * Saves the current execution context so that it can be restored later.
+	 * Dereferee does not use this method directly, but it is useful for
+	 * other libraries that want to integrate with Dereferee and implement
+	 * crash recovery (such as unit testing frameworks; CxxTest uses this
+	 * method to make sure that backtraces are properly rolled back when
+	 * a POSIX signal is handled).
+	 *
+	 * Currently, the pair of context methods is intended for use by
+	 * platforms that keep track of backtraces as functions are called (such
+	 * as the gcc_*_platforms, currently), as opposed to those that compute
+	 * it on demand (msvc_win32_platform). In the latter case, this method
+	 * can be left unimplemented.
+	 *
+	 * Calls to this method can be nested, so implementors should use a stack
+	 * structure to store these contexts.
+	 */
+	virtual void save_current_context() { }
+	
+	// -----------------------------------------------------------------------
+	/**
+	 * Restores the most recent execution context that was saved.
+	 *
+	 * See the description of the save_current_context method for information
+	 * on how to implement this.
+	 */
+	virtual void restore_current_context() { }
+
+	// -----------------------------------------------------------------------
+	/**
 	 * Override the class-specific allocator and deallocator methods so that
 	 * the creation of listener subclasses will not interfere with the memory
 	 * tracking in the global operators.
@@ -172,8 +232,21 @@ public:
 };
 
 
-#define DEREFEREE_MAX_FUNCTION_LEN 512
+/**
+ * The maximum length of the buffer used to hold a symbol name stored by the
+ * platform::get_backtrace_frame_info and platform::demangle_symbol methods.
+ */
+#define DEREFEREE_MAX_SYMBOL_LEN 512
+
+/** Old name for the above symbol. */
+#define DEREFEREE_MAX_FUNCTION_LEN DEREFEREE_MAX_SYMBOL_LEN
+
+/**
+ * The maximum length of the buffer used to hold a source file name stored by
+ * the platform::get_backtrace_frame_info method.
+ */
 #define DEREFEREE_MAX_FILENAME_LEN 512
+
 
 } // namespace Dereferee
 

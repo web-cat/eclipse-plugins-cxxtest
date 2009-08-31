@@ -165,9 +165,12 @@ public class CxxTestSuiteGenerator
 		return suiteFile;
 	}
 
-    private String constructHeaderFileContent(ITranslationUnit headerTU, String oldContents, IProgressMonitor monitor)
+    private String constructHeaderFileContent(ITranslationUnit headerTU,
+    		String oldContents, IProgressMonitor monitor)
     {
-        monitor.beginTask(NewClassWizardMessages.getString("NewClassCodeGeneration.createType.task.header"), 100); //$NON-NLS-1$
+        monitor.beginTask(
+        		NewClassWizardMessages.
+        		NewClassCodeGeneration_createType_task_header, 100);
         
         if (oldContents != null && oldContents.length() == 0)
             oldContents = null;

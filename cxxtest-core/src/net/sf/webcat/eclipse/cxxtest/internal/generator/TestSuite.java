@@ -20,181 +20,200 @@ package net.sf.webcat.eclipse.cxxtest.internal.generator;
 import java.util.ArrayList;
 import java.util.List;
 
-   public class TestSuite
-   {
-       //~ Constructors .....................................................
+//--------------------------------------------------------------------------
+/**
+ * Represents a test suite (a class containing test case methods).
+ * 
+ * @author Tony ALlevato
+ * @version $Id$
+ */
+public class TestSuite
+{
+    //~ Constructors ..........................................................
 
-       // ------------------------------------------------------
-       /// <summary>
-       /// Creates a new test suite based on the specified class in the VC
-       /// code model.
-       /// </summary>
-       /// <param name="testClass">
-       /// The VC code model class object from which to create the test
-       /// suite.
-       /// </param>
-       public TestSuite(String name, String fullPath, int lineNumber)
-       {
-           this.name = name;
-           this.fullPath = fullPath;
-           this.lineNumber = lineNumber;
+    // ------------------------------------------------------
+    /**
+     * Creates a new test suite object.
+     * 
+     * @param name the name of the test suite class
+     * @param fullPath the absolute path to the source file containing this
+     *     test suite
+     * @param lineNumber the line number in the source file where the test
+     *     suite is defined
+     */
+    public TestSuite(String name, String fullPath, int lineNumber)
+    {
+        this.name = name;
+        this.fullPath = fullPath;
+        this.lineNumber = lineNumber;
 
-           testCases = new ArrayList<TestCase>();
+        testCases = new ArrayList<TestCase>();
 
-           createLineNumber = 0;
-           destroyLineNumber = 0;
-       }
-
-
-       //~ Properties .......................................................
-
-       // ------------------------------------------------------
-       /// <summary>
-       /// Gets the name of the test suite class.
-       /// </summary>
-       public String getName()
-       {
-           return name;
-       }
+        createLineNumber = 0;
+        destroyLineNumber = 0;
+    }
 
 
-       // ------------------------------------------------------
-       /// <summary>
-       /// Gets the full path to the source file that contains this test
-       /// suite.
-       /// </summary>
-       public String getFullPath()
-       {
-           return fullPath;
-       }
+    //~ Methods ...............................................................
+
+    // ------------------------------------------------------
+    /**
+     * Gets the name of the test suite class.
+     */
+    public String getName()
+    {
+        return name;
+    }
 
 
-       // ------------------------------------------------------
-       /// <summary>
-       /// Gets the line number in the source code at which this test suite
-       /// class starts.
-       /// </summary>
-       public int getLineNumber()
-       {
-           return lineNumber;
-       }
+    // ------------------------------------------------------
+    /**
+     * Gets the absolute path to the source file that contains this test suite.
+     */
+    public String getFullPath()
+    {
+        return fullPath;
+    }
 
 
-       // ------------------------------------------------------
-       /// <summary>
-       /// Gets the name of the C++ object that will be generated to
-       /// represent this test suite.
-       /// </summary>
-       public String getObjectName()
-       {
-           return "suite_" + getName();
-       }
+    // ------------------------------------------------------
+    /**
+     * Gets the line number in the source code at which this test suite
+     * class starts.
+     */
+    public int getLineNumber()
+    {
+        return lineNumber;
+    }
 
 
-       // ------------------------------------------------------
-       /// <summary>
-       /// Gets the name of the C++ object that will be generated to
-       /// represent this test suite description.
-       /// </summary>
-       public String getDescriptionObjectName()
-       {
-           return "suiteDescription_" + getName();
-       }
+    // ------------------------------------------------------
+    /**
+     * Gets the name of the C++ object that will be generated to represent this
+     * test suite.
+     */
+    public String getObjectName()
+    {
+        return "suite_" + getName();
+    }
 
 
-       // ------------------------------------------------------
-       /// <summary>
-       /// Gets the name of the C++ object that will be generated to
-       /// represent the list of test cases found in this test suite.
-       /// </summary>
-       public String getTestListName()
-       {
-           return "Tests_" + getName();
-       }
+    // ------------------------------------------------------
+    /**
+     * Gets the name of the C++ object that will be generated to represent this
+     * test suite description.
+     */
+    public String getDescriptionObjectName()
+    {
+        return "suiteDescription_" + getName();
+    }
 
 
-       // ------------------------------------------------------
-       /// <summary>
-       /// Gets the array of test cases in this test suite.
-       /// </summary>
-       public List<TestCase> getTestCases()
-       {
-           return testCases;
-       }
+    // ------------------------------------------------------
+    /**
+     * Gets the name of the C++ object that will be generated to represent the
+     * list of test cases found in this test suite.
+     */
+    public String getTestListName()
+    {
+        return "Tests_" + getName();
+    }
 
 
-       // ------------------------------------------------------
-       /// <summary>
-       /// Gets or sets the line number that contains a createSuite static
-       /// method for this test suite, or 0 if there is none.
-       /// </summary>
-       public int getCreateLineNumber()
-       {
-           return createLineNumber;
-       }
-       
-       
-       public void setCreateLineNumber(int value)
-       {
-           createLineNumber = value;
-       }
+    // ------------------------------------------------------
+    /**
+     * Gets the list of test cases in this test suite.
+     */
+    public List<TestCase> getTestCases()
+    {
+        return testCases;
+    }
 
 
-       // ------------------------------------------------------
-       /// <summary>
-       /// Gets or sets the line number that contains a destroySuite static
-       /// method for this test suite, or 0 if there is none.
-       /// </summary>
-       public int getDestroyLineNumber()
-       {
-           return destroyLineNumber;
-       }
-       
-       
-       public void setDestroyLineNumber(int value)
-       {
-           destroyLineNumber = value;
-       }
+    // ------------------------------------------------------
+    /**
+     * Gets the line number that contains a createSuite static method for this
+     * test suite, or 0 if there is none.
+     */
+    public int getCreateLineNumber()
+    {
+        return createLineNumber;
+    }
 
 
-       // ------------------------------------------------------
-       /// <summary>
-       /// Gets a value indicating whether the test suite is dynamic or not
-       /// (that is, it contains a createSuite static method).
-       /// </summary>
-       public boolean isDynamic()
-       {
-           return (createLineNumber != 0);
-       }
+    // ------------------------------------------------------
+    /**
+     * Sets the line number that contains a createSuite static method for this
+     * test suite, or 0 if there is none.
+     */
+    public void setCreateLineNumber(int value)
+    {
+        createLineNumber = value;
+    }
 
 
-       //~ Methods ..........................................................
-
-       // ------------------------------------------------------
-       /// <summary>
-       /// Adds a test case method to this test suite.
-       /// </summary>
-       /// <param name="testCase">
-       /// The test case to add to this test suite.
-       /// </param>
-       public void addTestCase(TestCase testCase)
-       {
-           testCases.add(testCase);
-       }
+    // ------------------------------------------------------
+    /**
+     * Gets the line number that contains a destroySuite static method for this
+     * test suite, or 0 if there is none.
+     */
+    public int getDestroyLineNumber()
+    {
+        return destroyLineNumber;
+    }
 
 
-       //~ Instance variables ...............................................
+    // ------------------------------------------------------
+    /**
+     * Sets the line number that contains a destroySuite static method for this
+     * test suite, or 0 if there is none.
+     */
+    public void setDestroyLineNumber(int value)
+    {
+        destroyLineNumber = value;
+    }
 
-       private String name;
-       private String fullPath;
-       private int lineNumber;
 
-       // The list of test case methods contained in this test suite.
-       private List<TestCase> testCases;
+    // ------------------------------------------------------
+    /**
+     * Gets a value indicating whether the test suite is dynamic or not (that
+     * is, it contains a createSuite static method).
+     */
+    public boolean isDynamic()
+    {
+        return (createLineNumber != 0);
+    }
 
-       // The line number of the createSuite method, or 0 if there is none.
-       private int createLineNumber;
 
-       // The line number of the destroySuite method, or 0 if there is none.
-       private int destroyLineNumber;
-   }
+    // ------------------------------------------------------
+    /**
+     * Adds a test case method to this test suite.
+     * 
+     * @param testCase the test case to add
+     */
+    public void addTestCase(TestCase testCase)
+    {
+        testCases.add(testCase);
+    }
+
+
+    //~ Instance variables ...............................................
+
+    // The name of the test suite.
+    private String name;
+    
+    // The absolute path to the source file containing the test suite.
+    private String fullPath;
+    
+    // The line number in the source file at which the test suite is defined.
+    private int lineNumber;
+
+    // The list of test case methods contained in this test suite.
+    private List<TestCase> testCases;
+
+    // The line number of the createSuite method, or 0 if there is none.
+    private int createLineNumber;
+
+    // The line number of the destroySuite method, or 0 if there is none.
+    private int destroyLineNumber;
+}

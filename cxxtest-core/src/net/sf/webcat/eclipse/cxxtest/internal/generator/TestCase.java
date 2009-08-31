@@ -17,18 +17,21 @@
  */
 package net.sf.webcat.eclipse.cxxtest.internal.generator;
 
+//--------------------------------------------------------------------------
+/**
+ * Represents a test case method that will have code generated to execute it.
+ * 
+ * @author Tony Allevato
+ * @version $Id$
+ */
 public class TestCase
 {
-    //~ Constructor ......................................................
+    //~ Constructor ...........................................................
 
-    // ------------------------------------------------------
-    /// <summary>
-    /// Creates a new test case from the specified code model function.
-    /// </summary>
-    /// <param name="function">
-    /// The VC code model function object from which to create the test
-    /// case.
-    /// </param>
+    // ----------------------------------------------------------
+    /**
+     * Creates a new test case at the specified line in a source file.
+     */
     public TestCase(String name, int lineNumber)
     {
         this.name = name;
@@ -36,30 +39,30 @@ public class TestCase
     }
 
 
-    //~ Properties .......................................................
+    //~ Methods ...............................................................
 
-    // ------------------------------------------------------
-    /// <summary>
-    /// Gets the name of the test case method.
-    /// </summary>
+    // ----------------------------------------------------------
+    /**
+     * Gets the name of the test case method.
+     */
     public String getName()
     {
         return name;
     }
 
 
-    // ------------------------------------------------------
-    /// <summary>
-    /// Gets the line number at which the test case method appears in
-    /// the source.
-    /// </summary>
+    // ----------------------------------------------------------
+    /**
+     * Gets the line number at which the test case method appears in the
+     * source.
+     */
     public int getLineNumber()
     {
         return lineNumber;
     }
 
 
-    //~ Instance variables ...............................................
+    //~ Static/instance variables .............................................
 
     private String name;
     private int lineNumber;

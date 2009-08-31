@@ -1,7 +1,7 @@
-#ifndef __CXXTEST_SELFTEST_H
-#define __CXXTEST_SELFTEST_H
+#ifndef __cxxtest__SelfTest_h__
+#define __cxxtest__SelfTest_h__
 
 #define CXXTEST_SUITE(name)
 #define CXXTEST_CODE(member)
 
-#endif // __CXXTEST_SELFTEST_H
+#endif // __cxxtest__SelfTest_h__

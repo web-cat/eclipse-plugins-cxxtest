@@ -29,6 +29,7 @@ namespace Dereferee
  * convenience typedefs for the pointer and reference types of a particular
  * type T.
  */
+
 template <typename T>
 struct pointer_traits { };
 

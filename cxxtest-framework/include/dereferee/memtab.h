@@ -22,7 +22,7 @@
 #include <cstdlib>
 #include <cassert>
 
-#include "types.h"
+#include <dereferee/types.h>
 
 namespace Dereferee
 {
@@ -49,7 +49,25 @@ struct mem_info
 	 * The size of the block of memory that was allocated.
 	 */
 	size_t block_size;
-	
+
+	/**
+	 * The size of the cookie allocated before this block, if this block is an
+	 * array of objects with non-trivial destructors.
+	 */
+	size_t cookie_size;
+
+	/**
+	 * The size of the array that this block represents, if it is an array.
+	 * This is filled at the same time that the cookie size is populated.
+	 */
+	size_t array_size;
+
+	/**
+	 * Initially false, this is set to true once the cookie size (and
+	 * consequently, the array size) has been determined.
+	 */
+	bool cookie_size_is_known;
+
 	/**
 	 * A reference count indicating the number of checked pointers that
 	 * currently point to this block of memory.
@@ -79,6 +97,11 @@ struct mem_info
 	 * block was allocated.
 	 */
 	void** backtrace;
+	
+	/**
+	 * A listener-specific value that is associated with the memory block.
+	 */
+    void* user_info;
 };
 
 

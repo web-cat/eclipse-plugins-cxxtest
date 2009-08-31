@@ -23,13 +23,15 @@
 #include <memory>
 #include <typeinfo>
 
-#include "config.h"
-#include "types.h"
-#include "option.h"
-#include "platform.h"
-#include "listener.h"
-#include "memtab.h"
-#include "usage_stats_impl.h"
+#include <dereferee/config.h>
+#include <dereferee/types.h>
+#include <dereferee/option.h>
+#include <dereferee/platform.h>
+#include <dereferee/listener.h>
+#include <dereferee/memtab.h>
+#include <dereferee/cookie_calculator.h>
+#include <dereferee/bounds_checker.h>
+#include <dereferee/usage_stats_impl.h>
 
 #ifndef DEREFEREE_DISABLED
 
@@ -37,6 +39,14 @@
 
 namespace Dereferee
 {
+
+/**
+ * Forward declarations to satisfy Microsoft Visual C++.
+ */
+Dereferee::platform* current_platform();
+Dereferee::listener* current_listener();
+void visit_allocations(Dereferee::allocation_visitor visitor, void* arg);
+
 
 // ============================================================================
 /**
@@ -125,6 +135,13 @@ private:
 
 	// -----------------------------------------------------------------------
 	/**
+	 * Counts the number of links in the memory allocation table.  Called when
+	 * execution is complete to report memory leaks.
+	 */
+	void count_leaked_entries(memtab_entry* entry, size_t& reports_logged);
+
+	// -----------------------------------------------------------------------
+	/**
 	 * Displays the contents of the memory allocation table.  Called when
 	 * execution is complete to report memory leaks.
 	 */
@@ -154,6 +171,14 @@ private:
 	 */
 	void add_option(option*& options, size_t& num_options,
 			size_t& cap_options, const char* key, const char* value);
+
+	// -----------------------------------------------------------------------
+	/**
+	 * A recursive helper function that handles the visitation of allocated
+	 * memory blocks.
+	 */
+    void visit_allocation_entry(memtab_entry* entry,
+                                allocation_visitor visitor, void* arg);
 
 public:
 	// -----------------------------------------------------------------------
@@ -222,6 +247,15 @@ public:
 	 */
 	refcount_t ref_count(const void* address);
 	
+	// -----------------------------------------------------------------------
+    /**
+     * Calls the specified visitor function on every currently allocated block
+     * of memory.
+     *
+     * @param visitor the visitor function to invoke
+     */
+    void visit_allocations(allocation_visitor visitor, void* arg);
+
 	// -----------------------------------------------------------------------
 	/**
 	 * Gets descriptive information about the memory block that contains the
@@ -319,6 +353,17 @@ public:
 
 	// -----------------------------------------------------------------------
 	/**
+	 * Friend declaration of the helper functions declared in <dereferee.h>
+	 * so that their implementations can access the private _platform and
+	 * _listener fields.
+	 */
+	friend platform* Dereferee::current_platform();
+	friend listener* Dereferee::current_listener();
+    friend void Dereferee::visit_allocations(allocation_visitor visitor,
+                                             void* arg);
+
+	// -----------------------------------------------------------------------
+	/**
 	 * This class contains a custom allocator that prevents its construction
 	 * from interfering with the memory tracking logic.
 	 */
@@ -327,174 +372,7 @@ public:
 };
 
 
-// ===========================================================================
-/**
- * The remove_const template is a traits-like class that permits us to remove
- * the const modifier from a type, if necessary. This is necessary when
- * calculating the cookie size for a particular type because we have to
- * "pretend" to allocate an object of that type, and the type must be non-const
- * so that a compiler error is not generated (because the object being created
- * will not be initialized).
- */
-template <typename T>
-struct remove_const
-{
-	typedef T type;
-};
-
-template <typename T>
-struct remove_const<T const>
-{
-	typedef T type;
-};
-
-
-// ===========================================================================
-/**
- * This structure is passed into the parameterized new[] operator that is used
- * to compute the cookie size for a type.
- */
-struct cookie_info
-{
-	/**
-	 * The size of the type whose cookie size is being requested. Passed into
-	 * the new[] operator.
-	 */
-	size_t type_size;
-	
-	/**
-	 * The cookie size for the type being allocated. Passed out of the new[]
-	 * operator.
-	 */
-	size_t cookie_size;
-};
-
-
-// ===========================================================================
-/**
- * A traits-like class that computes the "cookie" size for a particular type
- * T. When allocating an array of objects whose class has a non-trivial
- * destructor, most compilers (all of those currently tested) increase the size
- * of the memory request by sizeof(size_t) in order to store the number of
- * elements in the array, so that the runtime can iterate over them at the time
- * delete[] is called and execute their destructors.
- *
- * If there were wider support for the TR1 extensions in current C++ compilers,
- * it would be possible to use traits such as has_trivial_destructor and
- * is_pod to determine if a type will cause this cookie to be reserved.
- * Instead, we use the method below, which involves a custom new[] operator to
- * subtract sizeof(T) from the requested size inside the operator, and then
- * throwing an exception to prevent any side effects that might be caused by
- * constructing the object.
- *
- * This method does not pose a problem if the type T does not have a default
- * (parameterless) constructor, because the cookie_calculator template is only
- * instantiated by the arithmetic and array operators of checked_ptr, so they
- * only apply in that context. For this to happen, a student must actually
- * allocate an array and then use a checked pointer to it in some fashion,
- * and for this to happen the type must of course have a parameterless
- * constructor.
- */
-
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4291)
-#endif
-
-
-/**
- * The default value of the cached cookie_size field. The cookie size will
- * be set to the proper value the first time an array operation is
- * performed on a pointer of that type.
- */
-const size_t unknown_cookie_size = (size_t)~0;
-
-
-template <typename T>
-class bounds_checker
-{
-private:
-	static size_t _cached_cookie_size;
-
-	const mem_info *addr_info;
-
-	/**
-	 * Returns the size of the cookie that is reserved when allocating an array
-	 * of objects of type T. This is usually 0 (for POD types and types with
-	 * trivial destructors) or sizeof(size_t) (for types with non-trivial
-	 * destructors).
-	 *
-	 * For performance reasons, this size is only computed once and then
-	 * cached for later calls.
-	 *
-	 * @returns the size of the cookie that is reserved when allocating an
-	 *     array of type T
-	 */
-	static size_t cookie_size()
-	{
-		if(_cached_cookie_size == unknown_cookie_size)
-		{
-			cookie_info info;
-			info.type_size = sizeof(T);
-			
-			// We "pretend" to allocate an array of one object of type T by
-			// using a parameterized operator new[] that takes a cookie_info
-			// struct as its extra parameter. This allows the operator to
-			// subtract off the size of the object itself from the size of the
-			// memory block requested by the runtime, and then throw an
-			// exception to prevent the object from actually being initialized.
-
-			try { new(info) typename remove_const<T>::type[1]; }
-			catch(std::bad_alloc) { }
-
-			_cached_cookie_size = info.cookie_size;
-		}
-		
-		return _cached_cookie_size;
-	}
-
-public:
-	explicit bounds_checker(const mem_info *info) : addr_info(info) { }
-	
-	size_t array_size() const
-	{
-		return (addr_info->block_size - cookie_size())
-			/ sizeof(T);
-	}
-
-	bool contains(void *address) const
-	{
-		char *p = (char *) address;
-		char *lower_bound = (char *) addr_info->address
-			+ cookie_size();
-		char *upper_bound = (char *) addr_info->address
-			+ addr_info->block_size;
-		
-		return (lower_bound <= p && p < upper_bound);
-	}
-};
-
-template <typename T>
-size_t bounds_checker<T>::_cached_cookie_size = unknown_cookie_size;
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
 } // namespace Dereferee
-
-
-// ===========================================================================
-/**
- * This parameterized new[] operator does not actually allocate any memory.
- * The info parameter comes in with the type_size parameter initialized to the
- * size of a single object of the type being allocated. The difference between
- * this value and the size parameter yields the cookie size for that type,
- * which is passed back out through the info struct before the exception is
- * thrown.
- */
-void* operator new[](size_t size, Dereferee::cookie_info& info)
-	DEREFEREE_THROW_BAD_ALLOC;
 
 
 #endif // DEREFEREE_DISABLED

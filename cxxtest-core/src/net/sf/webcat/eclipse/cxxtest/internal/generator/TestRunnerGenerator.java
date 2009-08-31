@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -33,9 +34,7 @@ import org.antlr.stringtemplate.StringTemplate;
 import org.antlr.stringtemplate.StringTemplateGroup;
 import org.antlr.stringtemplate.language.AngleBracketTemplateLexer;
 import org.eclipse.cdt.core.model.ICProject;
-import org.eclipse.cdt.core.model.ITranslationUnit;
 import org.eclipse.core.runtime.FileLocator;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 
 public class TestRunnerGenerator
@@ -91,12 +90,14 @@ public class TestRunnerGenerator
         options.put("root", true);
         options.put("part", false);
         options.put("abortOnFail", true);
-        options.put("mainProvided", suites.isMainProvided());
-        options.put("runner", "XmlStdioPrinter");
-        options.put("xmlOutput", true);
+        options.put("mainProvided", suites.doesMainFunctionExist());
         options.put("testResultsFilename", ICxxTestConstants.TEST_RESULTS_FILE);
         options.put("testsToRun", testsToRunProxy);
 
+        ArrayList<String> listeners = new ArrayList<String>();
+        listeners.add("XmlStdioPrinter");
+        options.put("listeners", listeners);
+        
         try
         {
             writer = new FileWriter(path);
@@ -138,26 +139,26 @@ public class TestRunnerGenerator
 		traceStack = value;
 	}
 
-	public ITranslationUnit[] getPossibleTestFiles()
-	{
-		return possibleTestFiles;
-	}
-
-	public void setPossibleTestFiles(ITranslationUnit[] units)
-	{
-		possibleTestFiles = units;
-	}
-	
 	public String[] getExtraIncludes()
 	{
 		return extraIncludes;
 	}
 
-	public void setExtraIncludes(String[] includes)
+	public void setExtraIncludes(String[] files)
 	{
-		extraIncludes = includes;
+		extraIncludes = files;
+	}
+	
+	public String[] getPossibleTestFiles()
+	{
+		return possibleTestFiles;
 	}
 
+	public void setPossibleTestFiles(String[] files)
+	{
+		possibleTestFiles = files;
+	}
+	
 	public void generate()
     {
         template.setAttribute("options", options);
@@ -165,22 +166,14 @@ public class TestRunnerGenerator
 
         if (possibleTestFiles != null && possibleTestFiles.length > 0)
         {
-        	String[] paths = new String[possibleTestFiles.length];
-
-        	for(int i = 0; i < possibleTestFiles.length; i++)
-        	{
-            	IPath resPath = possibleTestFiles[i].getResource().getLocation();
-        		paths[i] = resPath.toOSString();
-        	}
-        	
-        	template.setAttribute("possibleTestFiles", paths);
+        	template.setAttribute("possibleTestFiles", possibleTestFiles);
         }
 
         if (extraIncludes != null && extraIncludes.length > 0)
         {
-        	template.setAttribute("extraIncludes", extraIncludes);
+        	options.put("extraIncludes", extraIncludes);
         }
-        
+
         try
         {
             template.write(new AutoIndentWriter(writer));
@@ -221,6 +214,6 @@ public class TestRunnerGenerator
 	private boolean trapSignals;
 	private boolean traceStack;
 
-	private ITranslationUnit[] possibleTestFiles;
+	private String[] possibleTestFiles;
 	private String[] extraIncludes;
 }

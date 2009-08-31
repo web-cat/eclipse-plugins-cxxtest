@@ -1,5 +1,5 @@
-#ifndef __CXXTEST__TESTSUITE_H
-#define __CXXTEST__TESTSUITE_H
+#ifndef __cxxtest__TestSuite_h__
+#define __cxxtest__TestSuite_h__
 
 //
 // class TestSuite is the base class for all test suites.
@@ -21,50 +21,25 @@ namespace CxxTest
     class TestSuite
     {
     public:
-        virtual ~TestSuite() {}
-        virtual void setUp() {}
-        virtual void tearDown() {}
+        virtual ~TestSuite();
+        virtual void setUp();
+        virtual void tearDown();
     };
     
     class AbortTest {};
-
-#   if defined(_CXXTEST_HAVE_EH)
     void doAbortTest();
-
+#   define TS_ABORT() CxxTest::doAbortTest()
+    
     bool abortTestOnFail();
     void setAbortTestOnFail( bool value = CXXTEST_DEFAULT_ABORT );
-#       define TS_ABORT() CxxTest::doAbortTest()
-#   else // !_CXXTEST_HAVE_EH
-#       define TS_ABORT()
-#   endif // _CXXTEST_HAVE_EH
 
     unsigned maxDumpSize();
     void setMaxDumpSize( unsigned value = CXXTEST_MAX_DUMP_SIZE );
 
-    inline void doTrace( const char *file, unsigned line, const char *message )
-    {
-        tracker().trace( file, line, message );
-    }
-
-    inline void doWarn( const char *file, unsigned line, const char *message )
-    {
-        tracker().warning( file, line, message );
-    }
-
-    inline void doFailTest( const char *file, unsigned line, const char *message )
-    {
-        tracker().failedTest( file, line, message );
-        TS_ABORT();
-    }
-
-    inline void doFailAssert( const char *file, unsigned line,
-                              const char *expression, const char *message )
-    {
-        if ( message )
-            tracker().failedTest( file, line, message );
-        tracker().failedAssert( file, line, expression );
-        TS_ABORT();
-    }
+    void doTrace( const char *file, unsigned line, const char *message );
+    void doWarn( const char *file, unsigned line, const char *message );
+    void doFailTest( const char *file, unsigned line, const char *message );
+    void doFailAssert( const char *file, unsigned line, const char *expression, const char *message );
 
     template<class X, class Y>
     bool equals( X x, Y y )
@@ -86,42 +61,11 @@ namespace CxxTest
         }
     }
 
-    inline bool sameData( const void *x, const void *y, unsigned size )
-    {
-        if ( x == y )
-            return true;
-
-        if ( !x || !y )
-            return false;
-
-        const int *ix = (const int *)x;
-        const int *iy = (const int *)y;
-        for ( ; size >= sizeof(int); size -= sizeof(int) )
-            if ( *ix++ != *iy++ )
-                return false;
-
-        const char *cx = (const char *)ix;
-        const char *cy = (const char *)iy;
-        while ( size -- )
-            if ( *cx++ != *cy++ )
-                return false;
-
-        return true;
-    }
-
-    inline void doAssertSameData( const char *file, unsigned line,
-                                  const char *xExpr, const void *x,
-                                  const char *yExpr, const void *y,
-                                  const char *sizeExpr, unsigned size,
-                                  const char *message )
-    {
-        if ( !sameData( x, y, size ) ) {
-            if ( message )
-                tracker().failedTest( file, line, message );
-            tracker().failedAssertSameData( file, line, xExpr, yExpr, sizeExpr, x, y, size );
-            TS_ABORT();
-        }
-    }
+    void doAssertSameData( const char *file, unsigned line,
+                           const char *xExpr, const void *x,
+                           const char *yExpr, const void *y,
+                           const char *sizeExpr, unsigned size,
+                           const char *message );
 
     template<class X, class Y>
     bool differs( X x, Y y )
@@ -235,27 +179,13 @@ namespace CxxTest
         }
     }
 
-    inline void doFailAssertThrows( const char *file, unsigned line,
-                                    const char *expr, const char *type,
-                                    bool otherThrown,
-                                    const char *message )
-    {
-        if ( message )
-            tracker().failedTest( file, line, message );
-        
-        tracker().failedAssertThrows( file, line, expr, type, otherThrown );
-        TS_ABORT();
-    }
-
-    inline void doFailAssertThrowsNot( const char *file, unsigned line,
-                                       const char *expression, const char *message )
-    {
-        if ( message )
-            tracker().failedTest( file, line, message );
-        
-        tracker().failedAssertThrowsNot( file, line, expression );
-        TS_ABORT();
-    }
+    void doFailAssertThrows( const char *file, unsigned line,
+                             const char *expr, const char *type,
+                             bool otherThrown,
+                             const char *message );
+    
+    void doFailAssertThrowsNot( const char *file, unsigned line,
+                                const char *expression, const char *message );
 
 #   ifdef _CXXTEST_HAVE_EH
 #       define _TS_TRY try
@@ -265,12 +195,7 @@ namespace CxxTest
 #       define _TSM_LAST_CATCH(f,l,m) _TS_LAST_CATCH( { (CxxTest::tracker()).failedTest(f,l,m); } )
 #       ifdef _CXXTEST_HAVE_STD
 #           define ___TSM_CATCH(f,l,m) \
-                    catch(const std::exception &e) \
-                    { \
-                    	std::string msg(m); \
-                    	msg += ": "; msg += e.what(); \
-                    	(CxxTest::tracker()).failedTest(f,l,msg.c_str()); \
-                    } \
+                    catch(const std::exception &e) { (CxxTest::tracker()).failedTest(f,l,e.what()); } \
                     _TSM_LAST_CATCH(f,l,m)
 #       else // !_CXXTEST_HAVE_STD
 #           define ___TSM_CATCH(f,l,m) _TSM_LAST_CATCH(f,l,m)
@@ -468,6 +393,53 @@ namespace CxxTest
 #   define _TSM_ASSERT_THROWS(f,l,m,e,t) ___TS_ASSERT_THROWS(f,l,e,t,TS_AS_STRING(m))
 #   define TSM_ASSERT_THROWS(m,e,t) _TSM_ASSERT_THROWS(__FILE__,__LINE__,m,e,t)
 
+    // TS_ASSERT_THROWS_ASSERT
+#   define ___TS_ASSERT_THROWS_ASSERT(f,l,e,t,a,m) { \
+            bool _ts_threw_expected = false, _ts_threw_else = false; \
+            _TS_TRY { e; } \
+            _TS_CATCH_TYPE( (t), { a; _ts_threw_expected = true; } ) \
+            _TS_CATCH_ABORT( { throw; } ) \
+            _TS_LAST_CATCH( { _ts_threw_else = true; } ) \
+            if ( !_ts_threw_expected ) { CxxTest::doFailAssertThrows( (f), (l), #e, #t, _ts_threw_else, (m) ); } }
+
+#   define _TS_ASSERT_THROWS_ASSERT(f,l,e,t,a) ___TS_ASSERT_THROWS_ASSERT(f,l,e,t,a,0)
+#   define TS_ASSERT_THROWS_ASSERT(e,t,a) _TS_ASSERT_THROWS_ASSERT(__FILE__,__LINE__,e,t,a)
+
+#   define _TSM_ASSERT_THROWS_ASSERT(f,l,m,e,t,a) ___TS_ASSERT_THROWS_ASSERT(f,l,e,t,a,TS_AS_STRING(m))
+#   define TSM_ASSERT_THROWS_ASSERT(m,e,t,a) _TSM_ASSERT_THROWS_ASSERT(__FILE__,__LINE__,m,e,t,a)
+
+    // TS_ASSERT_THROWS_EQUALS
+#   define TS_ASSERT_THROWS_EQUALS(e,t,x,y) TS_ASSERT_THROWS_ASSERT(e,t,TS_ASSERT_EQUALS(x,y))
+#   define TSM_ASSERT_THROWS_EQUALS(m,e,t,x,y) TSM_ASSERT_THROWS_ASSERT(m,e,t,TSM_ASSERT_EQUALS(m,x,y))
+
+    // TS_ASSERT_THROWS_DIFFERS
+#   define TS_ASSERT_THROWS_DIFFERS(e,t,x,y) TS_ASSERT_THROWS_ASSERT(e,t,TS_ASSERT_DIFFERS(x,y))
+#   define TSM_ASSERT_THROWS_DIFFERS(m,e,t,x,y) TSM_ASSERT_THROWS_ASSERT(m,e,t,TSM_ASSERT_DIFFERS(m,x,y))
+
+    // TS_ASSERT_THROWS_DELTA
+#   define TS_ASSERT_THROWS_DELTA(e,t,x,y,d) TS_ASSERT_THROWS_ASSERT(e,t,TS_ASSERT_DELTA(x,y,d))
+#   define TSM_ASSERT_THROWS_DELTA(m,e,t,x,y,d) TSM_ASSERT_THROWS_ASSERT(m,e,t,TSM_ASSERT_DELTA(m,x,y,d))
+
+    // TS_ASSERT_THROWS_SAME_DATA
+#   define TS_ASSERT_THROWS_SAME_DATA(e,t,x,y,s) TS_ASSERT_THROWS_ASSERT(e,t,TS_ASSERT_SAME_DATA(x,y,s))
+#   define TSM_ASSERT_THROWS_SAME_DATA(m,e,t,x,y,s) TSM_ASSERT_THROWS_ASSERT(m,e,t,TSM_ASSERT_SAME_DATA(m,x,y,s))
+
+    // TS_ASSERT_THROWS_LESS_THAN
+#   define TS_ASSERT_THROWS_LESS_THAN(e,t,x,y) TS_ASSERT_THROWS_ASSERT(e,t,TS_ASSERT_LESS_THAN(x,y))
+#   define TSM_ASSERT_THROWS_LESS_THAN(m,e,t,x,y) TSM_ASSERT_THROWS_ASSERT(m,e,t,TSM_ASSERT_LESS_THAN(m,x,y))
+
+    // TS_ASSERT_THROWS_LESS_THAN_EQUALS
+#   define TS_ASSERT_THROWS_LESS_THAN_EQUALS(e,t,x,y) TS_ASSERT_THROWS_ASSERT(e,t,TS_ASSERT_LESS_THAN_EQUALS(x,y))
+#   define TSM_ASSERT_THROWS_LESS_THAN_EQUALS(m,e,t,x,y) TSM_ASSERT_THROWS_ASSERT(m,e,t,TSM_ASSERT_LESS_THAN_EQUALS(m,x,y))
+
+    // TS_ASSERT_THROWS_PREDICATE
+#   define TS_ASSERT_THROWS_PREDICATE(e,t,p,v) TS_ASSERT_THROWS_ASSERT(e,t,TS_ASSERT_PREDICATE(p,v))
+#   define TSM_ASSERT_THROWS_PREDICATE(m,e,t,p,v) TSM_ASSERT_THROWS_ASSERT(m,e,t,TSM_ASSERT_PREDICATE(m,p,v))
+
+    // TS_ASSERT_THROWS_RELATION
+#   define TS_ASSERT_THROWS_RELATION(e,t,r,x,y) TS_ASSERT_THROWS_ASSERT(e,t,TS_ASSERT_RELATION(r,x,y))
+#   define TSM_ASSERT_THROWS_RELATION(m,e,t,r,x,y) TSM_ASSERT_THROWS_ASSERT(m,e,t,TSM_ASSERT_RELATION(m,r,x,y))
+
     // TS_ASSERT_THROWS_ANYTHING
 #   define ___TS_ASSERT_THROWS_ANYTHING(f,l,e,m) { \
             bool _ts_threw = false; \
@@ -537,4 +509,4 @@ namespace CxxTest
 #   endif // _CXXTEST_LONGLONG
 }
 
-#endif // __CXXTEST__TESTSUITE_H
+#endif // __cxxtest__TestSuite_h__

@@ -33,12 +33,12 @@ public class TestRunnerStringRenderer implements AttributeRenderer
 
     public String toString(Object o, String formatName)
     {
-        if (formatName.equals("asCString"))
+    	if (formatName.equals("asCString"))
             return toCString(o.toString());
         else if (formatName.equals("runnerRelativePath"))
-            return PathUtils.relativePathTo(runnerPath, o.toString());
+            return PathUtils.relativizePath(runnerPath, o.toString());
         else if (formatName.equals("runnerRelativePathAsCString"))
-            return toCString(PathUtils.relativePathTo(runnerPath, o.toString()));
+            return toCString(PathUtils.relativizePath(runnerPath, o.toString()));
         else
             return o.toString();
     }

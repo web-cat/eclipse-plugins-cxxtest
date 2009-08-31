@@ -77,6 +77,25 @@ namespace Dereferee
 {
 
 // ===========================================================================
+platform* current_platform()
+{
+	return __DMI->_platform;
+}
+
+// ---------------------------------------------------------------------------
+listener* current_listener()
+{
+	return __DMI->_listener;
+}
+
+// ---------------------------------------------------------------------------
+void visit_allocations(allocation_visitor visitor, void* arg)
+{
+	__DMI->visit_allocations(visitor, arg);
+}
+
+
+// ===========================================================================
 /**
  * The singleton instance of the Dereferee memory manager.
  */
@@ -362,7 +381,8 @@ void manager::remove_checked(const void* address)
 	memtab_entry* curr_node = memtab_find_address(_checked_table, address);
 	if(curr_node)
 	{
-		memtab_entry* rem_node = memtab_remove_address(_checked_table, address);
+		memtab_entry* rem_node =
+			memtab_remove_address(_checked_table, address);
 		memtab_free(rem_node);
 
 		_checked_table_size--;
@@ -470,6 +490,44 @@ void manager::error(error_code code, ...)
 }
 
 // ------------------------------------------------------------------
+void manager::visit_allocations(allocation_visitor visitor, void* arg)
+{
+    visit_allocation_entry(_checked_table, visitor, arg);
+    visit_allocation_entry(_unchecked_table, visitor, arg);
+}
+
+// ------------------------------------------------------------------
+void manager::visit_allocation_entry(memtab_entry* entry,
+                                     allocation_visitor visitor,
+                                     void* arg)
+{
+	if(entry)
+	{
+		visit_allocation_entry(entry->_1, visitor, arg);
+        allocation_info_impl aii(entry->info);
+        visitor(aii, arg);
+		visit_allocation_entry(entry->_2, visitor, arg);
+	}
+}
+
+// ------------------------------------------------------------------
+void manager::count_leaked_entries(memtab_entry* entry, size_t& total_leaks)
+{
+	if(entry)
+	{
+		count_leaked_entries(entry->_1, total_leaks);
+
+        allocation_info_impl alloc_info(entry->info);
+		if(_listener->should_report_leak(alloc_info))
+		{
+			total_leaks++;
+		}
+
+		count_leaked_entries(entry->_2, total_leaks);
+	}
+}
+
+// ------------------------------------------------------------------
 void manager::report_leaked_entry(memtab_entry* entry, size_t max_log,
 								  size_t& reports_logged)
 {
@@ -477,9 +535,12 @@ void manager::report_leaked_entry(memtab_entry* entry, size_t max_log,
 	{
 		report_leaked_entry(entry->_1, max_log, reports_logged);
 
-		if(reports_logged < max_log)
+        allocation_info_impl alloc_info(entry->info);
+
+		if(reports_logged < max_log
+		    && _listener->should_report_leak(alloc_info))
 		{
-			_listener->report_leak(allocation_info_impl(entry->info));
+			_listener->report_leak(alloc_info);
 			reports_logged++;
 		}
 
@@ -490,8 +551,12 @@ void manager::report_leaked_entry(memtab_entry* entry, size_t max_log,
 // ------------------------------------------------------------------
 void manager::report_usage()
 {
-	size_t num_leaks = _checked_table_size + _unchecked_table_size;
-	_usage_stats.set_leaks(num_leaks);
+	size_t total_leaks = 0;
+
+	count_leaked_entries(_checked_table, total_leaks);
+	count_leaked_entries(_unchecked_table, total_leaks);
+
+	_usage_stats.set_leaks(total_leaks);
 
 	_listener->begin_report(_usage_stats);
 
@@ -501,9 +566,9 @@ void manager::report_usage()
 	report_leaked_entry(_checked_table, max_log, reports_logged);
 	report_leaked_entry(_unchecked_table, max_log, reports_logged);
 
-	if(num_leaks > reports_logged)
+	if(total_leaks > reports_logged)
 	{
-		_listener->report_truncated(reports_logged, num_leaks);
+		_listener->report_truncated(reports_logged, total_leaks);
 	}
 
 	_listener->end_report();
@@ -537,8 +602,9 @@ void* manager::allocate_memory(size_t size, bool is_array)
 	new_node->info.block_size = size;
 	new_node->info.tag = next_tag();
 	new_node->info.ref_count = 0;
-//	new_node->info.cookie_size = unknown_cookie_size;
 	new_node->info.backtrace = _platform->get_backtrace(NULL, NULL);
+    new_node->info.user_info = _listener->get_allocation_user_info(
+        allocation_info_impl(new_node->info));
 
 	memtab_insert_entry(_unchecked_table, new_node);
 	_unchecked_table_size++;
@@ -563,7 +629,7 @@ void manager::free_memory(void* address, bool is_array)
 	else if(address != 0)
 	{
 		bool is_checked;
-		const mem_info* addr_info = address_info(address, &is_checked);
+		mem_info* addr_info = address_info(address, &is_checked);
 
 		if(!addr_info)
 		{
@@ -590,6 +656,9 @@ void manager::free_memory(void* address, bool is_array)
 			size_t size = addr_info->block_size;
 
 			_usage_stats.record_deallocation(size, is_array);
+
+            allocation_info_impl aii(*addr_info);
+            _listener->free_allocation_user_info(aii);
 
 			_platform->free_backtrace(addr_info->backtrace);
 

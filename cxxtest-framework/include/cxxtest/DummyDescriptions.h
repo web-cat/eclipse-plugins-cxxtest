@@ -1,5 +1,5 @@
-#ifndef __CXXTEST__DUMMY_DESCRIPTIONS_H
-#define __CXXTEST__DUMMY_DESCRIPTIONS_H
+#ifndef __cxxtest__DummyDescriptions_h__
+#define __cxxtest__DummyDescriptions_h__
 
 //
 // DummyTestDescription, DummySuiteDescription and DummyWorldDescription
@@ -12,65 +12,65 @@ namespace CxxTest
     class DummyTestDescription : public TestDescription
     {
     public:
-        DummyTestDescription() {}
+        DummyTestDescription();
         
-        const char *file() const { return "<no file>"; }
-        unsigned line() const { return 0; }
-        const char *testName() const { return "<no test>"; }
-        const char *suiteName() const { return "<no suite>"; }
-        bool setUp() { return true;}
-        void run() {}
-        bool tearDown() { return true;}
+        const char *file() const;
+        unsigned line() const;
+        const char *testName() const;
+        const char *suiteName() const;
+        bool setUp();
+        void run();
+        bool tearDown();
 
-        TestDescription *next() { return 0; }
-        const TestDescription *next() const { return 0; }
+        TestDescription *next();
+        const TestDescription *next() const;
     };
 
     class DummySuiteDescription : public SuiteDescription
-    {        
+    {      
     public:
-        DummySuiteDescription() : _test() {}
+        DummySuiteDescription();
         
-        const char *file() const { return "<no file>"; }
-        unsigned line() const { return 0; }
-        const char *suiteName() const { return "<no suite>"; }
-        TestSuite *suite() const { return 0; }
-        unsigned numTests() const { return 0; }
-        const TestDescription &testDescription( unsigned ) const { return _test; }
-        SuiteDescription *next() { return 0; }
-        TestDescription *firstTest() { return 0; }
-        const SuiteDescription *next() const { return 0; }
-        const TestDescription *firstTest() const { return 0; }
-        void activateAllTests() {}
-        bool leaveOnly( const char * /*testName*/ ) { return false; }
+        const char *file() const;
+        unsigned line() const;
+        const char *suiteName() const;
+        TestSuite *suite() const;
+        unsigned numTests() const;
+        const TestDescription &testDescription( unsigned ) const;
+        SuiteDescription *next();
+        TestDescription *firstTest();
+        const SuiteDescription *next() const;
+        const TestDescription *firstTest() const;
+        void activateAllTests();
+        bool leaveOnly( const char * /*testName*/ );
         
-        bool setUp() { return true;}
-        bool tearDown() { return true;}
+        bool setUp();
+        bool tearDown();
 
     private:
         DummyTestDescription _test;
     };
 
     class DummyWorldDescription : public WorldDescription
-    {        
+    {
     public:
-        DummyWorldDescription() : _suite() {}
+        DummyWorldDescription();
         
-        unsigned numSuites( void ) const { return 0; }
-        unsigned numTotalTests( void ) const { return 0; }
-        const SuiteDescription &suiteDescription( unsigned ) const { return _suite; }
-        SuiteDescription *firstSuite() { return 0; }
-        const SuiteDescription *firstSuite() const { return 0; }
-        void activateAllTests() {}
-        bool leaveOnly( const char * /*suiteName*/, const char * /*testName*/ = 0 ) { return false; }
+        unsigned numSuites( void ) const;
+        unsigned numTotalTests( void ) const;
+        const SuiteDescription &suiteDescription( unsigned ) const;
+        SuiteDescription *firstSuite();
+        const SuiteDescription *firstSuite() const;
+        void activateAllTests();
+        bool leaveOnly( const char * /*suiteName*/, const char * /*testName*/ = 0 );
             
-        bool setUp() { return true;}
-        bool tearDown() { return true;}
+        bool setUp();
+        bool tearDown();
 
     private:
         DummySuiteDescription _suite;
     };
 }
 
-#endif // __CXXTEST__DUMMY_DESCRIPTIONS_H
+#endif // __cxxtest__DummyDescriptions_h__
 

@@ -37,8 +37,9 @@
  */
 
 #include <dereferee.h>
+#include <iostream>
 
-#warning Ptr<> is obsolete. You should include <dereferee.h> instead of <chkptr.h> and replace any variables of type "Ptr<T>" with "checked(T*)" (note the asterisk in the updated version).
+//#warning Ptr<> is obsolete. You should include <dereferee.h> instead of <chkptr.h> and replace any variables of type "Ptr<T>" with "checked(T*)" (note the asterisk in the updated version).
 
 
 // ===========================================================================

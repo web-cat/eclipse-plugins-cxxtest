@@ -21,7 +21,7 @@
 
 
 #include <cstdlib>
-#include "pointer_traits.h"
+#include <dereferee/pointer_traits.h>
 
 
 namespace Dereferee
@@ -29,6 +29,10 @@ namespace Dereferee
 
 #ifndef DEREFEREE_NO_DYNAMIC_CAST
 template <typename U> class dynamic_cast_helper;
+#endif
+
+#ifndef DEREFEREE_NO_CONST_CAST
+template <typename U> class const_cast_helper;
 #endif
 
 // ===========================================================================
@@ -120,6 +124,54 @@ public:
 	 */
 	template <typename U>
 	checked_ptr<T>& operator=(const dynamic_cast_helper<U* const>& rhs);
+#endif
+
+#ifndef DEREFEREE_NO_CONST_CAST
+	// -----------------------------------------------------------------------
+	/**
+	 * Creates a checked pointer that points to the result of the specified
+	 * const_cast<U*> operation. U* need not be equivalent to T*, only that
+	 * U* is assignable to T*.
+	 *
+	 * @param rhs the result of a const_cast operation 
+	 */
+	template <typename U>
+	checked_ptr(const const_cast_helper<U*>& rhs);
+
+	// -----------------------------------------------------------------------
+	/**
+	 * Creates a checked pointer that points to the result of the specified
+	 * const_cast<U* const> operation. U* const need not be equivalent to T*,
+	 * only that U* const is assignable to T*.
+	 *
+	 * @param rhs the result of a const_cast operation
+	 */
+	template <typename U>
+	checked_ptr(const const_cast_helper<U* const>& rhs);
+
+	// -----------------------------------------------------------------------
+	/**
+	 * Assigns the result of the specified const_cast<U*> operation to this
+	 * checked pointer. U* need not be equivalent to T*, only that U* is
+	 * assignable to T*.
+	 *
+	 * @param rhs the result of a const_cast operation
+	 * @returns a reference to this pointer
+	 */
+	template <typename U>
+	checked_ptr<T>& operator=(const const_cast_helper<U*>& rhs);
+
+	// -----------------------------------------------------------------------
+	/**
+	 * Assigns the result of the specified const_cast<U* const> operation to
+	 * this checked pointer. U* const need not be equivalent to T*, only that
+	 * U* const is assignable to T*.
+	 *
+	 * @param rhs the result of a const_cast operation
+	 * @returns a reference to this pointer
+	 */
+	template <typename U>
+	checked_ptr<T>& operator=(const const_cast_helper<U* const>& rhs);
 #endif
 
 	// -----------------------------------------------------------------------
@@ -365,14 +417,21 @@ public:
 /*
  * Include the implementations of the checked_ptr methods. 
  */
-#include "unchecked-impl.h"
+#include <dereferee/unchecked-impl.h>
 
 
 /*
  * Include the implementations of the enhanced dynamic_cast operator.
  */
 #ifndef DEREFEREE_NO_DYNAMIC_CAST
-#include "dynamic_cast.h"
+#include <dereferee/dynamic_cast.h>
+#endif
+
+/*
+ * Include the implementations of the enhanced const_cast operator.
+ */
+#ifndef DEREFEREE_NO_CONST_CAST
+#include <dereferee/const_cast.h>
 #endif
 
 

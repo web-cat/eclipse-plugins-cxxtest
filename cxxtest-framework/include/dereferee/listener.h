@@ -19,12 +19,14 @@
 #ifndef DEREFEREE_LISTENER_H
 #define DEREFEREE_LISTENER_H
 
+#include <cstdlib>
 #include <cstdarg>
+#include <climits>
 #include <memory>
 #include <typeinfo>
 
-#include "option.h"
-#include "platform.h"
+#include <dereferee/option.h>
+#include <dereferee/platform.h>
 
 // ===========================================================================
 
@@ -287,16 +289,62 @@ class listener
 public:
 	virtual ~listener() { }
 
+    // -----------------------------------------------------------------------
+    /**
+     * Called each time a memory allocation is made so that the listener can
+     * associate an arbitrary listener-specific value with the memory block.
+     * At the time this method is called, the following properties in
+     * allocation_info are valid: address, is_array, block_size, and
+     * backtrace. The properties array_size and type_name are NOT valid at
+     * the time this method is called.
+     *
+     * The value returned from this method can be either a scalar value cast
+     * to void*, or a block of dynamically allocated memory (which you must
+     * free in free_allocation_user_info). If this method allocates memory,
+     * it should use malloc and free to manage that memory; under no
+     * circumstances should new/delete be used.
+     * 
+     * @param alloc_info an allocation_info reference describing properties of
+     *     the allocated memory block
+     *
+     * @returns an arbitrary value to associate with the memory block
+     */
+    virtual void* get_allocation_user_info(const allocation_info& alloc_info)
+    {
+        return NULL;
+    }
+
+    // -----------------------------------------------------------------------
+    /**
+     * Called each time a block of memory is freed so that the listener can
+     * release any resources that it associated with the block in an earlier
+     * invocation of get_allocation_user_info (accessible by calling the
+     * user_info() method on alloc_info).
+     * 
+     * @param alloc_info an allocation_info reference describing properties of
+     *     the allocated memory block
+     *
+     * @returns an arbitrary value to associate with the memory block
+     */
+    virtual void free_allocation_user_info(const allocation_info& alloc_info)
+    {
+    }
+
 	// -----------------------------------------------------------------------
 	/**
 	 * Returns the maximum number of memory leaks that should be reported to
 	 * the listener. If there are more leaks, then report_truncated() is called
 	 * to report the actual number.
 	 *
+	 * The default implementation returns UINT_MAX.
+	 *
 	 * @returns the maximum number of memory leaks to report, or UINT_MAX to
 	 *     effectively set no limit on the number of leaks reported
 	 */
-	virtual size_t maximum_leaks_to_report() = 0;
+	virtual size_t maximum_leaks_to_report()
+	{
+        return UINT_MAX;
+	}
 
 	// -----------------------------------------------------------------------
 	/**
@@ -305,38 +353,69 @@ public:
 	 * followed by zero or more calls to report_leak(), then by zero or one
 	 * call to report_truncated(), and then a call to end_report().
 	 *
+	 * The default implementation does nothing.
+	 *
 	 * @param stats a usage_stats object that can be queried for information
 	 *     about memory usage during program execution
 	 */
-	virtual void begin_report(const usage_stats& stats) = 0;
+	virtual void begin_report(const usage_stats& stats)
+	{
+	}
 	
+	// -----------------------------------------------------------------------
+	/**
+	 * Called by the memory manager to ask whether this allocation, left over
+	 * at the end of the program, is actually a leak. By default, this method
+	 * will always return true; a listener can override it if it wishes to
+	 * use custom logic to filter out certain "leaks".
+	 *
+	 * @param leak an allocation_info object that can be queried for
+	 *     information about the block of memory that was leaked
+	 */
+	virtual bool should_report_leak(const allocation_info& leak)
+	{
+        return true;
+	}
+
 	// -----------------------------------------------------------------------
 	/**
 	 * Called by the memory manager to report that a block of memory was
 	 * leaked at the end of program execution.
 	 *
+	 * The default implementation does nothing.
+	 *
 	 * @param leak an allocation_info object that can be queried for
 	 *     information about the block of memory that was leaked
 	 */
-	virtual void report_leak(const allocation_info& leak) = 0;
+	virtual void report_leak(const allocation_info& leak)
+	{
+	}
 
 	// -----------------------------------------------------------------------
 	/**
 	 * Called by the memory manager if the number of actual leaks is greater
 	 * than the number returned from max_leaks_to_report().
 	 *
+	 * The default implementation does nothing.
+	 *
 	 * @param leaks_logged the number of leaks that were actually reported
 	 * @param actual_leaks the actual number of total leaks that occurred
 	 */
 	virtual void report_truncated(size_t leaks_reported,
-								  size_t actual_leaks) = 0;
+								  size_t actual_leaks)
+	{
+	}
 
 	// -----------------------------------------------------------------------
 	/**
 	 * Called by the memory manager to notify the listener that the end-of-
 	 * execution memory usage report is complete.
+	 *
+	 * The default implementation does nothing.
 	 */
-	virtual void end_report() = 0;
+	virtual void end_report()
+	{
+	}
 
 	// -----------------------------------------------------------------------
 	/**
@@ -346,7 +425,9 @@ public:
 	 * undefined behavior, such as a segmentation fault or nondeterministic
 	 * behavior at runtime).
 	 *
-	 * @param message a human-readable message indicating the error
+	 * @param code the error code indicating what occurred
+	 * @param args a varargs list that contains arguments to be used when
+	 *     formatting the error message string
 	 */
 	virtual void error(error_code code, va_list args) = 0;
 
@@ -356,9 +437,12 @@ public:
 	 * a warning caused by incorrect use of a checked pointer or a block of
 	 * memory. Warnings are defined as situations that do not immediately
 	 * result in undefined behavior or runtime failure, but that are likely
-	 * to lead to such behavior in the future.
+	 * to lead to such behavior in the future. Memory leaks also fall into
+	 * this category.
 	 *
-	 * @param message a human-readable message indicating the warning
+	 * @param code the warning code indicating what occurred
+	 * @param args a varargs list that contains arguments to be used when
+	 *     formatting the warning message string
 	 */
 	virtual void warning(warning_code code, va_list args) = 0;
 	
@@ -378,7 +462,7 @@ public:
  * This interface is used by the report_leak() method of a listener so that
  * the listener can obtain information about the memory that was leaked.
  *
- * Users do not need to implement this interface.
+ * This interface is not intended to be implemented by users.
  */
 class allocation_info
 {
@@ -428,8 +512,8 @@ public:
 	 * returns the value typeid(T).name().
 	 * 
 	 * It is the responsibility of the listener to convert this into a human-
-	 * readable form before displaying it, usually by demangling it if
-	 * necessary.
+	 * readable form before displaying it, usually by asking the platform to
+	 * demangle it if necessary.
 	 *
 	 * @returns the type name of objects in this memory block, or NULL if this
 	 *     information is unavailable
@@ -444,7 +528,34 @@ public:
 	 * @returns the backtrace for the allocation of this memory block
 	 */
 	virtual void** backtrace() const = 0;
+	
+	// -----------------------------------------------------------------------
+	/**
+	 * Gets the listener-specific user info value that was associated with
+	 * the memory block in a call to listener::get_allocation_user_info().
+	 *
+	 * @returns the listener-specific user info value of this memory block
+	 */
+    virtual void* user_info() const = 0;
+    
+    // -----------------------------------------------------------------------
+    /**
+     * Sets the listener-specific user info value that is associated with
+     * the memory block. This can be used from a visitor function to update
+     * the user info at a time other than when the block is first allocated.
+     *
+     * @param value the new user info value for the memory block
+     */
+    virtual void set_user_info(void* value) = 0;
 };
+
+
+// ---------------------------------------------------------------------------
+/**
+ * The signature of an allocation visitor function:
+ * void my_allocation_visitor(allocation_info& alloc_info, void* arg);
+ */
+typedef void (* allocation_visitor)(allocation_info&, void*);
 
 
 // ===========================================================================
@@ -455,7 +566,7 @@ public:
  * memory allocation/deallocation operators, and the number of memory leaks
  * that occurred.
  *
- * Users do not need to implement this interface.
+ * This interface is not intended to be implemented by users.
  */
 class usage_stats
 {

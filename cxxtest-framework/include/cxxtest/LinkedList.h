@@ -1,5 +1,5 @@
-#ifndef __CXXTEST__LINKED_LIST_H
-#define __CXXTEST__LINKED_LIST_H
+#ifndef __cxxtest__LinkedList_h__
+#define __cxxtest__LinkedList_h__
 
 #include <cxxtest/Flags.h>
 
@@ -13,13 +13,14 @@ namespace CxxTest
         Link *_head;
         Link *_tail;
 
-        void initialize() { _head = _tail = 0; }
+        void initialize();
 
         Link *head();
         const Link *head() const;
         Link *tail();
         const Link *tail() const;
 
+        bool empty() const;
         unsigned size() const;
         Link *nth( unsigned n );
 
@@ -28,50 +29,27 @@ namespace CxxTest
     };
 
     class Link
-    {        
+    {       
     public:
-        Link() : _next( 0 ), _prev( 0 ), _active( true ) {}
-        virtual ~Link() {}
+        Link();
+        virtual ~Link();
 
-        bool active() const { return _active; }
-        void setActive( bool value = true ) { _active = value; }
+        bool active() const;
+        void setActive( bool value = true );
 
-        Link *justNext() { return _next; }
-        Link *justPrev() { return _prev; }
+        Link *justNext();
+        Link *justPrev();
         
-        Link *next() { Link *l = _next; while ( l && !l->_active ) l = l->_next; return l; }
-        Link *prev() { Link *l = _prev; while ( l && !l->_active ) l = l->_prev; return l; }
-        const Link *next() const { Link *l = _next; while ( l && !l->_active ) l = l->_next; return l; }
-        const Link *prev() const { Link *l = _prev; while ( l && !l->_active ) l = l->_prev; return l; }
+        Link *next();
+        Link *prev();
+        const Link *next() const;
+        const Link *prev() const;
 
         virtual bool setUp() = 0;
         virtual bool tearDown() = 0;
 
-        void attach( List &list )
-        {
-            if ( list._tail )
-                list._tail->_next = this;
-
-            _prev = list._tail;
-            _next = 0;
-            
-            if ( list._head == 0 )
-                list._head = this;
-            list._tail = this;
-        }
-
-        void detach( List &list )
-        {
-            if ( _prev )
-                _prev->_next = _next;
-            else
-                list._head = _next;
-            
-            if ( _next )
-                _next->_prev = _prev;
-            else
-                list._tail = _prev;
-        }
+        void attach( List &l );
+        void detach( List &l );
 
     private:
         Link *_next;
@@ -83,5 +61,5 @@ namespace CxxTest
     };
 }
 
-#endif // __CXXTEST__LINKED_LIST_H
+#endif // __cxxtest__LinkedList_h__
 

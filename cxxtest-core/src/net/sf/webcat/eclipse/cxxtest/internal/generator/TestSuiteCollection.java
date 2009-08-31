@@ -18,47 +18,68 @@
 package net.sf.webcat.eclipse.cxxtest.internal.generator;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+//--------------------------------------------------------------------------
+/**
+ * Represents the collection of test suites that will populate the runner.
+ * 
+ * @author Tony ALlevato
+ * @version $Id$
+ */
 public class TestSuiteCollection
 {
+    //~ Constructors ..........................................................
+
+    // ----------------------------------------------------------
     public TestSuiteCollection()
     {
         this.suites = new ArrayList<TestSuite>();
-        this.possibleTestFiles = new ArrayList<String>();
+        this.possibleTestFiles = new HashSet<String>();
     }
 
 
+    //~ Methods ...............................................................
+
+    // ----------------------------------------------------------
     public List<TestSuite> getSuites()
     {
         return suites;
     }
 
 
-    public List<String> getPossibleTestFiles()
+    // ----------------------------------------------------------
+    public String[] getPossibleTestFiles()
     {
-        return possibleTestFiles;
+        return possibleTestFiles.toArray(
+        		new String[possibleTestFiles.size()]);
     }
 
 
-    public boolean isMainProvided()
+    // ----------------------------------------------------------
+    public boolean doesMainFunctionExist()
     {
-        return mainProvided;
-    }
-    
-    
-    public void setMainProvided(boolean value)
-    {
-    	mainProvided = value;
+        return mainExists;
     }
 
     
+    // ----------------------------------------------------------
+    public void setDoesMainFunctionExist(boolean value)
+    {
+    	mainExists = value;
+    }
+
+
+    // ----------------------------------------------------------
     public void addSuite(TestSuite suite)
     {
         suites.add(suite);
     }
     
     
+    // ----------------------------------------------------------
     public TestSuite getSuite(String name)
     {
         for (TestSuite suite : suites)
@@ -69,11 +90,25 @@ public class TestSuiteCollection
         
         return null;
     }
-
     
+    
+    // ----------------------------------------------------------
+    public void addPossibleTestFile(String name)
+    {
+    	possibleTestFiles.add(name);
+    }
+    
+    
+    // ----------------------------------------------------------
+    public void removePossibleTestFile(String name)
+    {
+    	possibleTestFiles.remove(name);
+    }
+
+
+    //~ Static/instance variables .............................................
+
     private List<TestSuite> suites;
-
-    private List<String> possibleTestFiles;
-
-    private boolean mainProvided;
+    private Set<String> possibleTestFiles;
+    private boolean mainExists;
 }

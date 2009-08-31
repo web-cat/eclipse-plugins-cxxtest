@@ -1,5 +1,5 @@
-#ifndef __CXXTEST__ERRORPRINTER_H
-#define __CXXTEST__ERRORPRINTER_H
+#ifndef __cxxtest__ErrorPrinter_h__
+#define __cxxtest__ErrorPrinter_h__
 
 //
 // The ErrorPrinter is a simple TestListener that
@@ -39,11 +39,17 @@ namespace CxxTest
         public:
             Adapter( CXXTEST_STD(ostream) &o ) : _o(o) {}
             void flush() { _o.flush(); }
-            OutputStream &operator<<( unsigned i ) { _o << i; return *this; }
             OutputStream &operator<<( const char *s ) { _o << s; return *this; }
             OutputStream &operator<<( Manipulator m ) { return OutputStream::operator<<( m ); }
+            OutputStream &operator<<( unsigned i )
+            {
+                char s[1 + 3 * sizeof(unsigned)];
+                numberToString( i, s );
+                _o << s;
+                return *this;
+            }
         };
     };
 }
 
-#endif // __CXXTEST__ERRORPRINTER_H
+#endif // __cxxtest__ErrorPrinter_h__

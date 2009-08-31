@@ -31,7 +31,14 @@ namespace Dereferee
  */
 struct option
 {
+	/**
+	 * The identifier key for the option.
+	 */
 	const char* key;
+	
+	/**
+	 * The string value of the option.
+	 */
 	const char* value;
 };
 

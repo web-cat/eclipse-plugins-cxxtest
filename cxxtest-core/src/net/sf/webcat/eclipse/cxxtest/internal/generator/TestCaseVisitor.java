@@ -50,45 +50,6 @@ import org.eclipse.core.runtime.IPath;
  */
 public class TestCaseVisitor implements ICElementVisitor
 {
-	/**
-	 * The current suite being processed.
-	 */
-	private TestSuite currentSuite = null;
-
-	/**
-	 * A vector containing all the test suites processed.
-	 */
-	private TestSuiteCollection suites = new TestSuiteCollection();
-
-	/**
-	 * A regular expression that matches the name of the CxxTest suite
-	 * base class in the superclass list.  This will match either
-	 * TestSuite, CxxTest::TestSuite, or ::CxxTest::TestSuite.
-	 */
-	private Pattern superclassPattern =
-		Pattern.compile("((::)?\\s*CxxTest\\s*::\\s*)?TestSuite");
-
-	private Pattern includePattern =
-		Pattern.compile("\\s*#\\s*include\\s+<cxxtest/TestSuite.h>");
-
-	/**
-	 * Keeps track of whether a "using namespace std" directive was
-	 * encountered during the traversal.
-	 */
-	private boolean usesStandardLibrary = true;
-
-	/**
-	 * Contains the IStructure handles of all the test suites encountered,
-	 * for quick lookup, such that each suite will only be generated once
-	 * (sometimes the tree traversal will encounter the same element twice,
-	 * may have to do with resource deltas?)
-	 */
-	private Set<IStructure> generatedSuites = new HashSet<IStructure>();
-
-	private Set<ITranslationUnit> possibleTestFiles = new HashSet<ITranslationUnit>();
-
-	private String driverFileName = null;
-
 	public TestCaseVisitor(String file)
 	{
 		driverFileName = file;
@@ -172,14 +133,18 @@ public class TestCaseVisitor implements ICElementVisitor
 	
 	private boolean shouldVisitFile(ITranslationUnit unit)
 	{
-		String name = unit.getPath().lastSegment();
+		IPath path = unit.getLocation();
+		String name = path.lastSegment();
+		
 		if(name.equals(driverFileName))
+		{
 			return false;
+		}
 		else
 		{
 			if(containsCxxTestIncludeDirective(unit))
 			{
-				possibleTestFiles.add(unit);
+				suites.addPossibleTestFile(path.toOSString());
 			}
 
 			return true;
@@ -208,11 +173,6 @@ public class TestCaseVisitor implements ICElementVisitor
 	public TestSuiteCollection getSuites()
 	{
 		return suites;
-	}
-
-	public ITranslationUnit[] getPossibleTestFiles()
-	{
-		return possibleTestFiles.toArray(new ITranslationUnit[possibleTestFiles.size()]);
 	}
 
 	/**
@@ -258,7 +218,7 @@ public class TestCaseVisitor implements ICElementVisitor
 			{
 				generatedSuites.add(element);
 
-				IPath path = element.getTranslationUnit().getResource().getLocation();
+				IPath path = element.getTranslationUnit().getLocation();
 				
 				currentSuite = new TestSuite(element.getElementName(),
 						path.toOSString(), getLineNumber(element));
@@ -266,7 +226,7 @@ public class TestCaseVisitor implements ICElementVisitor
 
 				ITranslationUnit containingUnit = element.getTranslationUnit();
 				if(containingUnit != null)
-					possibleTestFiles.remove(containingUnit);
+					suites.removePossibleTestFile(path.toOSString());
 
 				return true;
 			}
@@ -345,7 +305,7 @@ public class TestCaseVisitor implements ICElementVisitor
 	private void checkForMain(IFunctionDeclaration element)
 	{
 		if("main".equals(element.getElementName()))
-			suites.setMainProvided(true);
+			suites.setDoesMainFunctionExist(true);
 	}
 	
 	/**
@@ -395,4 +355,40 @@ public class TestCaseVisitor implements ICElementVisitor
 			return 1;
 		}
 	}
+
+
+	//~ Static/instance variables ............................................
+	
+	/* The current suite being processed. */
+	private TestSuite currentSuite = null;
+
+	/* A collection of all the test suites processed. */
+	private TestSuiteCollection suites = new TestSuiteCollection();
+
+	/*
+	 * A regular expression that matches the name of the CxxTest suite
+	 * base class in the superclass list.  This will match either
+	 * TestSuite, CxxTest::TestSuite, or ::CxxTest::TestSuite.
+	 */
+	private Pattern superclassPattern =
+		Pattern.compile("((::)?\\s*CxxTest\\s*::\\s*)?TestSuite");
+
+	private Pattern includePattern =
+		Pattern.compile("\\s*#\\s*include\\s+<cxxtest/TestSuite.h>");
+
+	/*
+	 * Keeps track of whether a "using namespace std" directive was
+	 * encountered during the traversal.
+	 */
+	private boolean usesStandardLibrary = true;
+
+	/*
+	 * Contains the IStructure handles of all the test suites encountered,
+	 * for quick lookup, such that each suite will only be generated once
+	 * (sometimes the tree traversal will encounter the same element twice,
+	 * may have to do with resource deltas?)
+	 */
+	private Set<IStructure> generatedSuites = new HashSet<IStructure>();
+
+	private String driverFileName = null;
 }

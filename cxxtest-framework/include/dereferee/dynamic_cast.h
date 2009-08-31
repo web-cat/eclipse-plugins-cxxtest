@@ -19,6 +19,7 @@
 #ifndef DEREFEREE_DYNAMIC_CAST_H
 #define DEREFEREE_DYNAMIC_CAST_H
 
+// C4512: The compiler cannot generate an assignment operator for a class.
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4512)
@@ -117,6 +118,18 @@ public:
 	{
 		return cast_value;
 	}
+	
+	
+	// -----------------------------------------------------------------------
+	/**
+	 * Returns the result of the dynamic_cast that occurred when this helper
+	 * object was initialized. This opertor is required to support syntax
+	 * such as dynamic_cast<T*>(p)->method().
+	 */
+	U* operator->() const
+	{
+		return cast_value;
+	}
 };
 
 
@@ -171,6 +184,18 @@ public:
 	 * @returns the result of the dynamic_cast.
 	 */
 	operator U* const() const
+	{
+		return cast_value;
+	}
+
+	
+	// -----------------------------------------------------------------------
+	/**
+	 * Returns the result of the dynamic_cast that occurred when this helper
+	 * object was initialized. This opertor is required to support syntax
+	 * such as dynamic_cast<T*>(p)->method().
+	 */
+	U* const operator->() const
 	{
 		return cast_value;
 	}
@@ -256,6 +281,19 @@ public:
 	}
 };
 
+
+template <typename TDest, typename TSrc>
+TDest dynamic_cast_stub(TSrc& value)
+{
+    return (TDest) dynamic_cast_helper<TDest>(value);
+}
+
+/*template <typename TDest, typename TSrc>
+TDest dynamic_cast_stub(TSrc const & value)
+{
+    return (TDest) dynamic_cast_helper<TDest>(value);
+}*/
+
 } // namespace Dereferee
 
 
@@ -266,7 +304,7 @@ public:
  * constructs, since as far as we know, dynamic_cast is only valid in those
  * contexts where the constructor call above would also be accepted.
  */
-#define dynamic_cast ::Dereferee::dynamic_cast_helper
+#define dynamic_cast ::Dereferee::dynamic_cast_stub
 
 
 #ifdef _MSC_VER

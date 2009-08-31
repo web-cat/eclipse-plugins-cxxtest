@@ -23,7 +23,6 @@
 #include <bfd.h>
 #include <dereferee/platform.h>
 
-#include <cxxtest/Signals.h>
 
 // ===========================================================================
 /**
@@ -72,17 +71,16 @@ struct backtrace_frame
 
 static const size_t MAX_BACKTRACE_SIZE = 256;
 
+static uint32_t back_trace_index = 0;
 static backtrace_frame back_trace[MAX_BACKTRACE_SIZE];
 
-// If CxxTest is in use, use its stack-top variable since the
-// signal handlers need to unwind the stack trace upon failure.
-#ifdef CXXTEST_TRAP_SIGNALS
-#	define MAX_BACKTRACE_SIZE CxxTest::__cxxtest_jmpmax
-#	define back_trace_index CxxTest::__cxxtest_stackTop
-#else
-	static const size_t MAX_BACKTRACE_SIZE = 256;
-	static uint32_t back_trace_index = 0;
-#endif
+struct saved_back_trace
+{
+	saved_back_trace* prev;
+	int index;
+};
+
+static saved_back_trace* saved_back_trace_top = NULL;
 
 struct platform_symbol_info
 {
@@ -94,29 +92,95 @@ struct platform_symbol_info
 };
 
 // ===========================================================================
+/**
+ * The symbol_table is a singleton that loads and maintains the symbol table
+ * of the executable when the platform is initialized.
+ */
 class symbol_table
 {
-public:
-	~symbol_table() NO_INSTR;
-
-	static symbol_table *instance() NO_INSTR;
-
-	const char *symbol_name_at_address(uint32_t address) NO_INSTR;
-	char *demangled_name_at_address(uint32_t address) NO_INSTR;
-	uint32_t source_location_at_address(uint32_t address, const char **path,
-		uint32_t *line) NO_INSTR;
-
-	void *operator new(size_t size) NO_INSTR;
-	void operator delete(void* ptr) NO_INSTR;
-
 private:
-	symbol_table() NO_INSTR;
-
-	void load_symbol_info();
-
+	/**
+	 * The single instance of the symbol_table class.
+	 */
 	static symbol_table *the_instance;
 
+	/**
+	 * True if symbols were successfully loaded from the executable;
+	 * otherwise, false.
+	 */
 	bool symbols_loaded;
+
+	// -----------------------------------------------------------------------
+	/**
+	 * Initializes the symbol table.
+	 */
+	symbol_table() NO_INSTR;
+
+	// -----------------------------------------------------------------------
+	/**
+	 * Loads the symbols from the executable and populates the internal table.
+	 */
+	void load_symbol_info();
+
+public:
+	// -----------------------------------------------------------------------
+	/**
+	 * Destroys the symbol table instance. This occurs as the result of an
+	 * atexit() handler that is installed when the symbol table is created.
+	 */
+	~symbol_table() NO_INSTR;
+
+	// -----------------------------------------------------------------------
+	/**
+	 * Gets the single instance of the symbol_table class.
+	 *
+	 * @returns the single instance of the symbol_table class
+	 */
+	static symbol_table *instance() NO_INSTR;
+
+	// -----------------------------------------------------------------------
+	/**
+	 * Gets the raw (mangled) name of the symbol at the specified address.
+	 *
+	 * @param address the address of the symbol
+	 *
+	 * @returns the mangled name of the symbol if found, or NULL if there was
+	 *     no symbol at that address
+	 */
+	const char *symbol_name_at_address(bfd_vma address) NO_INSTR;
+
+	// -----------------------------------------------------------------------
+	/**
+	 * Gets the human-readable (demangled) name of the symbol at the specified
+	 * address.
+	 *
+	 * @param address the address of the symbol
+	 *
+	 * @returns the demangled name of the symbol if found, or NULL if there
+	 *     was no symbol at that address
+	 */
+	char *demangled_name_at_address(bfd_vma address) NO_INSTR;
+
+	// -----------------------------------------------------------------------
+	/**
+	 * Gets the source file path and line number of the symbol at the
+	 * specified address.
+	 *
+	 * @param address the address of the symbol
+	 * @param path a pointer to a "const char *" that will store the address
+	 *     of the string that contains the source file path
+	 * @param line a pointer to a uint32_t that will store the line number
+	 *
+	 * @returns the actual address of the symbol (since the one passed in
+	 *     may be offset) if it was found, or NULL if there was no symbol at
+	 *     that address
+	 */
+	bfd_vma source_location_at_address(bfd_vma address, const char **path,
+		uint32_t *line) NO_INSTR;
+
+	// -----------------------------------------------------------------------
+	void *operator new(size_t size) NO_INSTR;
+	void operator delete(void* ptr) NO_INSTR;
 };
 
 symbol_table *symbol_table::the_instance = NULL;
@@ -126,6 +190,7 @@ static asymbol** syms;
 static unsigned long num_symbols;
 static asymbol** sym_table;
 
+
 // ===========================================================================
 /**
  * Interface and implementation of the gcc_bfd_platform class.
@@ -133,22 +198,37 @@ static asymbol** sym_table;
 class gcc_bfd_platform : public Dereferee::platform
 {
 public:
+	// -----------------------------------------------------------------------
 	gcc_bfd_platform(const Dereferee::option* options);
 
+	// -----------------------------------------------------------------------
 	~gcc_bfd_platform();
 
+	// -----------------------------------------------------------------------
 	void** get_backtrace(void* instr_ptr, void* frame_ptr);
 
+	// -----------------------------------------------------------------------
 	void free_backtrace(void** backtrace);
 
+	// -----------------------------------------------------------------------
 	bool get_backtrace_frame_info(void* frame, char* function,
 		char* filename, int* line_number);
+
+	// -----------------------------------------------------------------------
+	void demangle_type_name(char* type_name);
+
+	// -----------------------------------------------------------------------
+	void save_current_context();
+
+	// -----------------------------------------------------------------------
+	void restore_current_context();
 };
 
 // ---------------------------------------------------------------------------
 gcc_bfd_platform::gcc_bfd_platform(const Dereferee::option* options)
 {
-	// Force the symbol table to be created at the start of execution.
+	// Force the symbol table to be created when the platform is initialized,
+	// if it hasn't been already.
 	symbol_table::instance();
 }
 
@@ -190,7 +270,7 @@ bool gcc_bfd_platform::get_backtrace_frame_info(void* frame, char* function,
 	char* filename, int* line_number)
 {
 	char *name = symbol_table::instance()->demangled_name_at_address(
-		(uint32_t)frame);
+		(bfd_vma)frame);
 	const char *path = "";
 	uint32_t line = 0;
 
@@ -198,9 +278,9 @@ bool gcc_bfd_platform::get_backtrace_frame_info(void* frame, char* function,
 	{
 		strncpy(function, name, DEREFEREE_MAX_FUNCTION_LEN - 1);
 
-		uint32_t true_address =
+		bfd_vma true_address =
 			symbol_table::instance()->source_location_at_address(
-			(uint32_t)frame, &path, &line);
+			(bfd_vma)frame, &path, &line);
 
 		if (true_address)
 		{
@@ -220,6 +300,42 @@ bool gcc_bfd_platform::get_backtrace_frame_info(void* frame, char* function,
 
 	return false;
 }
+
+// ---------------------------------------------------------------------------
+void gcc_bfd_platform::demangle_type_name(char* type_name)
+{
+	int status;
+	char *demangled = __cxa_demangle(type_name, NULL, NULL, &status);
+
+	if(status == 0)
+	{
+		strncpy(type_name, demangled, DEREFEREE_MAX_SYMBOL_LEN);
+		free(demangled);
+	}
+}
+
+// ---------------------------------------------------------------------------
+void gcc_bfd_platform::save_current_context()
+{
+	saved_back_trace* new_top =
+		(saved_back_trace*) calloc(1, sizeof(saved_back_trace));
+	new_top->prev = saved_back_trace_top;
+	new_top->index = back_trace_index;
+	saved_back_trace_top = new_top;
+}
+
+// ---------------------------------------------------------------------------
+void gcc_bfd_platform::restore_current_context()
+{
+	if (saved_back_trace_top)
+	{
+		saved_back_trace* new_top = saved_back_trace_top->prev;
+		back_trace_index = saved_back_trace_top->index;
+		free(saved_back_trace_top);
+		saved_back_trace_top = new_top;
+	}
+}
+
 
 // ===========================================================================
 
@@ -244,17 +360,19 @@ static void find_bfd_address(bfd* abfd, asection* section, void* data)
 		&info->filename, &info->funcName, (unsigned int*)(&info->line));
 }
 
-// ===========================================================================
-
+// ---------------------------------------------------------------------------
 void destroy_symbol_table()
 {
 	delete symbol_table::instance();
 }
 
+// ---------------------------------------------------------------------------
 void *symbol_table::operator new(size_t size) { return malloc(size); }
 
+// ---------------------------------------------------------------------------
 void symbol_table::operator delete(void* ptr) { free(ptr); }
 
+// ---------------------------------------------------------------------------
 symbol_table *symbol_table::instance()
 {
 	if(the_instance == NULL)
@@ -266,6 +384,7 @@ symbol_table *symbol_table::instance()
 	return the_instance;
 }
 
+// ---------------------------------------------------------------------------
 symbol_table::symbol_table()
 {
 	symbols_loaded = false;
@@ -280,6 +399,7 @@ symbol_table::symbol_table()
 	load_symbol_info();
 }
 
+// ---------------------------------------------------------------------------
 symbol_table::~symbol_table()
 {
 	if(syms)
@@ -288,10 +408,11 @@ symbol_table::~symbol_table()
 	if(sym_table)
 		free(sym_table);
 
-	if(abfd)
-		bfd_close(abfd);
+//	if(abfd)
+//		bfd_close(abfd);
 }
 
+// ---------------------------------------------------------------------------
 void symbol_table::load_symbol_info()
 {
 	char** matching;
@@ -333,13 +454,14 @@ void symbol_table::load_symbol_info()
 	symbols_loaded = true;
 }
 
-const char *symbol_table::symbol_name_at_address(uint32_t address)
+// ---------------------------------------------------------------------------
+const char *symbol_table::symbol_name_at_address(bfd_vma address)
 {
 	if(!symbols_loaded)
 		return NULL;
 
 	platform_symbol_info info;
-	info.pc = (bfd_vma)address;
+	info.pc = address;
 	info.found = 0;
 
 	if(abfd)
@@ -351,7 +473,8 @@ const char *symbol_table::symbol_name_at_address(uint32_t address)
 		return NULL;
 }
 
-char *symbol_table::demangled_name_at_address(uint32_t address)
+// ---------------------------------------------------------------------------
+char *symbol_table::demangled_name_at_address(bfd_vma address)
 {
 	const char *name = symbol_name_at_address(address);
 	if(!name)
@@ -369,14 +492,15 @@ char *symbol_table::demangled_name_at_address(uint32_t address)
 	return demangled;
 }
 
-uint32_t symbol_table::source_location_at_address(uint32_t address,
+// ---------------------------------------------------------------------------
+bfd_vma symbol_table::source_location_at_address(bfd_vma address,
 	const char **path, uint32_t *line)
 {
 	if(!symbols_loaded)
 		return 0;
 
 	platform_symbol_info info;
-	info.pc = (bfd_vma)address;
+	info.pc = address;
 	info.found = 0;
 
 	if(abfd)
@@ -386,12 +510,13 @@ uint32_t symbol_table::source_location_at_address(uint32_t address,
 	{
 		*path = info.filename;
 		*line = info.line;
-		return (uint32_t)info.pc;
+		return (bfd_vma)info.pc;
 	}
 	else
 		return 0;
 }
 
+// ---------------------------------------------------------------------------
 void try_demangle_symbol(const char* mangled, char* demangled, size_t size)
 {
 	unsigned skip_first = 0;
@@ -411,12 +536,14 @@ void try_demangle_symbol(const char* mangled, char* demangled, size_t size)
  * create and destroy the listener object.
  */
 
+// ---------------------------------------------------------------------------
 Dereferee::platform* Dereferee::create_platform(
 		const Dereferee::option* options)
 {
 	return new DerefereeSupport::gcc_bfd_platform(options);
 }
 
+// ---------------------------------------------------------------------------
 void Dereferee::destroy_platform(Dereferee::platform* platform)
 {
 	delete platform;
@@ -424,42 +551,40 @@ void Dereferee::destroy_platform(Dereferee::platform* platform)
 
 // ===========================================================================
 
+namespace CxxTest {
+	extern bool __cxxtest_handlingOverflow;
+}
+
 void __cyg_profile_func_enter(void *this_fn, void *call_site)
 {
 	using namespace DerefereeSupport;
 
-    if (CxxTest::__cxxtest_handlingOverflow)
-		return;
+	// If the user makes function calls too deep and overflows the frame
+	// tracking buffer, we currently just stop tracking. In a future version,
+	// we may wish to change this to drop the *earliest* frames, rather than
+	// the latest ones.
 
-    if ((int)back_trace_index == (int)MAX_BACKTRACE_SIZE)
-    {
-		// Assume the student has gone into infinite recursion and abort.
-        CxxTest::__cxxtest_handlingOverflow = true;
-
-#ifdef __CYGWIN__
-		// Can't use abort() here because it hard-kills the process on Windows,
-		// rather than raising a signal that would be caught so execution could
-		// continue with the next test case. Instead, cause an access violation
-		// that will be caught by the structured exception handler.
-		int* x = 0;
-		*x = 0xBADBEEF;
-#else
-		abort();
-#endif
-    }
-	else
+    if ((int)back_trace_index != (int)MAX_BACKTRACE_SIZE)
 	{
+		CxxTest::__cxxtest_handlingOverflow = false;
 		back_trace[back_trace_index].function = this_fn;
 		back_trace[back_trace_index].call_site = call_site;
 		back_trace_index++;
 	}
+	else if (!CxxTest::__cxxtest_handlingOverflow)
+	{
+		CxxTest::__cxxtest_handlingOverflow = true;
+		int* p = 0;
+		*p = 0xDEADBEEF;
+	}
 }
 
+// ---------------------------------------------------------------------------
 void __cyg_profile_func_exit(void *this_fn, void *call_site)
 {
 	using namespace DerefereeSupport;
 
-    if (CxxTest::__cxxtest_handlingOverflow)
+	if (CxxTest::__cxxtest_handlingOverflow)
 		return;
 
     if (back_trace_index)

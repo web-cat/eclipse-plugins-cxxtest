@@ -19,6 +19,7 @@
 #ifndef DEREFEREE_CONST_CAST_H
 #define DEREFEREE_CONST_CAST_H
 
+// C4512: The compiler cannot generate an assignment operator for a class.
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4512)
@@ -83,7 +84,7 @@ private:
 public:
 	// -----------------------------------------------------------------------
 	/**
-	 * Dynamic casts the specified T* pointer to U*, storing the result.
+	 * Const casts the specified T* pointer to U*, storing the result.
 	 *
 	 * @param value_to_cast the pointer to cast to U*
 	 */
@@ -95,7 +96,7 @@ public:
 
 	// -----------------------------------------------------------------------
 	/**
-	 * Dynamic casts the pointer wrapped by the specified checked_ptr<T*>
+	 * Const casts the pointer wrapped by the specified checked_ptr<T*>
 	 * pointer to U*, storing the result.
 	 *
 	 * @param value_to_cast the pointer to cast to U*
@@ -140,7 +141,7 @@ private:
 public:
 	// -----------------------------------------------------------------------
 	/**
-	 * Dynamic casts the specified T* pointer to U*, storing the result.
+	 * Const casts the specified T* pointer to U*, storing the result.
 	 *
 	 * @param value_to_cast the pointer to cast to U*
 	 */
@@ -152,7 +153,7 @@ public:
 
 	// -----------------------------------------------------------------------
 	/**
-	 * Dynamic casts the pointer wrapped by the specified checked_ptr<T*>
+	 * Const casts the pointer wrapped by the specified checked_ptr<T*>
 	 * pointer to U*, storing the result.
 	 *
 	 * @param value_to_cast the pointer to cast to U*
@@ -193,7 +194,7 @@ private:
 public:
 	// -----------------------------------------------------------------------
 	/**
-	 * Dynamic casts the specified T& reference to U&, storing the result.
+	 * Const casts the specified T& reference to U&, storing the result.
 	 *
 	 * @param value_to_cast the non-const reference to cast to U&
 	 */
@@ -233,7 +234,7 @@ private:
 public:
 	// -----------------------------------------------------------------------
 	/**
-	 * Dynamic casts the specified T& reference to U&, storing the result.
+	 * Const casts the specified T& reference to U&, storing the result.
 	 *
 	 * @param value_to_cast the non-const reference to cast to U&
 	 */

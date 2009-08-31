@@ -42,6 +42,62 @@
                </tool>
             </enablement>
          </optionSet>
+         <optionSet
+               version="1.6.0">
+           <runnerIncludes
+                 path="/runner-include">
+              <includePath
+                    path="dereferee-src/gcc_bfd_platform.cpp">
+              </includePath>
+           </runnerIncludes>
+            <enablement
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledCondition"
+                  configurationFilter="Debug">
+               <tool
+                     superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
+                  <splitStringOption
+                        id="gnu.cpp.compiler.option.other.other">
+                     <item
+                           value="-finstrument-functions">
+                     </item>
+                  </splitStringOption>
+               </tool>
+               <tool
+                     superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
+                  <librariesOption
+                        id="gnu.cpp.link.option.libs">
+                     <item
+                           value="bfd">
+                     </item>
+                     <item
+                           value="iberty">
+                     </item>
+                  </librariesOption>
+               </tool>
+            </enablement>
+            <enablement
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledNeedsLibIntlCondition"
+                  configurationFilter="Debug">
+               <tool
+                     superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
+                  <splitStringOption
+                        id="gnu.cpp.compiler.option.other.other">
+                     <item
+                           value="-finstrument-functions">
+                     </item>
+                  </splitStringOption>
+               </tool>
+               <tool
+                     superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
+                  <librariesOption
+                        id="gnu.cpp.link.option.libs">
+                     <item
+                           value="intl">
+                     </item>
+                  </librariesOption>
+               </tool>
+            </enablement>
+         </optionSet>
       </extraProjectOptions>
    </extension>
 

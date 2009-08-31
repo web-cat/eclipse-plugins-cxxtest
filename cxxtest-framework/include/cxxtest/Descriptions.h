@@ -1,5 +1,5 @@
-#ifndef __CXXTEST__DESCRIPTIONS_H
-#define __CXXTEST__DESCRIPTIONS_H
+#ifndef __cxxtest__Descriptions_h__
+#define __cxxtest__Descriptions_h__
 
 //
 // TestDescription, SuiteDescription and WorldDescription
@@ -10,14 +10,12 @@
 
 namespace CxxTest 
 {
-    class TestListener;
     class TestSuite;
-    class TestRunner;
 
     class TestDescription : public Link
     {
     public:
-        virtual ~TestDescription() {}
+        virtual ~TestDescription();
         
         virtual const char *file() const = 0;
         virtual unsigned line() const = 0;
@@ -33,7 +31,7 @@ namespace CxxTest
     class SuiteDescription : public Link
     {
     public:
-        virtual ~SuiteDescription() {}
+        virtual ~SuiteDescription();
         
         virtual const char *file() const = 0;
         virtual unsigned line() const = 0;
@@ -55,7 +53,7 @@ namespace CxxTest
     class WorldDescription : public Link
     {
     public:
-        virtual ~WorldDescription() {}
+        virtual ~WorldDescription();
         
         virtual unsigned numSuites( void ) const = 0;
         virtual unsigned numTotalTests( void ) const = 0;
@@ -72,5 +70,4 @@ namespace CxxTest
     };
 }
 
-#endif // __CXXTEST__DESCRIPTIONS_H
-
+#endif // __cxxtest__Descriptions_h__

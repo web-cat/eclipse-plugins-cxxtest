@@ -25,6 +25,12 @@
  * compilers. If your compiler is not listed here, you can add it by using
  * preprocessor macros to detect its existence and version, and enabling or
  * disabling the features that the compiler supports.
+ *
+ * If you are adding support for a compiler here, make sure to also look
+ * inside cookie_calculator.h and see if you need to make any adjustments
+ * there to support your compiler. (This is particularly true if your
+ * compiler supports the TR1 traits extensions, which provide a much more
+ * robust method for cookie calculation.)
  */
 
 /*
@@ -52,6 +58,16 @@
  * use our redefinition of the dynamic_cast operator? If not, define this and
  * those definitions will not be included; however, any code that passes a
  * checked_ptr<T*> to dynamic_cast will first have to explicitly cast it back
+ * to T*.
+ *
+ * ----
+ * DEREFEREE_NO_CONST_CAST
+ * Value: defined/undefined
+ *
+ * Does the compiler support partial template specializations well enough to
+ * use our redefinition of the const_cast operator? If not, define this and
+ * those definitions will not be included; however, any code that passes a
+ * checked_ptr<T*> to const_cast will first have to explicitly cast it back
  * to T*.
  *
  * ----

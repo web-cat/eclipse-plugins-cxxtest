@@ -80,6 +80,46 @@
 #	endif
 #endif
 
+// ===========================================================================
+/*
+ * These functions provide access to the currently active platform and
+ * listener objects for the Dereferee memory manager (creating the manager
+ * and these objects if they have not yet been created). Most clients will
+ * not need to access these directly, but they can be useful for libraries
+ * that want to integrate with Dereferee in a more cohesive manner.
+ */
+
+// ---------------------------------------------------------------------------
+/**
+ * Gets the active platform in use by Dereferee.
+ *
+ * @returns the active platform
+ */
+Dereferee::platform* Dereferee::current_platform();
+
+// ---------------------------------------------------------------------------
+/**
+ * Gets the active platform in use by Dereferee.
+ *
+ * @returns the active platform
+ */
+Dereferee::listener* Dereferee::current_listener();
+
+// ---------------------------------------------------------------------------
+/**
+ * Public interface that can be used by clients to visit all of the currently
+ * allocated blocks of memory that Dereferee is managing.
+ *
+ * @param visitor the visitor function that will be called for each allocated
+ *     block of memory; the signature of this function is
+ *     void allocation_visitor(const Dereferee::allocation_info& info,
+ *                             void* arg)
+ * @param arg a user-defined argument that is passed to the visitor
+ */
+void Dereferee::visit_allocations(Dereferee::allocation_visitor visitor,
+                                  void* arg);
+
+// ===========================================================================
 /*
  * Import only the declaration of checked_ptr into the global namespace. No
  * other classes in the Dereferee namespace are intended for public use, so in
@@ -87,5 +127,6 @@
  * from that namespace.
  */
 using ::Dereferee::checked_ptr;
+
 
 #endif // DEREFEREE_H

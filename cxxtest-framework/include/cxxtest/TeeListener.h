@@ -1,11 +1,10 @@
-#ifndef __CXXTEST__TEELISTENER_H
-#define __CXXTEST__TEELISTENER_H
+#ifndef __cxxtest__TeeListener_h__
+#define __cxxtest__TeeListener_h__
 
 //
-// A TeeListener notifies two "reular" TestListeners
+// A TeeListener notifies two "regular" TestListeners
 //
 
-#include <cxxtest/TestListener.h>
 #include <cxxtest/TestListener.h>
 
 namespace CxxTest
@@ -172,6 +171,13 @@ namespace CxxTest
             _second->leaveWorld(d);
         }
 
+        void suiteInitError( const char *file, unsigned line,
+                             const char *expression )
+        {
+            _first->suiteInitError(file, line, expression);
+            _second->suiteInitError(file, line, expression);
+        }
+
     private:
         TestListener *_first, *_second;
         TestListener _dummy;
@@ -179,4 +185,4 @@ namespace CxxTest
 };
 
 
-#endif // __CXXTEST__TEELISTENER_H
+#endif // __cxxtest__TeeListener_h__

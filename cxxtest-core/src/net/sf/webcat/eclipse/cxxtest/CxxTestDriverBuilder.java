@@ -134,7 +134,8 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 			generator.setTrackHeap(trackHeap);
 			generator.setTrapSignals(trapSignals);
 			generator.setTraceStack(traceStack);
-			generator.setPossibleTestFiles(visitor.getPossibleTestFiles());
+			generator.setPossibleTestFiles(
+					visitor.getSuites().getPossibleTestFiles());
 			generator.setExtraIncludes(extraIncludes);
 
 			generator.generate();

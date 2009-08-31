@@ -1,5 +1,5 @@
-#ifndef __TESTTRACKER_H
-#define __TESTTRACKER_H
+#ifndef __cxxtest__TestTracker_h__
+#define __cxxtest__TestTracker_h__
 
 //
 // The TestTracker tracks running tests
@@ -17,17 +17,13 @@ namespace CxxTest
     class TestTracker : public TestListener
     {
     public:
-        virtual ~TestTracker() {}
+        virtual ~TestTracker();
         
-        static TestTracker &tracker()
-        {
-            static TestTracker theTracker;
-            return theTracker;
-        }
+        static TestTracker &tracker();
 
-        const TestDescription *fixTest( const TestDescription *d ) const { return d ? d : &dummyTest(); }
-        const SuiteDescription *fixSuite( const SuiteDescription *d ) const { return d ? d : &dummySuite(); }
-        const WorldDescription *fixWorld( const WorldDescription *d ) const { return d ? d : &dummyWorld(); }
+        const TestDescription *fixTest( const TestDescription *d ) const;
+        const SuiteDescription *fixSuite( const SuiteDescription *d ) const;
+        const WorldDescription *fixWorld( const WorldDescription *d ) const;
 
         const TestDescription &test() const { return *_test; }
         const SuiteDescription &suite() const { return *_suite; }
@@ -43,150 +39,49 @@ namespace CxxTest
         unsigned suiteFailedTests() const { return _suiteFailedTests; }
         unsigned failedSuites() const { return _failedSuites; }
 
-        void enterWorld( const WorldDescription &wd )
-        {
-            setWorld( &wd );
-            _warnings = _failedTests = _testFailedAsserts = _suiteFailedTests = _failedSuites = 0;
-            _l->enterWorld( wd );
-        }
-
-        void enterSuite( const SuiteDescription &sd )
-        {
-            setSuite( &sd );
-            _testFailedAsserts = _suiteFailedTests = 0;
-            _l->enterSuite(sd);
-        }
-        
-        void enterTest( const TestDescription &td )
-        {
-            setTest( &td );
-            _testFailedAsserts = false;
-            _l->enterTest(td);
-        }
-
-        void leaveTest( const TestDescription &td )
-        {
-            _l->leaveTest( td );
-            setTest( 0 );
-        }
-
-        void leaveSuite( const SuiteDescription &sd )
-        {
-            _l->leaveSuite( sd );
-            setSuite( 0 );
-        }
-
-        void leaveWorld( const WorldDescription &wd )
-        {
-            _l->leaveWorld( wd );
-            setWorld( 0 );
-        }
-
-        void trace( const char *file, unsigned line, const char *expression )
-        {
-            _l->trace( file, line, expression );
-        }
-
-        void warning( const char *file, unsigned line, const char *expression )
-        {
-            countWarning();
-            _l->warning( file, line, expression );
-        }
-
-        void failedTest( const char *file, unsigned line, const char *expression )
-        {
-            countFailure();
-            _l->failedTest( file, line, expression );
-        }
-        
-        void failedAssert( const char *file, unsigned line, const char *expression )
-        {
-            countFailure();
-            _l->failedAssert( file, line, expression );
-        }
-
+        void enterWorld( const WorldDescription &wd );
+        void enterSuite( const SuiteDescription &sd );
+        void enterTest( const TestDescription &td );
+        void leaveTest( const TestDescription &td );
+        void leaveSuite( const SuiteDescription &sd );
+        void leaveWorld( const WorldDescription &wd );
+        void trace( const char *file, unsigned line, const char *expression );
+        void warning( const char *file, unsigned line, const char *expression );
+        void failedTest( const char *file, unsigned line, const char *expression );
+        void failedAssert( const char *file, unsigned line, const char *expression );
         void failedAssertEquals( const char *file, unsigned line,
                                  const char *xStr, const char *yStr,
-                                 const char *x, const char *y )
-        {
-            countFailure();
-            _l->failedAssertEquals( file, line, xStr, yStr, x, y );
-        }
-
+                                 const char *x, const char *y );
         void failedAssertSameData( const char *file, unsigned line,
                                    const char *xStr, const char *yStr,
                                    const char *sizeStr, const void *x,
-                                   const void *y, unsigned size )
-        {
-            countFailure();
-            _l->failedAssertSameData( file, line, xStr, yStr, sizeStr, x, y, size );
-        }
-
+                                   const void *y, unsigned size );
         void failedAssertDelta( const char *file, unsigned line,
                                 const char *xStr, const char *yStr, const char *dStr,
-                                const char *x, const char *y, const char *d )
-        {
-            countFailure();
-            _l->failedAssertDelta( file, line, xStr, yStr, dStr, x, y, d );
-        }
+                                const char *x, const char *y, const char *d );
         void failedAssertDiffers( const char *file, unsigned line,
                                   const char *xStr, const char *yStr,
-                                  const char *value )
-        {
-            countFailure();
-            _l->failedAssertDiffers( file, line, xStr, yStr, value );
-        }
-        
+                                  const char *value );
         void failedAssertLessThan( const char *file, unsigned line,
                                    const char *xStr, const char *yStr,
-                                   const char *x, const char *y )
-        {
-            countFailure();
-            _l->failedAssertLessThan( file, line, xStr, yStr, x, y );
-        }
-
+                                   const char *x, const char *y );
         void failedAssertLessThanEquals( const char *file, unsigned line,
                                          const char *xStr, const char *yStr,
-                                         const char *x, const char *y )
-        {
-            countFailure();
-            _l->failedAssertLessThanEquals( file, line, xStr, yStr, x, y );
-        }
-
+                                         const char *x, const char *y );
         void failedAssertPredicate( const char *file, unsigned line,
-                                    const char *predicate, const char *xStr, const char *x )
-        {
-            countFailure();
-            _l->failedAssertPredicate( file, line, predicate, xStr, x );
-        }
-        
+                                    const char *predicate, const char *xStr, const char *x );
         void failedAssertRelation( const char *file, unsigned line,
                                    const char *relation, const char *xStr, const char *yStr,
-                                   const char *x, const char *y )
-        {
-            countFailure();
-            _l->failedAssertRelation( file, line, relation, xStr, yStr, x, y );
-        }
-        
+                                   const char *x, const char *y );
         void failedAssertThrows( const char *file, unsigned line,
                                  const char *expression, const char *type,
-                                 bool otherThrown )
-        {
-            countFailure();
-            _l->failedAssertThrows( file, line, expression, type, otherThrown );
-        }
+                                 bool otherThrown );
+        void failedAssertThrowsNot( const char *file, unsigned line, const char *expression );
+        void suiteInitError(const char *file, unsigned line, const char *expression);
+
+        void** sigBacktrace();
+
         
-        void failedAssertThrowsNot( const char *file, unsigned line, const char *expression )
-        {
-            countFailure();
-            _l->failedAssertThrowsNot( file, line, expression );
-        }
-
-        void suiteInitError(const char *file, unsigned line, const char *expression)
-        {
-        	_l->suiteInitError(file, line, expression);
-        }
-
     private:
         TestTracker( const TestTracker & );
         TestTracker &operator=( const TestTracker & );
@@ -200,72 +95,24 @@ namespace CxxTest
         const SuiteDescription *_suite;
         const TestDescription *_test;
 
-        const TestDescription &dummyTest() const { return dummySuite().testDescription(0); }
-        const SuiteDescription &dummySuite() const { return dummyWorld().suiteDescription(0); }
-        const WorldDescription &dummyWorld() const { return _dummyWorld; }
+        const TestDescription &dummyTest() const;
+        const SuiteDescription &dummySuite() const;
+        const WorldDescription &dummyWorld() const;
         
-        void setWorld( const WorldDescription *w )
-        {
-            _world = fixWorld( w );
-            setSuite( 0 );
-        }
-
-        void setSuite( const SuiteDescription *s )
-        {
-            _suite = fixSuite( s );
-            setTest( 0 );
-        }
-
-        void setTest( const TestDescription *t )
-        {
-            _test = fixTest( t );
-        }
-
-        void countWarning()
-        {
-            ++ _warnings;
-        }
-
-        void countFailure()
-        {
-            if ( ++ _testFailedAsserts == 1 ) {
-                ++ _failedTests;
-                if ( ++ _suiteFailedTests == 1 )
-                    ++ _failedSuites;
-            }
-        }
+        void setWorld( const WorldDescription *w );
+        void setSuite( const SuiteDescription *s );
+        void setTest( const TestDescription *t );
+        void countWarning();
+        void countFailure();
 
         friend class TestRunner;
         
-        TestTracker()
-        {
-            if ( !_created ) {
-                initialize();
-                _created = true;
-            }
-        }
-
-        void initialize()
-        {
-            _warnings = 0;
-            _failedTests = 0;
-            _testFailedAsserts = 0;
-            _suiteFailedTests = 0;
-            _failedSuites = 0;
-            setListener( 0 );
-            _world = 0;
-            _suite = 0;
-            _test = 0;
-        }
-
-        void setListener( TestListener *l )
-        {
-            _l = l ? l : &_dummyListener;
-        }
+        TestTracker();
+        void initialize();
+        void setListener( TestListener *l );
     };
 
     inline TestTracker &tracker() { return TestTracker::tracker(); }
 };
 
-
-#endif // __TESTTRACKER_H
+#endif // __cxxtest__TestTracker_h__

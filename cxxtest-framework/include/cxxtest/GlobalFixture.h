@@ -1,5 +1,5 @@
-#ifndef __CXXTEST__GLOBAL_FIXTURE_H
-#define __CXXTEST__GLOBAL_FIXTURE_H
+#ifndef __cxxtest__GlobalFixture_h__
+#define __cxxtest__GlobalFixture_h__
 
 #include <cxxtest/LinkedList.h>
 
@@ -8,23 +8,23 @@ namespace CxxTest
     class GlobalFixture : public Link
     {
     public:
-        virtual bool setUpWorld() { return true; }
-        virtual bool tearDownWorld() { return true; }
-        virtual bool setUp() { return true; }
-        virtual bool tearDown() { return true; }
+        virtual bool setUpWorld();
+        virtual bool tearDownWorld();
+        virtual bool setUp();
+        virtual bool tearDown();
         
-        GlobalFixture() { attach( _list ); }
-        ~GlobalFixture() { detach( _list ); }
+        GlobalFixture();
+        ~GlobalFixture();
         
-        static GlobalFixture *firstGlobalFixture() { return (GlobalFixture *)_list.head(); }
-        static GlobalFixture *lastGlobalFixture() { return (GlobalFixture *)_list.tail(); }
-        GlobalFixture *nextGlobalFixture() { return (GlobalFixture *)next(); }
-        GlobalFixture *prevGlobalFixture() { return (GlobalFixture *)prev(); }
+        static GlobalFixture *firstGlobalFixture();
+        static GlobalFixture *lastGlobalFixture();
+        GlobalFixture *nextGlobalFixture();
+        GlobalFixture *prevGlobalFixture();
 
     private:
         static List _list;
     };
 }
 
-#endif // __CXXTEST__GLOBAL_FIXTURE_H
+#endif // __cxxtest__GlobalFixture_h__
 
