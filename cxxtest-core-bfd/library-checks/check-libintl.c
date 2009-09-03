@@ -7,6 +7,7 @@
  */
 int main()
 {
-	bindtextdomain(0, 0);
+	/* This function is referenced by libbfd. */
+	libintl_dgettext(0, 0);
 	return 0;
 }

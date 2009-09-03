@@ -1,12 +1,18 @@
-#include <iberty.h>
+#include <stdlib.h>
 
 /*
- * Checks for the existence of libintl on the system. First attempt to
- * link *without* -lintl since some versions of glibc come with these
- * functions built-in. If this fails, then try linking *with* -lintl.
+ * Checks for the existence of a function that bfd needs to link properly.
+ * This function may be in glibc on some systems, or it may require
+ * libiberty, so first try compiling without it, then try compiling with
+ * -liberty if that fails. If this second part fails, the user probably
+ * needs to install libiberty from the appropriate package.
  */
+
+struct objalloc;
+struct objalloc *objalloc_create(void);
+
 int main()
 {
-	bindtextdomain(0, 0);
+	objalloc_create();
 	return 0;
 }
