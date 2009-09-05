@@ -62,6 +62,10 @@
                      </item>
                   </splitStringOption>
                </tool>
+            </enablement>
+            <enablement
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledAndHasLibBfdCondition"
+                  configurationFilter="Debug">
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
                   <librariesOption
@@ -69,30 +73,31 @@
                      <item
                            value="bfd">
                      </item>
-                     <item
-                           value="iberty">
-                     </item>
                   </librariesOption>
                </tool>
             </enablement>
             <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledNeedsLibIntlCondition"
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledAndNeedsLibIntlCondition"
                   configurationFilter="Debug">
-               <tool
-                     superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
-                  <splitStringOption
-                        id="gnu.cpp.compiler.option.other.other">
-                     <item
-                           value="-finstrument-functions">
-                     </item>
-                  </splitStringOption>
-               </tool>
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
                   <librariesOption
                         id="gnu.cpp.link.option.libs">
                      <item
                            value="intl">
+                     </item>
+                  </librariesOption>
+               </tool>
+            </enablement>
+            <enablement
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledAndNeedsLibIbertyCondition"
+                  configurationFilter="Debug">
+               <tool
+                     superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
+                  <librariesOption
+                        id="gnu.cpp.link.option.libs">
+                     <item
+                           value="iberty">
                      </item>
                   </librariesOption>
                </tool>

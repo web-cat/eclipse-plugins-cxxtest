@@ -171,5 +171,11 @@
          </simple>
       </processType>
    </extension>
+   <extension
+         point="org.eclipse.ui.startup">
+      <startup
+            class="net.sf.webcat.eclipse.cxxtest.internal.CxxTestEarlyStartup">
+      </startup>
+   </extension>
 
 </plugin>
