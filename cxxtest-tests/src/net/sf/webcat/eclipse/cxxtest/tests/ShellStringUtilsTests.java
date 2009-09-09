@@ -107,7 +107,7 @@ public class ShellStringUtilsTests
 	@Test public void versionPatternDeploymentNoQualifier()
 	{
 		String path = "/path/to/plugins/net.sf.webcat.eclipse.cxxtest_1.5.0/path/to/foo";
-		String regex = ShellStringUtils.patternForAnyVersionOfPluginRelativePath(path);
+		String regex = ShellStringUtils.patternForAnyVersionOfPluginRelativePath(path, true);
 		
 		assertTrue(path.matches(regex));
 		assertTrue("/path/to/plugins/net.sf.webcat.eclipse.cxxtest_1.6.0/path/to/foo".matches(regex));
@@ -125,7 +125,7 @@ public class ShellStringUtilsTests
 	@Test public void versionPatternDeploymentQualifier()
 	{
 		String path = "/path/to/plugins/net.sf.webcat.eclipse.cxxtest_1.5.0.v12345-6789/path/to/foo";
-		String regex = ShellStringUtils.patternForAnyVersionOfPluginRelativePath(path);
+		String regex = ShellStringUtils.patternForAnyVersionOfPluginRelativePath(path, true);
 		
 		assertTrue(path.matches(regex));
 		assertTrue("/path/to/plugins/net.sf.webcat.eclipse.cxxtest_1.6.0.v12345-9876/path/to/foo".matches(regex));
@@ -143,7 +143,7 @@ public class ShellStringUtilsTests
 	@Test public void versionPatternDevelopment()
 	{
 		String path = "/path/to/workspace/cxxtest-core/path/to/foo";
-		String regex = ShellStringUtils.patternForAnyVersionOfPluginRelativePath(path);
+		String regex = ShellStringUtils.patternForAnyVersionOfPluginRelativePath(path, true);
 		
 		assertTrue("/path/to/workspace/cxxtest-core/path/to/foo".matches(regex));
 		assertTrue("/path/to/workspace/cxxtest-core/path/to/foo/".matches(regex));
