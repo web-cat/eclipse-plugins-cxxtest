@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import net.sf.webcat.eclipse.cxxtest.internal.MutableBoolean;
 import net.sf.webcat.eclipse.cxxtest.internal.generator.TestCaseVisitor;
 import net.sf.webcat.eclipse.cxxtest.internal.generator.TestRunnerGenerator;
 import net.sf.webcat.eclipse.cxxtest.internal.generator.TestSuiteCollection;
@@ -39,6 +40,7 @@ import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.QualifiedName;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -70,9 +72,11 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		// currently loaded is more recent than the version of project options
 		// recorded in the project. If so, ask the user if the project should
 		// be upgraded.
+		
 		final IExtraOptionsUpdater updater = CxxTestPlugin.getDefault().getExtraOptionsUpdater();
+		final MutableBoolean alreadyUpdated = new MutableBoolean();
 
-		if(updater.isUpdateNeeded(project))
+		if (updater.isUpdateNeeded(project))
 		{
 			Display.getDefault().syncExec(new Runnable() {
 				public void run()
@@ -82,9 +86,30 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 							"This project was created with an older version of CxxTest. Would you like to upgrade its settings to the current version?\n\nIf you choose \"No\", the project will likely not compile properly.");
 
 					if(result)
+					{
 						updater.updateOptions(project);
+						alreadyUpdated.setValue(true);
+					}
                 }
 			});
+		}
+		
+		if (!alreadyUpdated.getValue())
+		{
+			// Check to see if the global stack trace preference has changed
+			// since this project was last built.
+			
+			IPreferenceStore store = CxxTestPlugin.getDefault().getPreferenceStore();
+
+			boolean globalStackTrace = store.getBoolean(CxxTestPlugin.CXXTEST_PREF_TRACE_STACK);
+			boolean projectStackTrace = Boolean.valueOf(project.getPersistentProperty(
+					new QualifiedName(CxxTestPlugin.PLUGIN_ID,
+							ICxxTestConstants.PROP_STACK_TRACE_ENABLED)));
+
+			if (globalStackTrace != projectStackTrace)
+			{
+				updater.updateOptions(project);
+			}
 		}
 
 		if(!checkForRebuild())

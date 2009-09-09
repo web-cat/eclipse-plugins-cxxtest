@@ -46,5 +46,12 @@ public class CxxTestPreferenceInitializer extends AbstractPreferenceInitializer
 		store.setDefault(CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS, true);
 		store.setDefault(CxxTestPlugin.CXXTEST_PREF_TRACK_HEAP, true);
 		store.setDefault(CxxTestPlugin.CXXTEST_PREF_TRACE_STACK, true);
+
+		// Assume the system doesn't have the required libraries by default;
+		// we'll find out when we check during initialization, or whenever the
+		// user toggles the stack trace setting.
+		store.setDefault(CxxTestPlugin.CXXTEST_PREF_HAS_REQUIRED_LIBRARIES,
+				false);
+		store.setDefault(CxxTestPlugin.CXXTEST_PREF_FIRST_TIME, true);
 	}
 }

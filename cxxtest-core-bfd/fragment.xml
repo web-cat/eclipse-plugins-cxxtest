@@ -14,8 +14,8 @@
               </includePath>
            </runnerIncludes>
             <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledCondition"
-                  configurationFilter="Debug">
+                  configurationFilter="Debug"
+                  isForStackTrace="true">
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
                   <splitStringOption
@@ -51,8 +51,8 @@
               </includePath>
            </runnerIncludes>
             <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledCondition"
-                  configurationFilter="Debug">
+                  configurationFilter="Debug"
+                  isForStackTrace="true">
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
                   <splitStringOption
@@ -64,8 +64,9 @@
                </tool>
             </enablement>
             <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledAndHasLibBfdCondition"
-                  configurationFilter="Debug">
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.HasLibBfdCondition"
+                  configurationFilter="Debug"
+                  isForStackTrace="true">
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
                   <librariesOption
@@ -77,8 +78,9 @@
                </tool>
             </enablement>
             <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledAndNeedsLibIntlCondition"
-                  configurationFilter="Debug">
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.NeedsLibIntlCondition"
+                  configurationFilter="Debug"
+                  isForStackTrace="true">
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
                   <librariesOption
@@ -90,8 +92,9 @@
                </tool>
             </enablement>
             <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledAndNeedsLibIbertyCondition"
-                  configurationFilter="Debug">
+                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.NeedsLibIbertyCondition"
+                  configurationFilter="Debug"
+                  isForStackTrace="true">
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
                   <librariesOption
@@ -106,10 +109,10 @@
       </extraProjectOptions>
    </extension>
    <extension
-         point="net.sf.webcat.eclipse.cxxtest.platformSpecificStartup">
-      <startup
+         point="net.sf.webcat.eclipse.cxxtest.stackTraceDependencyCheck">
+      <dependencyCheck
             class="net.sf.webcat.eclipse.cxxtest.bfd.CheckForRequiredLibraries">
-      </startup>
+      </dependencyCheck>
    </extension>
 
 </fragment>

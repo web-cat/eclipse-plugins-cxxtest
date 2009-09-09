@@ -3,7 +3,7 @@
 <schema targetNamespace="net.sf.webcat.eclipse.cxxtest" xmlns="http://www.w3.org/2001/XMLSchema">
 <annotation>
       <appInfo>
-         <meta.schema plugin="net.sf.webcat.eclipse.cxxtest" id="platformSpecificStartup" name="Platform-Specific Startup Tasks"/>
+         <meta.schema plugin="net.sf.webcat.eclipse.cxxtest" id="stackTraceDependencyCheck" name="Stack Trace Dependency Check"/>
       </appInfo>
       <documentation>
          [Enter description of this extension point.]
@@ -18,7 +18,7 @@
       </annotation>
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
-            <element ref="startup"/>
+            <element ref="dependencyCheck"/>
          </sequence>
          <attribute name="point" type="string" use="required">
             <annotation>
@@ -47,7 +47,7 @@
       </complexType>
    </element>
 
-   <element name="startup">
+   <element name="dependencyCheck">
       <complexType>
          <attribute name="class" type="string" use="required">
             <annotation>
@@ -55,7 +55,7 @@
                   
                </documentation>
                <appInfo>
-                  <meta.attribute kind="java" basedOn=":net.sf.webcat.eclipse.cxxtest.IPlatformSpecificStartup"/>
+                  <meta.attribute kind="java" basedOn=":net.sf.webcat.eclipse.cxxtest.IStackTraceDependencyCheck"/>
                </appInfo>
             </annotation>
          </attribute>

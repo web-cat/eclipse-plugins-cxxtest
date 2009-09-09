@@ -60,4 +60,6 @@ public interface ICxxTestConstants
 	static final String MEMWATCH_RESULTS_FILE = ".dereferee.log";
 
 	static final String BINARY_LOG_FILE = ".execution.log";
+	
+	static final String PROP_STACK_TRACE_ENABLED = "stackTraceEnabled";
 }

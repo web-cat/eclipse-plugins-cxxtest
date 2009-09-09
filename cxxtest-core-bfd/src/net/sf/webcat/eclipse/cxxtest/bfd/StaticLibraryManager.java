@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +65,8 @@ public class StaticLibraryManager
 		}
 
 		StringBuffer buffer = new StringBuffer();
-		
+		buffer.append("The following linker libraries are missing: ");
+
 		buffer.append(list.get(0));
 		for (int i = 1; i < list.size(); i++)
 		{
@@ -80,14 +80,18 @@ public class StaticLibraryManager
 
 	public void checkForDependencies(IProgressMonitor monitor)
 	{
-		monitor.beginTask("Looking for CxxTest dependencies", 6);
-		monitor.worked(1);
+		monitor.beginTask("Checking for link library requirements", 5);
 
+		// Check for libintl functions, first without explicitly linking
+		// (in case they're part of glibc), and then by linking directly.
+
+		monitor.subTask("Looking for built-in libintl functions");
 		boolean hasIntlBuiltIn = tryToCompile("check-libintl.c", null);
 		monitor.worked(1);
 
 		if (!hasIntlBuiltIn)
 		{
+			monitor.subTask("Looking for libintl as a separate library");
 			hasIntl = tryToCompile("check-libintl.c",
 					new String[] { "intl" });
 			needsLinkToIntl = true;
@@ -100,11 +104,16 @@ public class StaticLibraryManager
 		
 		monitor.worked(1);
 
+		// Check for libiberty functions, first without explicitly linking
+		// (in case they're part of glibc), and then by linking directly.
+
+		monitor.subTask("Looking for built-in libiberty functions");
 		boolean hasIbertyBuiltIn = tryToCompile("check-libiberty.c", null);
 		monitor.worked(1);
 
 		if (!hasIbertyBuiltIn)
 		{
+			monitor.subTask("Looking for libiberty as a separate library");
 			hasIberty = tryToCompile("check-libiberty.c",
 					new String[] { "iberty" });
 			needsLinkToIberty = true;
@@ -117,8 +126,21 @@ public class StaticLibraryManager
 
 		monitor.worked(1);
 		
-		// Now use what we know to try search for bfd successfully.
+		// Now use what we know to try search for libbfd successfully. For
+		// this to be successful we need to have support for several libintl
+		// and libiberty functions, so use the information collected above to
+		// link to them explicitly if necessary.
 
+		monitor.subTask("Looking for libbfd");
+		hasBfd = tryToCompile("check-libbfd.c", librariesNeededForBfd());
+		monitor.worked(1);
+		
+		monitor.done();
+	}
+
+
+	private String[] librariesNeededForBfd()
+	{
 		ArrayList<String> libs = new ArrayList<String>();
 		libs.add("bfd");
 		
@@ -132,12 +154,7 @@ public class StaticLibraryManager
 			libs.add("iberty");
 		}
 
-		String[] libArray = libs.toArray(new String[libs.size()]);
-		
-		hasBfd = tryToCompile("check-libbfd.c", libArray);
-		monitor.worked(1);
-		
-		monitor.done();
+		return libs.toArray(new String[libs.size()]);
 	}
 
 

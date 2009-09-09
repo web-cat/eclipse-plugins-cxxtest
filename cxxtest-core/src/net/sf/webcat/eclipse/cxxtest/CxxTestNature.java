@@ -25,6 +25,8 @@ import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IProjectNature;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.QualifiedName;
+import org.eclipse.jface.preference.IPreferenceStore;
 
 /**
  * The project nature attached to CxxTest projects.
@@ -145,6 +147,13 @@ public class CxxTestNature implements IProjectNature
 		IExtraOptionsUpdater updater =
 		        CxxTestPlugin.getDefault().getExtraOptionsUpdater();
 		updater.updateOptions(project);
+		
+		IPreferenceStore store = CxxTestPlugin.getDefault().getPreferenceStore();
+		boolean stackTrace = store.getBoolean(CxxTestPlugin.CXXTEST_PREF_TRACE_STACK);
+
+		project.setPersistentProperty(new QualifiedName(
+				CxxTestPlugin.PLUGIN_ID, ICxxTestConstants.PROP_STACK_TRACE_ENABLED),
+				Boolean.toString(stackTrace));
 
 		return index == -1;
 	}

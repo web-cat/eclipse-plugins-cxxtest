@@ -18,6 +18,7 @@
 package net.sf.webcat.eclipse.cxxtest.preferences;
 
 import net.sf.webcat.eclipse.cxxtest.CxxTestPlugin;
+import net.sf.webcat.eclipse.cxxtest.internal.StackTraceDependencyChecker;
 
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
@@ -58,10 +59,37 @@ public class CxxTestPreferencePage extends FieldEditorPreferencePage
             "Enable basic heap error checking", getFieldEditorParent()));
         addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS,
             "Trap signals within test cases", getFieldEditorParent()));
-        addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRACE_STACK,
-            "Generate stack traces for test failures and memory leaks (changes affect only new projects)",
-            getFieldEditorParent()));
+
+        final CancelableBooleanFieldEditor editor;
+        editor = new CancelableBooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRACE_STACK,
+            "Generate stack traces for test failures and memory leaks",
+            getFieldEditorParent());
+
+        editor.setCancelableListener(new ICancelableBooleanListener() {
+			public boolean shouldDenyChange(boolean newValue)
+			{
+				if (newValue == true)
+				{
+					boolean found = checkForRequiredLibraries();
+					if (!found)
+					{
+						return true;
+					}
+				}
+				
+				return false;
+			}
+        });
+
+        addField(editor);
 	}
+
+	
+	private boolean checkForRequiredLibraries()
+	{
+		return StackTraceDependencyChecker.checkForDependencies(true);
+	}
+
 
 	public void init(IWorkbench workbench)
 	{

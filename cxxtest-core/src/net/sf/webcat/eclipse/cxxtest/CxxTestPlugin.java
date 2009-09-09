@@ -80,6 +80,12 @@ public class CxxTestPlugin extends AbstractUIPlugin
 
 	public static final String CXXTEST_PREF_TRACE_STACK = PLUGIN_ID
 	        + ".preferences.traceStack";
+	
+	public static final String CXXTEST_PREF_HAS_REQUIRED_LIBRARIES = PLUGIN_ID
+			+ ".preferences.hasRequiredLibraries";
+
+	public static final String CXXTEST_PREF_FIRST_TIME = PLUGIN_ID
+			+ ".preferences.firstTime";
 
 	public static final String CXXTEST_CPREF_LOG_EXECUTION = "BINARY_EXECUTION_LOG";
 

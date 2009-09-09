@@ -18,6 +18,7 @@
 package net.sf.webcat.eclipse.cxxtest.internal.options;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
 
 /**
  * Utility functions that split a string into an array of components and join an
@@ -161,7 +162,8 @@ public class ShellStringUtils
 	// ------------------------------------------------------------------------
 	/**
 	 * Joins an array of String components into a single whitespace-delimited
-	 * string.
+	 * string. If any of the elements of array themselves have spaces in them,
+	 * they will be properly double-quoted.
 	 * 
 	 * @param array
 	 *            an array of Strings containing the components to be joined
@@ -174,16 +176,98 @@ public class ShellStringUtils
 
 		if(array.length > 0)
 		{
-			buffer.append(array[0]);
+			buffer.append(quoteIfNecessary(array[0]));
 
 			for(int i = 1; i < array.length; i++)
 			{
 				buffer.append(' ');
-				buffer.append(array[i]);
+				buffer.append(quoteIfNecessary(array[i]));
 			}
 		}
 
 		return buffer.toString();
+	}
+	
+	
+	/**
+	 * Performs shell-style quoting on a string if necessary. That is, if the
+	 * string contains spaces, it will be surrounded by double quotes;
+	 * otherwise, it will not. In either case, double quotes already in the
+	 * string will be escaped with a backslash.
+	 * 
+	 * @param str the string to quote
+	 * @return a copy of the string that has been quoted if necessary
+	 */
+	public static String quoteIfNecessary(String str)
+	{
+		str = str.replaceAll("\"", Matcher.quoteReplacement("\\\""));
+
+		if (str.indexOf(' ') != -1)
+		{
+			return "\"" + str + "\"";
+		}
+		else
+		{
+			return str;
+		}
+	}
+	
+	
+	/**
+	 * Gets a regular expression pattern string based on a plug-in relative
+	 * path that will match any version of that plug-in, not just the one
+	 * provided.  All other parts of the path must match exactly; the path
+	 * from the root to the plug-in directory must be the same, and the
+	 * portion of the path after the plug-in directory must also be to the
+	 * exact same resource (not a child of it).
+	 * 
+	 * This function can also be used in development, when the path to the
+	 * plug-in is merely the workspace path, because any path that does not
+	 * contain a plug-in version identifier will simply be returned unaltered.
+	 * 
+	 * @param path the plug-in relative path to match
+	 * @param isDirectory true if this path is a directory and not a file
+	 * 
+	 * @return a regular expression that will match this path regardless of
+	 *     the version of the plug-in
+	 */
+	public static String patternForAnyVersionOfPluginRelativePath(
+			String path, boolean isDirectory)
+	{
+		// First escape anything that might be a metacharacter. To play it
+		// safe, we'll just escape anything that isn't a character, digit,
+		// underscore, hyphen, or forward slash (common path characters).
+		
+		if (path.endsWith("/"))
+		{
+			path = path.substring(0, path.length() - 1);
+		}
+
+		StringBuffer buffer = new StringBuffer();
+		
+		for (int i = 0; i < path.length(); i++)
+		{
+			char ch = path.charAt(i);
+			
+			if (!Character.isLetterOrDigit(ch)
+					&& ch != '_' && ch != '/' && ch != '-')
+			{
+				buffer.append('\\');
+			}
+			
+			buffer.append(ch);
+		}
+		
+		if (isDirectory)
+		{
+			buffer.append("/?");
+		}
+
+		String escapedPath = buffer.toString();
+
+		String versionRegex = "_[^.]+\\.[^.]+\\.[^./]+(\\.[^/]+)?/";
+		return escapedPath.replaceFirst(versionRegex,
+				Matcher.quoteReplacement(versionRegex));
 	}
 
 

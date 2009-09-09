@@ -47,6 +47,7 @@ import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 
@@ -66,6 +67,11 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	 */
 	public ExtraOptionsUpdater()
 	{
+		store = CxxTestPlugin.getDefault().getPreferenceStore();
+
+		isWindows = System.getProperty("os.name").toLowerCase().startsWith(
+			"windows ");
+
 		optionSets =
 		        new HashMap<String, SortedMap<Version, IConfigurationElement>>();
 
@@ -235,14 +241,13 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 				}
 				catch (BuildException e)
 				{
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 
 			for(IConfigurationElement enablementElem : enablementElems)
 			{
-				if(doesConfigurationMatch(project, config, enablementElem))
+				if(doesConfigurationMatch(project, config, enablementElem, false))
 				{
 					IConfigurationElement[] toolElems =
 					        enablementElem.getChildren("tool");
@@ -362,7 +367,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 
 				if(optionType.equals("includesOption"))
 				{
-					String[] newEntries = getPathPatternsForOption(optionElem);
+					String[] newEntries = getPathPatternsForOption(optionElem, true);
 					ProjectOptionsUtil.removeFromIncludesIf(tool, optionId,
 					        new RegexOptionPredicate(newEntries));
 				}
@@ -390,7 +395,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 					ProjectOptionsUtil.removeFromStringListIf(tool, optionId,
 							new ChoiceOptionPredicate(newEntries));
 
-					newEntries = getPathPatternsForOption(optionElem);
+					newEntries = getPathPatternsForOption(optionElem, true);
 					ProjectOptionsUtil.removeFromStringListIf(tool, optionId,
 					        new RegexOptionPredicate(newEntries));
 				}
@@ -470,9 +475,15 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 
 			// This special check is somewhat shady, but it looks like it's
 			// the only way to handle a Windows path properly, since Eclipse
-			// returns a string like "/C:/folder/...".
-			if(path.charAt(2) == ':')
-				path = path.substring(1);
+			// returns a string like "/C:/folder/...". The Cygwin make tools
+			// don't like paths with colons in them, so we convert them to
+			// the "/cygdrive/c/..." format instead.
+
+			if(isWindows && path.charAt(2) == ':')
+			{
+				char letter = Character.toLowerCase(path.charAt(1));
+				path = "/cygdrive/" + letter + path.substring(3);
+			}
 
 			path = new Path(path).toOSString();
 			if(path.charAt(path.length() - 1) == File.separatorChar)
@@ -507,7 +518,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 		if(fullPath != null)
 		{
 			fullPath = fullPath.replace('\\', '/');
-
+			
 			if(quoted)
 				return (prefix + "\"" + fullPath + "\"");
 			else
@@ -537,14 +548,15 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
-	private String[] getPathPatternsForOption(IConfigurationElement optionElem)
+	private String[] getPathPatternsForOption(IConfigurationElement optionElem,
+			boolean quoted)
 	{
 		IConfigurationElement[] pathElems = optionElem.getChildren("path");
 		ArrayList<String> patterns = new ArrayList<String>();
 
 		for(IConfigurationElement pathElem : pathElems)
 		{
-			String pluginId = pathElem.getAttribute("pluginId");
+/*			String pluginId = pathElem.getAttribute("pluginId");
 			String relPath = pathElem.getAttribute("relativePath");
 
 			StringBuffer patternBuffer = new StringBuffer();
@@ -555,8 +567,13 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 				for(int i = 0; i < pluginId.length(); i++)
 				{
 					char ch = pluginId.charAt(i);
-					patternBuffer.append("\\u");
-					patternBuffer.append(String.format("%04X", (int)ch));
+					
+					if (!Character.isLetterOrDigit(ch))
+					{
+						patternBuffer.append("\\");
+					}
+
+					patternBuffer.append(ch);
 				}
 	
 				patternBuffer.append("[^\\\\]*\\\\");
@@ -565,12 +582,28 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 			for(int i = 0; i < relPath.length(); i++)
 			{
 				char ch = relPath.charAt(i);
-				patternBuffer.append("\\u");
-				patternBuffer.append(String.format("%04X", (int)ch));
+
+				if (!Character.isLetterOrDigit(ch))
+				{
+					patternBuffer.append("\\");
+				}
+
+				patternBuffer.append(ch);
 			}
 
 			patternBuffer.append(".*");
 			patterns.add(patternBuffer.toString());
+*/
+			String fullPath = getPathFromElement(pathElem, quoted);
+			if(fullPath != null)
+			{
+				boolean isDir = new File(fullPath).isDirectory();
+				String pattern =
+					ShellStringUtils.patternForAnyVersionOfPluginRelativePath(
+							fullPath, isDir);
+				
+				patterns.add(pattern);
+			}
 		}
 
 		String[] patternArray = new String[patterns.size()];
@@ -580,7 +613,8 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 
 
 	private boolean doesConfigurationMatch(IProject project,
-	        IConfiguration config, IConfigurationElement enablementElem)
+	        IConfiguration config, IConfigurationElement enablementElem,
+	        boolean ignoreStackTracing)
 	{
 		boolean satisfiesFilter, satisfiesCondition;
 
@@ -606,22 +640,34 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 		}
 
 		satisfiesCondition = true;
+		
+		boolean isForStackTrace = Boolean.valueOf(
+				enablementElem.getAttribute("isForStackTrace"));
+		boolean stackTraceEnabled = store.getBoolean(
+				CxxTestPlugin.CXXTEST_PREF_TRACE_STACK);
 
-		try
+		if (!ignoreStackTracing && isForStackTrace && !stackTraceEnabled)
 		{
-			Object condition =
-			        enablementElem.createExecutableExtension("conditionClass");
-
-			if(condition instanceof IExtraOptionsEnablement)
-			{
-				IExtraOptionsEnablement cond =
-				        (IExtraOptionsEnablement)condition;
-				satisfiesCondition = cond.shouldProcessOptions(project, config);
-			}
+			satisfiesCondition = false;
 		}
-		catch(CoreException e)
+		else
 		{
-			// Do nothing, conditionClass is an optional property.
+			try
+			{
+				Object condition =
+				        enablementElem.createExecutableExtension("conditionClass");
+	
+				if(condition instanceof IExtraOptionsEnablement)
+				{
+					IExtraOptionsEnablement cond =
+					        (IExtraOptionsEnablement)condition;
+					satisfiesCondition = cond.shouldProcessOptions(project, config);
+				}
+			}
+			catch(CoreException e)
+			{
+				// Do nothing, conditionClass is an optional property.
+			}
 		}
 
 		return (satisfiesFilter && satisfiesCondition);
@@ -651,7 +697,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 		{
 			for(IConfigurationElement enablementElem : enablementElems)
 			{
-				if(doesConfigurationMatch(project, config, enablementElem))
+				if(doesConfigurationMatch(project, config, enablementElem, true))
 				{
 					IConfigurationElement[] toolElems =
 					        enablementElem.getChildren("tool");
@@ -784,4 +830,8 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	 * their version number.
 	 */
 	private Map<String, SortedMap<Version, IConfigurationElement>> optionSets;
+	
+	private IPreferenceStore store;
+	
+	private boolean isWindows;
 }

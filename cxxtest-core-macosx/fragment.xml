@@ -13,8 +13,8 @@
                      path="dereferee-src/gcc_macosx_platform.cpp">
                </includePath></runnerIncludes>
             <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.StackTraceEnabledCondition"
-                  configurationFilter="Debug">
+                  configurationFilter="Debug"
+                  isForStackTrace="true">
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
                   <splitStringOption

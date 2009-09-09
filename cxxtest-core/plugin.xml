@@ -2,7 +2,7 @@
 <?eclipse version="3.0"?>
 <plugin>
    <extension-point id="extraProjectOptions" name="Extra Project Options Handler" schema="schema/extraProjectOptions.exsd"/>
-   <extension-point id="platformSpecificStartup" name="Platform-Specific Startup Tasks" schema="schema/platformSpecificStartup.exsd"/>
+   <extension-point id="stackTraceDependencyCheck" name="Stack Trace Dependency Check" schema="schema/stackTraceDependencyCheck.exsd"/>
 
      <extension
          id="cxxtestbuilder"
