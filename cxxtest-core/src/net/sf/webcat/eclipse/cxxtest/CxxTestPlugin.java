@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import net.sf.webcat.eclipse.cxxtest.internal.CxxTestPreferencesChangeListener;
 import net.sf.webcat.eclipse.cxxtest.internal.options.ExtraOptionsUpdater;
 import net.sf.webcat.eclipse.cxxtest.options.IExtraOptionsUpdater;
 import net.sf.webcat.eclipse.cxxtest.ui.TestRunnerViewPart;
@@ -115,6 +116,9 @@ public class CxxTestPlugin extends AbstractUIPlugin
 	public void start(BundleContext context) throws Exception
 	{
 		super.start(context);
+		
+		getPreferenceStore().addPropertyChangeListener(
+				new CxxTestPreferencesChangeListener());
 	}
 	
 

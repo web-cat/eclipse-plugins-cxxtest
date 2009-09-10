@@ -40,7 +40,6 @@ import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.QualifiedName;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -94,24 +93,6 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 			});
 		}
 		
-		if (!alreadyUpdated.getValue())
-		{
-			// Check to see if the global stack trace preference has changed
-			// since this project was last built.
-			
-			IPreferenceStore store = CxxTestPlugin.getDefault().getPreferenceStore();
-
-			boolean globalStackTrace = store.getBoolean(CxxTestPlugin.CXXTEST_PREF_TRACE_STACK);
-			boolean projectStackTrace = Boolean.valueOf(project.getPersistentProperty(
-					new QualifiedName(CxxTestPlugin.PLUGIN_ID,
-							ICxxTestConstants.PROP_STACK_TRACE_ENABLED)));
-
-			if (globalStackTrace != projectStackTrace)
-			{
-				updater.updateOptions(project);
-			}
-		}
-
 		if(!checkForRebuild())
 		{
 			// We don't need to rebuild the test case runner, so bail out.
