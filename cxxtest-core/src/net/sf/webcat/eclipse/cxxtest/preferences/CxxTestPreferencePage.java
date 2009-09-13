@@ -62,9 +62,13 @@ public class CxxTestPreferencePage extends FieldEditorPreferencePage
 		addField(new StringFieldEditor(CxxTestPlugin.CXXTEST_PREF_DRIVER_FILENAME,
 				Messages.CxxTestPreferencePage_GeneratedDriverFileName, getFieldEditorParent()));
 
-		addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRACK_HEAP,
-            Messages.CxxTestPreferencePage_EnableBasicHeapChecking, getFieldEditorParent()));
-        addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS,
+		// TODO: re-enable this later by using conditional code to include
+		// Dereferee in the test runner.
+		
+//		addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRACK_HEAP,
+//            Messages.CxxTestPreferencePage_EnableBasicHeapChecking, getFieldEditorParent()));
+
+		addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS,
             Messages.CxxTestPreferencePage_TrapSignals, getFieldEditorParent()));
 
         final CancelableBooleanFieldEditor editor;

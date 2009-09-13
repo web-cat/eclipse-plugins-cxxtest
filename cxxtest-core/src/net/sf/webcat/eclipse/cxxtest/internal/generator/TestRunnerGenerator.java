@@ -136,6 +136,7 @@ public class TestRunnerGenerator
 
 	public void setTrapSignals(boolean value)
 	{
+		options.put("trapSignals", value);
 		trapSignals = value;
 	}
 
@@ -146,6 +147,7 @@ public class TestRunnerGenerator
 	
 	public void setTraceStack(boolean value)
 	{
+		options.put("traceStack", value);
 		traceStack = value;
 	}
 
@@ -212,7 +214,8 @@ public class TestRunnerGenerator
     }
 
 
-    private static final String RunnerTemplateResourcePath = "/generator-templates/runner.stg"; //$NON-NLS-1$
+    private static final String RunnerTemplateResourcePath =
+    	"/generator-templates/runner.stg"; //$NON-NLS-1$
 
     private TestSuiteCollection suites;
     private TestsToRunProxy testsToRunProxy;

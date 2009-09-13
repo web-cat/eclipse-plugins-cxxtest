@@ -43,8 +43,8 @@ public class CxxTestPreferencesChangeListener implements
 {
 	public void propertyChange(PropertyChangeEvent event)
 	{
-		if (CxxTestPlugin.CXXTEST_PREF_TRACE_STACK.equals(
-				event.getProperty()))
+//		if (CxxTestPlugin.CXXTEST_PREF_TRACE_STACK.equals(
+//				event.getProperty()))
 		{
 			boolean oldValue = (Boolean) event.getOldValue();
 			boolean newValue = (Boolean) event.getNewValue();
@@ -79,7 +79,11 @@ public class CxxTestPreferencesChangeListener implements
 				if (project.hasNature(CxxTestPlugin.CXXTEST_NATURE))
 				{
 					IFile driver = project.getFile(driverFile);
-					driver.delete(true, null);
+
+					if (driver != null)
+					{
+						driver.delete(true, null);
+					}
 				}
 			}
 			catch (CoreException e)
