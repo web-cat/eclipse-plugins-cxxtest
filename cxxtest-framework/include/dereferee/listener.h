@@ -19,9 +19,7 @@
 #ifndef DEREFEREE_LISTENER_H
 #define DEREFEREE_LISTENER_H
 
-#include <cstdlib>
 #include <cstdarg>
-#include <climits>
 #include <memory>
 #include <typeinfo>
 

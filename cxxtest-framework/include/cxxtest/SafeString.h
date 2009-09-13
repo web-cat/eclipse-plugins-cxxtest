@@ -235,6 +235,7 @@ private:
         
         buffer = (char*) malloc(capacity);
         memcpy(buffer, src.buffer, size);
+        buffer[size] = '\0';
     }
 
 

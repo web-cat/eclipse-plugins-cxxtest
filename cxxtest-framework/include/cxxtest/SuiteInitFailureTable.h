@@ -69,7 +69,7 @@ private:
     // ----------------------------------------------------------
     char* copyString(const char* str)
     {
-        int len = strlen(str);
+    	size_t len = strlen(str);
         char* copy = (char*) malloc(len);
         strcpy(copy, str);
         return copy;

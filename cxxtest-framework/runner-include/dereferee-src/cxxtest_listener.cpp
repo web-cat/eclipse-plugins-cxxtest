@@ -342,8 +342,8 @@ void cxxtest_xml_listener::end_report()
 // ------------------------------------------------------------------
 void cxxtest_xml_listener::error(Dereferee::error_code code, va_list args)
 {
-	char text[513];
-	vsprintf(text, error_messages[code], args);
+	char text[513] = { 0 };
+	vsnprintf(text, 512, error_messages[code], args);
     CxxTest::__cxxtest_assertmsg = text;
 
 #ifdef __CYGWIN__
@@ -364,7 +364,7 @@ void cxxtest_xml_listener::warning(Dereferee::warning_code code,
 {
 	CxxTest::SafeString str;
 
-	char msg[512];
+	char msg[512] = { 0 };
 
 	if(code == Dereferee::warning_memory_boundary_corrupted)
 	{
