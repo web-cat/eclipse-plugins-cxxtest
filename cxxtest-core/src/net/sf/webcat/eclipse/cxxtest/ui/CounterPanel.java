@@ -1,21 +1,27 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.ui;
+
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
@@ -32,6 +38,10 @@ import org.eclipse.swt.widgets.Text;
  * have errors.
  * 
  * Influenced greatly by the same JUnit class.
+ * 
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class CounterPanel extends Composite
 {
@@ -39,8 +49,8 @@ public class CounterPanel extends Composite
 	protected Text numberOfFailures;
 	protected Text numberOfRuns;
 	
-	private final Image errorIcon = TestRunnerViewPart.createImage("ovr16/error_ovr.gif");
-	private final Image failureIcon = TestRunnerViewPart.createImage("ovr16/failed_ovr.gif");
+	private final Image errorIcon = TestRunnerViewPart.createImage("ovr16/error_ovr.gif"); //$NON-NLS-1$
+	private final Image failureIcon = TestRunnerViewPart.createImage("ovr16/failed_ovr.gif"); //$NON-NLS-1$
 
 	public CounterPanel(Composite parent)
 	{
@@ -52,9 +62,9 @@ public class CounterPanel extends Composite
 		gridLayout.marginWidth = 0;
 		setLayout(gridLayout);
 		
-		numberOfRuns = createLabel("Runs:", null, "0");
-		numberOfErrors = createLabel("Errors:", errorIcon, "0");
-		numberOfFailures = createLabel("Failures:", failureIcon, "0");
+		numberOfRuns = createLabel(Messages.CounterPanel_RunsLabel, null, "0"); //$NON-NLS-1$
+		numberOfErrors = createLabel(Messages.CounterPanel_ErrorsLabel, errorIcon, "0"); //$NON-NLS-1$
+		numberOfFailures = createLabel(Messages.CounterPanel_FailuresLabel, failureIcon, "0"); //$NON-NLS-1$
 
 		addDisposeListener(new DisposeListener() {
 			public void widgetDisposed(DisposeEvent e)

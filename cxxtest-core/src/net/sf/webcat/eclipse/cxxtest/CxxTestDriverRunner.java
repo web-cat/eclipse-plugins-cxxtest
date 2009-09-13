@@ -1,24 +1,29 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest;
 
 import java.util.Map;
 
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 import net.sf.webcat.eclipse.cxxtest.ui.TestRunnerViewPart;
 
 import org.eclipse.cdt.core.CCorePlugin;
@@ -48,12 +53,15 @@ import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.ui.IDebugUIConstants;
 import org.eclipse.swt.widgets.Display;
 
+//------------------------------------------------------------------------
 /**
  * This builder executes the generates test-case executable and adds problem
  * markers to the source file for any failed test cases. It also populates the
  * CxxTest view with information about the executed tests.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class CxxTestDriverRunner extends IncrementalProjectBuilder
 {
@@ -79,7 +87,7 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 				ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
 				ILaunchConfigurationType type = launchManager.getLaunchConfigurationType(
 						ICDTLaunchConfigurationConstants.ID_LAUNCH_C_APP);
-				final ILaunchConfigurationWorkingCopy config = type.newInstance(null, "CxxTestRunner");
+				final ILaunchConfigurationWorkingCopy config = type.newInstance(null, "CxxTestRunner"); //$NON-NLS-1$
 	
 				config.setAttribute(IDebugUIConstants.ATTR_PRIVATE, true);
 				config.setAttribute(IDebugUIConstants.ATTR_LAUNCH_IN_BACKGROUND, false);
@@ -172,9 +180,9 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 		String exeExtension = buildInfo.getBuildArtifactExtension();
 
 		if(exeExtension.length() > 0)
-			exeName += "." + exeExtension;
+			exeName += "." + exeExtension; //$NON-NLS-1$
 
-		IFile file = project.getFile(configuration.getName() + "/" + exeName);
+		IFile file = project.getFile(configuration.getName() + "/" + exeName); //$NON-NLS-1$
 		return file;
 	}
 
@@ -212,7 +220,7 @@ public class CxxTestDriverRunner extends IncrementalProjectBuilder
 			return null;
 		}
 
-        monitor.beginTask("Running CxxTest driver", 1);
+        monitor.beginTask(Messages.CxxTestDriverRunner_RunningDriverTaskDescription, 1);
 		deleteMarkers();
 
 		// If there are any problems in the project after it has been

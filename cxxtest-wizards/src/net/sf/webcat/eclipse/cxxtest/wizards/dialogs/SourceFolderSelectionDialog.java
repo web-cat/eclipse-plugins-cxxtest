@@ -10,6 +10,8 @@
  *******************************************************************************/
 package net.sf.webcat.eclipse.cxxtest.wizards.dialogs;
 
+import net.sf.webcat.eclipse.cxxtest.wizards.i18n.Messages;
+
 import org.eclipse.cdt.core.model.ICContainer;
 import org.eclipse.cdt.core.model.ICModel;
 import org.eclipse.cdt.core.model.ICProject;
@@ -53,7 +55,7 @@ public class SourceFolderSelectionDialog extends ElementTreeSelectionDialog {
         setValidator(fValidator);
         setSorter(fSorter);
         addFilter(fFilter);
-        setTitle("Folder Selection");
-        setMessage("Choose a source folder:");
+        setTitle(Messages.SourceFolderSelectionDialog_DialogTitle);
+        setMessage(Messages.SourceFolderSelectionDialog_DialogMessage);
     }
 }

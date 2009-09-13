@@ -1,23 +1,28 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.properties;
 
 import net.sf.webcat.eclipse.cxxtest.CxxTestNature;
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
@@ -37,7 +42,9 @@ import org.eclipse.ui.IWorkbenchPropertyPage;
  * Future enhancements may allow the user to include/exclude individual tests
  * from execution on this page.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class CxxTestPropertyPage extends PreferencePage implements
 		IWorkbenchPropertyPage
@@ -57,7 +64,7 @@ public class CxxTestPropertyPage extends PreferencePage implements
 		comp.setLayout(layout);
 
 		checkboxEnableCxxTest = new Button(comp, SWT.CHECK);
-		checkboxEnableCxxTest.setText("Enable CxxTest for this project");
+		checkboxEnableCxxTest.setText(Messages.CxxTestPropertyPage_EnableCxxTest);
 
 		checkboxEnableCxxTest.setSelection(isCxxTestEnabled());
 

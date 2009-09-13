@@ -1,20 +1,24 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.internal.generator;
 
 import java.io.FileWriter;
@@ -37,6 +41,12 @@ import org.eclipse.cdt.core.model.ICProject;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
 
+/**
+ * 
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
+ */
 public class TestRunnerGenerator
 {
     /**
@@ -78,25 +88,25 @@ public class TestRunnerGenerator
         templateGroup.registerRenderer(String.class,
                 new TestRunnerStringRenderer(path));
 
-        template = templateGroup.getInstanceOf("runAllTestsFile");
+        template = templateGroup.getInstanceOf("runAllTestsFile"); //$NON-NLS-1$
 
         // Initialize the options that will be passed into the template.
 
         options = new Hashtable<String, Object>();
-        options.put("platformIsMSVC", false);
-        options.put("trapSignals", true);
-        options.put("traceStack", true);
-        options.put("noStaticInit", true);
-        options.put("root", true);
-        options.put("part", false);
-        options.put("abortOnFail", true);
-        options.put("mainProvided", suites.doesMainFunctionExist());
-        options.put("testResultsFilename", ICxxTestConstants.TEST_RESULTS_FILE);
-        options.put("testsToRun", testsToRunProxy);
+        options.put("platformIsMSVC", false); //$NON-NLS-1$
+        options.put("trapSignals", true); //$NON-NLS-1$
+        options.put("traceStack", true); //$NON-NLS-1$
+        options.put("noStaticInit", true); //$NON-NLS-1$
+        options.put("root", true); //$NON-NLS-1$
+        options.put("part", false); //$NON-NLS-1$
+        options.put("abortOnFail", true); //$NON-NLS-1$
+        options.put("mainProvided", suites.doesMainFunctionExist()); //$NON-NLS-1$
+        options.put("testResultsFilename", ICxxTestConstants.TEST_RESULTS_FILE); //$NON-NLS-1$
+        options.put("testsToRun", testsToRunProxy); //$NON-NLS-1$
 
         ArrayList<String> listeners = new ArrayList<String>();
-        listeners.add("XmlStdioPrinter");
-        options.put("listeners", listeners);
+        listeners.add("XmlStdioPrinter"); //$NON-NLS-1$
+        options.put("listeners", listeners); //$NON-NLS-1$
         
         try
         {
@@ -161,17 +171,17 @@ public class TestRunnerGenerator
 	
 	public void generate()
     {
-        template.setAttribute("options", options);
-        template.setAttribute("suites", suites.getSuites());
+        template.setAttribute("options", options); //$NON-NLS-1$
+        template.setAttribute("suites", suites.getSuites()); //$NON-NLS-1$
 
         if (possibleTestFiles != null && possibleTestFiles.length > 0)
         {
-        	template.setAttribute("possibleTestFiles", possibleTestFiles);
+        	template.setAttribute("possibleTestFiles", possibleTestFiles); //$NON-NLS-1$
         }
 
         if (extraIncludes != null && extraIncludes.length > 0)
         {
-        	options.put("extraIncludes", extraIncludes);
+        	options.put("extraIncludes", extraIncludes); //$NON-NLS-1$
         }
 
         try
@@ -202,7 +212,7 @@ public class TestRunnerGenerator
     }
 
 
-    private static final String RunnerTemplateResourcePath = "/generator-templates/runner.stg";
+    private static final String RunnerTemplateResourcePath = "/generator-templates/runner.stg"; //$NON-NLS-1$
 
     private TestSuiteCollection suites;
     private TestsToRunProxy testsToRunProxy;

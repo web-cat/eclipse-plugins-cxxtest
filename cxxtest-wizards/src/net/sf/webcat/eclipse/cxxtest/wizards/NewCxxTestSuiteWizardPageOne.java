@@ -18,6 +18,7 @@
 package net.sf.webcat.eclipse.cxxtest.wizards;
 
 import net.sf.webcat.eclipse.cxxtest.wizards.dialogs.TranslationUnitSelectionDialog;
+import net.sf.webcat.eclipse.cxxtest.wizards.i18n.Messages;
 import net.sf.webcat.eclipse.cxxtest.wizards.ui.SWTUtil;
 
 import org.eclipse.cdt.core.model.CoreModel;
@@ -50,12 +51,11 @@ import org.eclipse.swt.widgets.Text;
 @SuppressWarnings("restriction")
 public class NewCxxTestSuiteWizardPageOne extends WizardPage
 {
-	private static final String PAGE_NAME = "NewCxxTestSuiteWizardPageOne";
+	private static final String PAGE_NAME = "NewCxxTestSuiteWizardPageOne"; //$NON-NLS-1$
 
-	private static final String PAGE_TITLE = "CxxTest Suite";
+	private static final String PAGE_TITLE = Messages.NewCxxTestSuiteWizardPageOne_PageTitle;
 	private static final String PAGE_DESCRIPTION =
-		"Select the name of the new CxxTest suite. You have the options to specify the\n" +
-		"header of the class under test and on the next page, the methods to be tested.";
+		Messages.NewCxxTestSuiteWizardPageOne_PageDescription;
 
 	private IPath sourceFolder;
 	private IPath headerUnderTest;
@@ -154,7 +154,7 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 		createTypeNameControls(composite, numColumns);
 		createSuperClassControls(composite, numColumns);
 		createMethodStubSelectionControls(composite, numColumns);
-		setSuperClass("CxxTest::TestSuite");
+		setSuperClass("CxxTest::TestSuite"); //$NON-NLS-1$
 		createSeparator(composite, numColumns);
 		createHeaderUnderTestControls(composite, numColumns);
 		
@@ -172,7 +172,7 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 	private void createContainerControls(Composite composite, int numColumns)
 	{
 		Label label = new Label(composite, SWT.NONE);
-		label.setText("Source Folder:");
+		label.setText(Messages.NewCxxTestSuiteWizardPageOne_SourceFolder);
 		label.setLayoutData(gridDataForLabel(1));
 
 		sourceFolderField = new Text(composite, SWT.SINGLE | SWT.BORDER);
@@ -186,7 +186,7 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 		});
 
 		Button browseButton = new Button(composite, SWT.NONE);
-		browseButton.setText("Browse...");
+		browseButton.setText(Messages.NewCxxTestSuiteWizardPageOne_Browse);
 		browseButton.setLayoutData(gridDataForButton(browseButton, 1));
 		browseButton.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e)
@@ -281,7 +281,7 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
     private void createTypeNameControls(Composite composite, int numColumns)
 	{
 		Label label = new Label(composite, SWT.NONE);
-		label.setText("Name:");
+		label.setText(Messages.NewCxxTestSuiteWizardPageOne_Name);
 		label.setLayoutData(gridDataForLabel(1));
 
 		suiteNameField = new Text(composite, SWT.SINGLE | SWT.BORDER);
@@ -302,7 +302,7 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 	private void createSuperClassControls(Composite composite, int numColumns)
 	{
 		Label label = new Label(composite, SWT.NONE);
-		label.setText("Superclass:");
+		label.setText(Messages.NewCxxTestSuiteWizardPageOne_Superclass);
 		label.setLayoutData(gridDataForLabel(1));
 
 		superClassField = new Text(composite, SWT.SINGLE | SWT.BORDER);
@@ -321,28 +321,28 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 	private void createMethodStubSelectionControls(Composite composite, int numColumns)
 	{
 		Label label = new Label(composite, SWT.NONE);
-		label.setText("Which method stubs would you like to create?");
+		label.setText(Messages.NewCxxTestSuiteWizardPageOne_MethodStubsPrompt);
 		label.setLayoutData(gridDataForLabel(4));
 
 		label = new Label(composite, SWT.NONE);
 		label.setLayoutData(gridDataForLabel(1));
 
 		setUpButton = new Button(composite, SWT.CHECK);
-		setUpButton.setText("setUp()");
+		setUpButton.setText("setUp()"); //$NON-NLS-1$
 		setUpButton.setLayoutData(gridDataForButton(setUpButton, 3));
 
 		label = new Label(composite, SWT.NONE);
 		label.setLayoutData(gridDataForLabel(1));
 
 		tearDownButton = new Button(composite, SWT.CHECK);
-		tearDownButton.setText("tearDown()");
+		tearDownButton.setText("tearDown()"); //$NON-NLS-1$
 		tearDownButton.setLayoutData(gridDataForButton(tearDownButton, 3));
 	}
 
 	private void createHeaderUnderTestControls(Composite composite, int numColumns)
 	{
 		Label label = new Label(composite, SWT.NONE);
-		label.setText("Header under test:");
+		label.setText(Messages.NewCxxTestSuiteWizardPageOne_HeaderUnderTest);
 		label.setLayoutData(gridDataForLabel(1));
 
 		headerUnderTestField = new Text(composite, SWT.SINGLE | SWT.BORDER);
@@ -356,7 +356,7 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 		});
 
 		Button browseButton = new Button(composite, SWT.NONE);
-		browseButton.setText("Browse...");
+		browseButton.setText(Messages.NewCxxTestSuiteWizardPageOne_Browse);
 		browseButton.setLayoutData(gridDataForButton(browseButton, 1));
 		browseButton.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e)
@@ -390,13 +390,13 @@ public class NewCxxTestSuiteWizardPageOne extends WizardPage
 		String msg = null;
 
 		if(sourceFolderField.getText().length() == 0)
-			msg = "Please enter the source folder in which the test suite will be created.";
+			msg = Messages.NewCxxTestSuiteWizardPageOne_EnterSourceFolderMsg;
 		else if(suiteNameField.getText().length() == 0)
-			msg = "Please enter a name for the test suite class.";
+			msg = Messages.NewCxxTestSuiteWizardPageOne_EnterSuiteNameMsg;
 		else if(!isValidSuiteName())
-			msg = "The suite name you have specified is not a valid C++ class name. Please enter a valid name.";
+			msg = Messages.NewCxxTestSuiteWizardPageOne_SuiteNameInvalidMsg;
 		else if(superClassField.getText().length() == 0)
-			msg = "Please enter the name of the superclass of the test suite.";
+			msg = Messages.NewCxxTestSuiteWizardPageOne_EnterSuperclassNameMsg;
 		
 		setErrorMessage(msg);
 		setPageComplete(msg == null);

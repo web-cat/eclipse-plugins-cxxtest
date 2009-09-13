@@ -19,6 +19,7 @@ package net.sf.webcat.eclipse.cxxtest.wizards;
 
 import java.util.Vector;
 
+import net.sf.webcat.eclipse.cxxtest.wizards.i18n.Messages;
 import net.sf.webcat.eclipse.cxxtest.wizards.ui.SWTUtil;
 
 import org.eclipse.cdt.core.model.CModelException;
@@ -54,11 +55,11 @@ import org.eclipse.ui.dialogs.ContainerCheckedTreeViewer;
 
 public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 {
-	private static final String PAGE_NAME = "NewCxxTestSuiteWizardPageTwo";
+	private static final String PAGE_NAME = "NewCxxTestSuiteWizardPageTwo"; //$NON-NLS-1$
 
-	private static final String PAGE_TITLE = "Test Functions";
+	private static final String PAGE_TITLE = Messages.NewCxxTestSuiteWizardPageTwo_PageTitle;
 	private static final String PAGE_DESCRIPTION =
-		"Select the functions for which test method stubs should be created.";
+		Messages.NewCxxTestSuiteWizardPageTwo_PageDescription;
 
 	private ContainerCheckedTreeViewer functionsTree;
 	private Button selectAllButton;
@@ -127,7 +128,7 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 	{
 		Label label= new Label(container, SWT.LEFT | SWT.WRAP);
 		label.setFont(container.getFont());
-		label.setText("Available functions:"); 
+		label.setText(Messages.NewCxxTestSuiteWizardPageTwo_AvailableFunctions); 
 		GridData gd = new GridData();
 		gd.horizontalSpan = 2;
 		label.setLayoutData(gd);
@@ -154,7 +155,7 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 		buttonContainer.setLayout(buttonLayout);
 
 		selectAllButton = new Button(buttonContainer, SWT.PUSH);
-		selectAllButton.setText("Select All"); 
+		selectAllButton.setText(Messages.NewCxxTestSuiteWizardPageTwo_SelectAll); 
 		gd= new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING);
 		selectAllButton.setLayoutData(gd);
 		selectAllButton.addSelectionListener(new SelectionAdapter() {
@@ -166,7 +167,7 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 		SWTUtil.setButtonDimensionHint(selectAllButton);
 
 		deselectAllButton = new Button(buttonContainer, SWT.PUSH);
-		deselectAllButton.setText("Deselect All"); 
+		deselectAllButton.setText(Messages.NewCxxTestSuiteWizardPageTwo_DeselectAll); 
 		gd= new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING);
 		deselectAllButton.setLayoutData(gd);
 		deselectAllButton.addSelectionListener(new SelectionAdapter() {
@@ -246,9 +247,9 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 
 		String label = Integer.toString(checkedFunctionCount);
 		if(checkedFunctionCount == 1)
-			label += " function selected."; 
+			label += Messages.NewCxxTestSuiteWizardPageTwo_FunctionSelectedSingular; 
 		else
-			label += " functions selected."; 
+			label += Messages.NewCxxTestSuiteWizardPageTwo_FunctionSelectedPlural; 
 
 		selectedFunctionsLabel.setText(label);
 	}
@@ -282,7 +283,7 @@ public class NewCxxTestSuiteWizardPageTwo extends WizardPage
 		{
 			if(element instanceof ITranslationUnit)
 			{
-				return "<global scope>";
+				return Messages.NewCxxTestSuiteWizardPageTwo_GlobalScope;
 			}
 			else
 			{

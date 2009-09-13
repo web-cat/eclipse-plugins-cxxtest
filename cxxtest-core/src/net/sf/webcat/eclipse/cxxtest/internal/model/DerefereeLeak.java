@@ -1,48 +1,56 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.internal.model;
 
+import java.text.MessageFormat;
 import java.util.Vector;
 
 import org.xml.sax.Attributes;
 
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestStackFrame;
 import net.sf.webcat.eclipse.cxxtest.model.IDerefereeLeak;
 
+/**
+ * 
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
+ */
 public class DerefereeLeak implements IDerefereeLeak
 {
-	private String address;
-	
-	private int size;
-	
-	private boolean array;
-
-	private Vector<ICxxTestStackFrame> stackTrace;
-
 	public DerefereeLeak(Attributes attributes)
 	{
-		address = attributes.getValue("address");
-		size = Integer.parseInt(attributes.getValue("size"));
+		address = attributes.getValue(ATTR_ADDRESS);
+		size = Integer.parseInt(attributes.getValue(ATTR_SIZE));
 		
-		if("yes".equals(attributes.getValue("array")))
+		if("yes".equals(attributes.getValue(ATTR_ARRAY))) //$NON-NLS-1$
+		{
 			array = true;
+		}
 		else
+		{
 			array = false;
+		}
 		
 		stackTrace = new Vector<ICxxTestStackFrame>();
 	}
@@ -71,22 +79,38 @@ public class DerefereeLeak implements IDerefereeLeak
 	{
 		ICxxTestStackFrame[] frames =
 			new ICxxTestStackFrame[stackTrace.size()];
+		
 		stackTrace.toArray(frames);
 		return frames;
 	}
 	
 	public String toString()
 	{
-		String msg;
-		
-		if(isArray())
-			msg = "Array";
+		if (isArray())
+		{
+			return MessageFormat.format(
+					Messages.DerefereeLeak_ArrayDescription,
+					getAddress(), getSize());
+		}
 		else
-			msg = "Block";
-		
-		msg += " at " + getAddress();
-		msg += ", " + getSize() + " bytes";
-		
-		return msg;
+		{
+			return MessageFormat.format(
+					Messages.DerefereeLeak_BlockDescription,
+					getAddress(), getSize());
+		}
 	}
+
+	private static final String ATTR_ADDRESS = "address"; //$NON-NLS-1$
+	
+	private static final String ATTR_SIZE = "size"; //$NON-NLS-1$
+
+	private static final String ATTR_ARRAY = "array"; //$NON-NLS-1$
+
+	private String address;
+	
+	private int size;
+	
+	private boolean array;
+
+	private Vector<ICxxTestStackFrame> stackTrace;
 }

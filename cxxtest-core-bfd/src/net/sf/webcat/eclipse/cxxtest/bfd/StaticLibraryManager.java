@@ -1,3 +1,24 @@
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.bfd;
 
 import java.io.File;
@@ -10,6 +31,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import net.sf.webcat.eclipse.cxxtest.CxxTestPlugin;
+import net.sf.webcat.eclipse.cxxtest.bfd.i18n.Messages;
 
 import org.eclipse.cdt.core.CCorePlugin;
 import org.eclipse.cdt.core.envvar.IEnvironmentVariable;
@@ -20,12 +42,20 @@ import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 
+//------------------------------------------------------------------------
+/**
+ * TODO: real description
+ *  
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
+ */
 public class StaticLibraryManager
 {
 	private StaticLibraryManager()
 	{
-		isWindows = System.getProperty("os.name").toLowerCase().startsWith(
-				"windows ");
+		isWindows = System.getProperty("os.name").toLowerCase().startsWith( //$NON-NLS-1$
+				"windows "); //$NON-NLS-1$
 	}
 
 
@@ -46,17 +76,17 @@ public class StaticLibraryManager
 
 		if (!hasBfd)
 		{
-			list.add("libbfd");
+			list.add("libbfd"); //$NON-NLS-1$
 		}
 		
 		if (!hasIntl)
 		{
-			list.add("libintl");
+			list.add("libintl"); //$NON-NLS-1$
 		}
 		
 		if (!hasIberty)
 		{
-			list.add("libiberty");
+			list.add("libiberty"); //$NON-NLS-1$
 		}
 		
 		if (list.isEmpty())
@@ -65,12 +95,12 @@ public class StaticLibraryManager
 		}
 
 		StringBuffer buffer = new StringBuffer();
-		buffer.append("The following linker libraries are missing: ");
+		buffer.append(Messages.StaticLibraryManager_MissingLibrariesMsgStart);
 
 		buffer.append(list.get(0));
 		for (int i = 1; i < list.size(); i++)
 		{
-			buffer.append(", ");
+			buffer.append(", "); //$NON-NLS-1$
 			buffer.append(list.get(i));
 		}
 		
@@ -80,20 +110,20 @@ public class StaticLibraryManager
 
 	public void checkForDependencies(IProgressMonitor monitor)
 	{
-		monitor.beginTask("Checking for link library requirements", 5);
+		monitor.beginTask(Messages.StaticLibraryManager_CheckingLibraryReqs, 5);
 
 		// Check for libintl functions, first without explicitly linking
 		// (in case they're part of glibc), and then by linking directly.
 
-		monitor.subTask("Looking for built-in libintl functions");
-		boolean hasIntlBuiltIn = tryToCompile("check-libintl.c", null);
+		monitor.subTask(Messages.StaticLibraryManager_LookingForIntlBuiltIn);
+		boolean hasIntlBuiltIn = tryToCompile("check-libintl.c", null); //$NON-NLS-1$
 		monitor.worked(1);
 
 		if (!hasIntlBuiltIn)
 		{
-			monitor.subTask("Looking for libintl as a separate library");
-			hasIntl = tryToCompile("check-libintl.c",
-					new String[] { "intl" });
+			monitor.subTask(Messages.StaticLibraryManager_LookingForIntlSeparate);
+			hasIntl = tryToCompile("check-libintl.c", //$NON-NLS-1$
+					new String[] { "intl" }); //$NON-NLS-1$
 			needsLinkToIntl = true;
 		}
 		else
@@ -107,15 +137,15 @@ public class StaticLibraryManager
 		// Check for libiberty functions, first without explicitly linking
 		// (in case they're part of glibc), and then by linking directly.
 
-		monitor.subTask("Looking for built-in libiberty functions");
-		boolean hasIbertyBuiltIn = tryToCompile("check-libiberty.c", null);
+		monitor.subTask(Messages.StaticLibraryManager_LookingForIbertyBuiltIn);
+		boolean hasIbertyBuiltIn = tryToCompile("check-libiberty.c", null); //$NON-NLS-1$
 		monitor.worked(1);
 
 		if (!hasIbertyBuiltIn)
 		{
-			monitor.subTask("Looking for libiberty as a separate library");
-			hasIberty = tryToCompile("check-libiberty.c",
-					new String[] { "iberty" });
+			monitor.subTask(Messages.StaticLibraryManager_LookingForIbertySeparate);
+			hasIberty = tryToCompile("check-libiberty.c", //$NON-NLS-1$
+					new String[] { "iberty" }); //$NON-NLS-1$
 			needsLinkToIberty = true;
 		}
 		else
@@ -131,8 +161,8 @@ public class StaticLibraryManager
 		// and libiberty functions, so use the information collected above to
 		// link to them explicitly if necessary.
 
-		monitor.subTask("Looking for libbfd");
-		hasBfd = tryToCompile("check-libbfd.c", librariesNeededForBfd());
+		monitor.subTask(Messages.StaticLibraryManager_LookingForBfd);
+		hasBfd = tryToCompile("check-libbfd.c", librariesNeededForBfd()); //$NON-NLS-1$
 		monitor.worked(1);
 		
 		monitor.done();
@@ -142,16 +172,16 @@ public class StaticLibraryManager
 	private String[] librariesNeededForBfd()
 	{
 		ArrayList<String> libs = new ArrayList<String>();
-		libs.add("bfd");
+		libs.add("bfd"); //$NON-NLS-1$
 		
 		if (shouldAddIntlToBuild())
 		{
-			libs.add("intl");
+			libs.add("intl"); //$NON-NLS-1$
 		}
 		
 		if (shouldAddIbertyToBuild())
 		{
-			libs.add("iberty");
+			libs.add("iberty"); //$NON-NLS-1$
 		}
 
 		return libs.toArray(new String[libs.size()]);
@@ -204,7 +234,7 @@ public class StaticLibraryManager
 		List<String> strings = new ArrayList<String>(envMap.size());
 		for (Map.Entry<String, String> entry : envMap.entrySet())
 		{
-			strings.add(entry.getKey() + "=" + entry.getValue());
+			strings.add(entry.getKey() + "=" + entry.getValue()); //$NON-NLS-1$
 		}
 		
 		return (String[]) strings.toArray(new String[strings.size()]);
@@ -219,7 +249,7 @@ public class StaticLibraryManager
 		File tempOut = null;
 		try
 		{
-			tempOut = File.createTempFile("libchkexe", null);
+			tempOut = File.createTempFile("libchkexe", null); //$NON-NLS-1$
 		}
 		catch (IOException e)
 		{
@@ -228,21 +258,21 @@ public class StaticLibraryManager
 		}
 
 		ArrayList<String> argList = new ArrayList<String>();
-		argList.add("sh");
-		argList.add("-c");
+		argList.add("sh"); //$NON-NLS-1$
+		argList.add("-c"); //$NON-NLS-1$
 
-		String cmdLine = "gcc -o ";
+		String cmdLine = "gcc -o "; //$NON-NLS-1$
 		
 		if (isWindows)
 		{
 			cmdLine += tempOut.getAbsolutePath().replace(File.separatorChar, '/');
-			cmdLine += " ";
+			cmdLine += " "; //$NON-NLS-1$
 			cmdLine += sourceFile.replace(File.separatorChar, '/');
 		}
 		else
 		{
 			cmdLine += tempOut.getAbsolutePath();
-			cmdLine += " ";
+			cmdLine += " "; //$NON-NLS-1$
 			cmdLine += sourceFile;
 		}
 
@@ -250,11 +280,11 @@ public class StaticLibraryManager
 		{
 			for (String lib : linkLibraries)
 			{
-				cmdLine += " -l" + lib;
+				cmdLine += " -l" + lib; //$NON-NLS-1$
 			}
 		}
 		
-		argList.add("\"" + cmdLine + "\"");
+		argList.add("\"" + cmdLine + "\""); //$NON-NLS-1$ //$NON-NLS-2$
 
 		String[] args = argList.toArray(new String[argList.size()]);
 
@@ -288,7 +318,7 @@ public class StaticLibraryManager
 		{
 			URL entry = FileLocator.find(
 					CxxTestPlugin.getDefault().getBundle(),
-					new Path("/library-checks/" + file), null);
+					new Path("/library-checks/" + file), null); //$NON-NLS-1$
 			URL url = FileLocator.resolve(entry);
 			path = url.getFile();
 

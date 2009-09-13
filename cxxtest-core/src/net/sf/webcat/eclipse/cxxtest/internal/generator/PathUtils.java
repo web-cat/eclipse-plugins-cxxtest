@@ -1,20 +1,24 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.internal.generator;
 
 import java.io.File;
@@ -22,12 +26,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
+
 //--------------------------------------------------------------------------
 /**
  * Utility functions for working with relative paths.
  * 
- * @author Tony ALlevato
- * @version $Id$
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class PathUtils
 {
@@ -53,7 +60,7 @@ public class PathUtils
         
         if (source == null)
         {
-            sourceFile = new File(".");
+            sourceFile = new File("."); //$NON-NLS-1$
         }
         else
         {
@@ -81,8 +88,7 @@ public class PathUtils
     {
         if (destination == null)
         {
-            throw new IllegalArgumentException("The destination path cannot "
-                    + "be null.");
+            throw new IllegalArgumentException(Messages.PathUtils_DestinationPathNull);
         }
 
         if (source != null && !source.isDirectory())
@@ -97,7 +103,7 @@ public class PathUtils
             // Use the process's current working directory if the source is
             // null.
             
-            source = new File(".");
+            source = new File("."); //$NON-NLS-1$
         }
 
         String[] srcSegments = reversedPathSegments(source);
@@ -122,7 +128,7 @@ public class PathUtils
                 String srcVolume = srcSegments[srcSegments.length - 1];
                 String destVolume = destSegments[destSegments.length - 1];
 
-                if (!srcVolume.equals(destVolume))
+                if (!srcVolume.equalsIgnoreCase(destVolume))
                 {
                     return destination.getAbsolutePath();
                 }
@@ -211,7 +217,7 @@ public class PathUtils
         
         for (; srcIndex >= 0; srcIndex--)
         {
-            relativePath.append("..");
+            relativePath.append(".."); //$NON-NLS-1$
             relativePath.append(File.separator);
         }
 
@@ -252,8 +258,8 @@ public class PathUtils
         // Determine if we're running on Windows, so we can do a volume check
         // if necessary.
         
-        String osName = System.getProperty("os.name").toLowerCase();
-        IS_WINDOWS = osName.contains("windows");
+        String osName = System.getProperty("os.name").toLowerCase(); //$NON-NLS-1$
+        IS_WINDOWS = osName.contains("windows"); //$NON-NLS-1$
     }
     
 

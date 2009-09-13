@@ -1,28 +1,34 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.ui;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.HashMap;
 
 import net.sf.webcat.eclipse.cxxtest.ICxxTestConstants;
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestAssertion;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestMethod;
@@ -98,7 +104,9 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * 
  * Greatly influenced by the same JUnit class.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 @SuppressWarnings("restriction")
 public class TestHierarchyTab extends TestRunTab
@@ -122,16 +130,16 @@ public class TestHierarchyTab extends TestRunTab
 	
 	private TestRunnerViewPart testRunnerView;
 	
-	private final Image testOkIcon = TestRunnerViewPart.createImage("obj16/testok.gif");
-	private final Image testErrorIcon = TestRunnerViewPart.createImage("obj16/testerr.gif");
-	private final Image testFailureIcon = TestRunnerViewPart.createImage("obj16/testfail.gif");
-	private final Image testWarnIcon = TestRunnerViewPart.createImage("obj16/testwarn.gif");
-	private final Image hierarchyIcon = TestRunnerViewPart.createImage("obj16/testhier.gif");
-	private final Image suiteIcon = TestRunnerViewPart.createImage("obj16/tsuite.gif");
-	private final Image suiteErrorIcon = TestRunnerViewPart.createImage("obj16/tsuiteerror.gif");
-	private final Image suiteFailIcon = TestRunnerViewPart.createImage("obj16/tsuitefail.gif");
-	private final Image suiteWarnIcon = TestRunnerViewPart.createImage("obj16/tsuitewarn.gif");
-	private final Image testIcon = TestRunnerViewPart.createImage("obj16/test.gif");
+	private final Image testOkIcon = TestRunnerViewPart.createImage("obj16/testok.gif"); //$NON-NLS-1$
+	private final Image testErrorIcon = TestRunnerViewPart.createImage("obj16/testerr.gif"); //$NON-NLS-1$
+	private final Image testFailureIcon = TestRunnerViewPart.createImage("obj16/testfail.gif"); //$NON-NLS-1$
+	private final Image testWarnIcon = TestRunnerViewPart.createImage("obj16/testwarn.gif"); //$NON-NLS-1$
+	private final Image hierarchyIcon = TestRunnerViewPart.createImage("obj16/testhier.gif"); //$NON-NLS-1$
+	private final Image suiteIcon = TestRunnerViewPart.createImage("obj16/tsuite.gif"); //$NON-NLS-1$
+	private final Image suiteErrorIcon = TestRunnerViewPart.createImage("obj16/tsuiteerror.gif"); //$NON-NLS-1$
+	private final Image suiteFailIcon = TestRunnerViewPart.createImage("obj16/tsuitefail.gif"); //$NON-NLS-1$
+	private final Image suiteWarnIcon = TestRunnerViewPart.createImage("obj16/tsuitewarn.gif"); //$NON-NLS-1$
+	private final Image testIcon = TestRunnerViewPart.createImage("obj16/test.gif"); //$NON-NLS-1$
 	
 	private class TestSuiteContentProvider implements ITreeContentProvider
 	{
@@ -235,8 +243,8 @@ public class TestHierarchyTab extends TestRunTab
 	{
 		public ExpandAllAction()
 		{
-			setText("Expand All");  
-			setToolTipText("Expand All Test Suites");  
+			setText(Messages.TestHierarchyTab_ExpandAllLabel);  
+			setToolTipText(Messages.TestHierarchyTab_ExpandAllTooltip);  
 		}
 		
 		public void run()
@@ -261,7 +269,7 @@ public class TestHierarchyTab extends TestRunTab
 		testTreePanel.setLayoutData(gridData);
 		
 		hierarchyTab.setControl(testTreePanel);
-		hierarchyTab.setToolTipText("Test Hierarchy"); 
+		hierarchyTab.setToolTipText(Messages.TestHierarchyTab_TabTooltip); 
 
 		viewer = new TreeViewer(testTreePanel, SWT.V_SCROLL | SWT.SINGLE);
 		gridData = new GridData(GridData.FILL_BOTH |
@@ -284,8 +292,8 @@ public class TestHierarchyTab extends TestRunTab
 		toolkit = new FormToolkit(display);
 		errorMsgField = new ScrolledFormText(testTreePanel, true);
 		errorMsgField.setBackground(toolkit.getColors().getBackground());
-		errorMsgField.getFormText().setColor("error",
-				toolkit.getColors().createColor("error", 255, 0, 0));
+		errorMsgField.getFormText().setColor(ERROR_COLOR_KEY,
+				toolkit.getColors().createColor(ERROR_COLOR_KEY, 255, 0, 0));
 
 		errorMsgField.getFormText().addHyperlinkListener(new HyperlinkAdapter()
 		{
@@ -304,9 +312,9 @@ public class TestHierarchyTab extends TestRunTab
 
 	private void openLink(String link)
 	{
-		if(link.startsWith("cxxtest.log"))
+		if(link.startsWith(ICxxTestConstants.TEST_RESULTS_FILE))
 		{
-			String[] parts = link.split(":");
+			String[] parts = link.split(":"); //$NON-NLS-1$
 			int lineNumber = 1;
 
 			if(parts.length == 2)
@@ -375,8 +383,9 @@ public class TestHierarchyTab extends TestRunTab
 			return sel.getFirstElement();
 	}
 
-	public String getName() {
-		return "Hierarchy"; 
+	public String getName()
+	{
+		return Messages.TestHierarchyTab_TabName; 
 	}
 	
 	public void setSelectedTest(ICxxTestBase testObject)
@@ -457,7 +466,7 @@ public class TestHierarchyTab extends TestRunTab
 		}
 
 		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
-		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS + "-end"));
+		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS + "-end")); //$NON-NLS-1$
 	}	
 
 	private void setSuites(ICxxTestSuite[] suites)
@@ -467,7 +476,7 @@ public class TestHierarchyTab extends TestRunTab
 		viewer.setInput(suites);
 		expandFailedTests();
 
-		errorMsgField.setText("");
+		errorMsgField.setText(""); //$NON-NLS-1$
 		stackLayout.topControl = viewer.getControl();
 		viewer.getControl().getParent().layout();
 	}
@@ -482,11 +491,11 @@ public class TestHierarchyTab extends TestRunTab
 			
 			switch(ch)
 			{
-				case '&':  buf.append("&amp;"); break; 
-				case '\'': buf.append("&apos;"); break; 
-				case '"':  buf.append("&quot;"); break; 
-				case '<':  buf.append("&lt;"); break; 
-				case '>':  buf.append("&gt;"); break;
+				case '&':  buf.append("&amp;"); break;  //$NON-NLS-1$
+				case '\'': buf.append("&apos;"); break;  //$NON-NLS-1$
+				case '"':  buf.append("&quot;"); break;  //$NON-NLS-1$
+				case '<':  buf.append("&lt;"); break;  //$NON-NLS-1$
+				case '>':  buf.append("&gt;"); break; //$NON-NLS-1$
 				default:   buf.append(ch); break;
 			}
 		}
@@ -497,31 +506,27 @@ public class TestHierarchyTab extends TestRunTab
 	private void setParseError(Exception e)
 	{
 		StringBuffer msg = new StringBuffer();
-		msg.append("<form>");
+		msg.append("<form>"); //$NON-NLS-1$
 
-		msg.append("<p><b>Error:</b></p>");
+		msg.append("<p><b>"); //$NON-NLS-1$
+		msg.append(Messages.TestHierarchyTab_ErrorTitle);
+		msg.append("</b></p>"); //$NON-NLS-1$
 
 		if(e instanceof SAXParseException)
 		{
-			SAXParseException spe = (SAXParseException)e;
-			msg.append("<p>An unexpected error occurred while processing the ");
-			msg.append("<a href=\"cxxtest.log:" + spe.getLineNumber() +
-					"\">CxxTest results log</a>");
-			msg.append(", line " + spe.getLineNumber() + ".</p>");
-			msg.append("<p><span color=\"error\">");
-			msg.append(escapeXMLString(e.getMessage()));
-			msg.append("</span></p>");
+			SAXParseException spe = (SAXParseException) e;
+			msg.append(MessageFormat.format(
+					Messages.TestHierarchyTab_ErrorDescriptionWithLineNumber,
+					ICxxTestConstants.TEST_RESULTS_FILE, spe.getLineNumber(), escapeXMLString(e.getMessage())));
 		}
 		else
 		{
-			msg.append("<p>An unexpected error occurred while processing the ");
-			msg.append("<a href=\"cxxtest.log\">CxxTest results log</a>.</p>");
-			msg.append("<p><span color=\"error\">");
-			msg.append(escapeXMLString(e.getMessage()));
-			msg.append("</span></p>");
+			msg.append(MessageFormat.format(
+					Messages.TestHierarchyTab_ErrorDescription,
+					ICxxTestConstants.TEST_RESULTS_FILE, escapeXMLString(e.getMessage())));
 		}
 
-		msg.append("</form>");
+		msg.append("</form>"); //$NON-NLS-1$
 
 		errorMsgField.setText(msg.toString());
 
@@ -666,4 +671,6 @@ public class TestHierarchyTab extends TestRunTab
 		}
 		catch(CoreException e) { }
 	}
+	
+	private static final String ERROR_COLOR_KEY = "error"; //$NON-NLS-1$
 }

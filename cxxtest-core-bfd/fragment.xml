@@ -5,17 +5,15 @@
          point="net.sf.webcat.eclipse.cxxtest.extraProjectOptions">
       <extraProjectOptions
             id="net.sf.webcat.eclipse.cxxtest.bfd.stackTracingOptions">
-         <optionSet
+         <optionSets
                version="1.5.0">
-           <runnerIncludes
-                 path="/runner-include">
-              <includePath
-                    path="dereferee-src/gcc_bfd_platform.cpp">
-              </includePath>
-           </runnerIncludes>
-            <enablement
-                  configurationFilter="Debug"
-                  isForStackTrace="true">
+            <optionSet>
+               <runnerIncludes
+                     path="/runner-include">
+                  <includeFile
+                        path="dereferee-src/gcc_bfd_platform.cpp">
+                  </includeFile>
+               </runnerIncludes>
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
                   <splitStringOption
@@ -30,29 +28,38 @@
                   <librariesOption
                         id="gnu.cpp.link.option.libs">
                      <item
-                           value="bfd">
+                           value="intl">
                      </item>
                      <item
                            value="iberty">
                      </item>
                      <item
-                           value="intl">
+                           value="bfd">
                      </item>
                   </librariesOption>
                </tool>
-            </enablement>
-         </optionSet>
-         <optionSet
+               <enablement>
+                  <test
+                        property="net.sf.webcat.eclipse.cxxtest.configurationName"
+                        value="Debug">
+                  </test>
+                  <test
+                        args="traceStack,boolean"
+                        property="net.sf.webcat.eclipse.cxxtest.preference"
+                        value="true">
+                  </test>
+               </enablement>
+            </optionSet>
+         </optionSets>
+         <optionSets
                version="1.6.0">
-           <runnerIncludes
-                 path="/runner-include">
-              <includePath
-                    path="dereferee-src/gcc_bfd_platform.cpp">
-              </includePath>
-           </runnerIncludes>
-            <enablement
-                  configurationFilter="Debug"
-                  isForStackTrace="true">
+            <optionSet>
+               <runnerIncludes
+                     path="/runner-include">
+                  <includeFile
+                        path="dereferee-src/gcc_bfd_platform.cpp">
+                  </includeFile>
+               </runnerIncludes>
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
                   <splitStringOption
@@ -62,11 +69,19 @@
                      </item>
                   </splitStringOption>
                </tool>
-            </enablement>
-            <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.HasLibBfdCondition"
-                  configurationFilter="Debug"
-                  isForStackTrace="true">
+               <enablement>
+                  <test
+                        property="net.sf.webcat.eclipse.cxxtest.configurationName"
+                        value="Debug">
+                  </test>
+                  <test
+                        args="traceStack,boolean"
+                        property="net.sf.webcat.eclipse.cxxtest.preference"
+                        value="true">
+                  </test>
+               </enablement>
+            </optionSet>
+            <optionSet>
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
                   <librariesOption
@@ -76,11 +91,24 @@
                      </item>
                   </librariesOption>
                </tool>
-            </enablement>
-            <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.NeedsLibIntlCondition"
-                  configurationFilter="Debug"
-                  isForStackTrace="true">
+               <enablement>
+                  <test
+                        property="net.sf.webcat.eclipse.cxxtest.configurationName"
+                        value="Debug">
+                  </test>
+                  <test
+                        args="traceStack,boolean"
+                        property="net.sf.webcat.eclipse.cxxtest.preference"
+                        value="true">
+                  </test>
+                  <test
+                        args="net.sf.webcat.eclipse.cxxtest.bfd.options.HasLibBfdCondition"
+                        property="net.sf.webcat.eclipse.cxxtest.evaluatePredicate"
+                        value="true">
+                  </test>
+               </enablement>
+            </optionSet>
+            <optionSet>
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
                   <librariesOption
@@ -90,11 +118,24 @@
                      </item>
                   </librariesOption>
                </tool>
-            </enablement>
-            <enablement
-                  conditionClass="net.sf.webcat.eclipse.cxxtest.options.NeedsLibIbertyCondition"
-                  configurationFilter="Debug"
-                  isForStackTrace="true">
+               <enablement>
+                  <test
+                        property="net.sf.webcat.eclipse.cxxtest.configurationName"
+                        value="Debug">
+                  </test>
+                  <test
+                        args="traceStack,boolean"
+                        property="net.sf.webcat.eclipse.cxxtest.preference"
+                        value="true">
+                  </test>
+                  <test
+                        args="net.sf.webcat.eclipse.cxxtest.bfd.options.NeedsLibIntlCondition"
+                        property="net.sf.webcat.eclipse.cxxtest.evaluatePredicate"
+                        value="true">
+                  </test>
+               </enablement>
+            </optionSet>
+            <optionSet>
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.linker">
                   <librariesOption
@@ -104,8 +145,24 @@
                      </item>
                   </librariesOption>
                </tool>
-            </enablement>
-         </optionSet>
+               <enablement>
+                  <test
+                        property="net.sf.webcat.eclipse.cxxtest.configurationName"
+                        value="Debug">
+                  </test>
+                  <test
+                        args="traceStack,boolean"
+                        property="net.sf.webcat.eclipse.cxxtest.preference"
+                        value="true">
+                  </test>
+                  <test
+                        args="net.sf.webcat.eclipse.cxxtest.bfd.options.NeedsLibIbertyCondition"
+                        property="net.sf.webcat.eclipse.cxxtest.evaluatePredicate"
+                        value="true">
+                  </test>
+               </enablement>
+            </optionSet>
+         </optionSets>
       </extraProjectOptions>
    </extension>
    <extension

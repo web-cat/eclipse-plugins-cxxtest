@@ -1,11 +1,34 @@
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.internal;
 
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.webcat.eclipse.cxxtest.CxxTestPlugin;
 import net.sf.webcat.eclipse.cxxtest.IStackTraceDependencyCheck;
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
@@ -26,6 +49,12 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IProgressService;
 
+/**
+ * 
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
+ */
 public class StackTraceDependencyChecker
 {
 	private StackTraceDependencyChecker()
@@ -52,7 +81,8 @@ public class StackTraceDependencyChecker
 			// tracing, but without forcing the user to wait for a modal
 			// operation at every startup.
 			
-			Job job = new Job("CxxTest Dependency Check") {
+			Job job = new Job(
+					Messages.StackTraceDependencyChecker_BackgroundJobName) {
 				@Override
 				protected IStatus run(IProgressMonitor monitor)
 				{
@@ -120,23 +150,24 @@ public class StackTraceDependencyChecker
 		IExtensionRegistry registry = Platform.getExtensionRegistry();
 		IExtensionPoint extensionPoint =
 		        registry.getExtensionPoint(CxxTestPlugin.PLUGIN_ID
-		                + ".stackTraceDependencyCheck");
+		                + ".stackTraceDependencyCheck"); //$NON-NLS-1$
 
 		IConfigurationElement[] elements =
 		        extensionPoint.getConfigurationElements();
 
-		monitor.beginTask("Looking for required CxxTest dependencies",
+		monitor.beginTask(
+				Messages.StackTraceDependencyChecker_BackgroundJobDescription,
 				elements.length);
 
 		for(IConfigurationElement element : elements)
 		{
 			SubProgressMonitor submon = new SubProgressMonitor(monitor, 1);
 			
-			if ("dependencyCheck".equals(element.getName()))
+			if ("dependencyCheck".equals(element.getName())) //$NON-NLS-1$
 			{
 				try
 				{
-					Object obj = element.createExecutableExtension("class");
+					Object obj = element.createExecutableExtension("class"); //$NON-NLS-1$
 					if (obj instanceof IStackTraceDependencyCheck)
 					{
 						IStackTraceDependencyCheck checker =
@@ -208,23 +239,19 @@ public class StackTraceDependencyChecker
 		StringBuffer buffer = new StringBuffer();
 		
 		buffer.append(
-			"In order to support retrieving stack traces when failures " +
-			"occur in CxxTest unit tests, the following dependencies " +
-			"need to be installed on your system:\n\n");
+			Messages.StackTraceDependencyChecker_MissingDependencyMsgStart);
 
 		for (String missingDep : missingDependencies)
 		{
-			buffer.append("      * ");
-			buffer.append(missingDep);
-			buffer.append("\n");
+			buffer.append(MessageFormat.format(
+					Messages.StackTraceDependencyChecker_MissingDependencyPartDescription,
+					missingDep));
 		}
 
-		buffer.append("\n");
-		buffer.append(
-			"Stack traces will be disabled in any projects that you " +
-			"create. Once you have satisfied these requirements, you " +
-			"can re-enable this feature in your Eclipse preferences.");
+		buffer.append(Messages.StackTraceDependencyChecker_MissingDependencyMsgEnd);
 
-		MessageDialog.openInformation(shell, "CxxTest", buffer.toString());		
+		MessageDialog.openInformation(shell,
+				Messages.StackTraceDependencyChecker_ShellTitle,
+				buffer.toString());		
 	}
 }

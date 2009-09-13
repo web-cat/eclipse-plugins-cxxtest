@@ -1,23 +1,28 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.preferences;
 
 import net.sf.webcat.eclipse.cxxtest.CxxTestPlugin;
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 import net.sf.webcat.eclipse.cxxtest.internal.StackTraceDependencyChecker;
 
 import org.eclipse.jface.preference.BooleanFieldEditor;
@@ -30,7 +35,9 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 /**
  * The preference page used to edit CxxTest settings.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class CxxTestPreferencePage extends FieldEditorPreferencePage
 	implements IWorkbenchPreferencePage
@@ -53,16 +60,16 @@ public class CxxTestPreferencePage extends FieldEditorPreferencePage
 	public void createFieldEditors()
 	{
 		addField(new StringFieldEditor(CxxTestPlugin.CXXTEST_PREF_DRIVER_FILENAME,
-				"Generated &driver file name:", getFieldEditorParent()));
+				Messages.CxxTestPreferencePage_GeneratedDriverFileName, getFieldEditorParent()));
 
 		addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRACK_HEAP,
-            "Enable basic heap error checking", getFieldEditorParent()));
+            Messages.CxxTestPreferencePage_EnableBasicHeapChecking, getFieldEditorParent()));
         addField(new BooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRAP_SIGNALS,
-            "Trap signals within test cases", getFieldEditorParent()));
+            Messages.CxxTestPreferencePage_TrapSignals, getFieldEditorParent()));
 
         final CancelableBooleanFieldEditor editor;
         editor = new CancelableBooleanFieldEditor(CxxTestPlugin.CXXTEST_PREF_TRACE_STACK,
-            "Generate stack traces for test failures and memory leaks",
+            Messages.CxxTestPreferencePage_GenerateStackTraces,
             getFieldEditorParent());
 
         editor.setCancelableListener(new ICancelableBooleanListener() {

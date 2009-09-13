@@ -5,16 +5,26 @@
          point="net.sf.webcat.eclipse.cxxtest.extraProjectOptions">
       <extraProjectOptions
             id="net.sf.webcat.eclipse.cxxtest.macosx.stackTracingOptions">
-         <optionSet
+         <optionSets
                version="1.5.0">
-            <runnerIncludes
-                  path="/runner-include">
-               <includePath
-                     path="dereferee-src/gcc_macosx_platform.cpp">
-               </includePath></runnerIncludes>
-            <enablement
-                  configurationFilter="Debug"
-                  isForStackTrace="true">
+            <optionSet>
+               <enablement>
+                  <test
+                        property="net.sf.webcat.eclipse.cxxtest.configurationName"
+                        value="Debug">
+                  </test>
+                  <test
+                        args="traceStack,boolean"
+                        property="net.sf.webcat.eclipse.cxxtest.preference"
+                        value="true">
+                  </test>
+               </enablement>
+               <runnerIncludes
+                     path="/runner-include">
+                  <includeFile
+                        path="dereferee-src/gcc_macosx_platform.cpp">
+                  </includeFile>
+               </runnerIncludes>
                <tool
                      superClassId="cdt.managedbuild.tool.gnu.cpp.compiler">
                   <splitStringOption
@@ -27,8 +37,8 @@
                      </item>
                   </splitStringOption>
                </tool>
-            </enablement>
-         </optionSet>
+            </optionSet>
+         </optionSets>
       </extraProjectOptions>
    </extension>
 

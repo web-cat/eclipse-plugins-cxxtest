@@ -1,28 +1,34 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.ui;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.Enumeration;
 import java.util.Vector;
 
 import net.sf.webcat.eclipse.cxxtest.CxxTestPlugin;
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestAssertion;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestMethod;
@@ -77,7 +83,9 @@ import org.eclipse.ui.part.ViewPart;
  * 
  * Influenced greatly by the same JUnit class.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class TestRunnerViewPart extends ViewPart
 {
@@ -86,22 +94,41 @@ public class TestRunnerViewPart extends ViewPart
 		public Object[] getElements(Object inputElement)
 		{
 			if(inputElement == null)
+			{
 				return new Object[0];
+			}
 			else if(inputElement instanceof IDerefereeSummary)
 			{
 				IDerefereeSummary info = (IDerefereeSummary)inputElement;
 				String[] array = new String[7];
-				array[0] = "Total bytes allocated: " + info.getTotalBytesAllocated();
-				array[1] = "Maximum bytes in use: " + info.getMaxBytesInUse();
-				array[2] = "Calls to new: " + info.getCallsToNew();
-				array[3] = "Calls to delete (non-null): " + info.getCallsToDelete();
-				array[4] = "Calls to new[]: " + info.getCallsToArrayNew();
-				array[5] = "Calls to delete[] (non-null): " + info.getCallsToArrayDelete();
-				array[6] = "Calls to delete/delete[] (with null): " + info.getCallsToDeleteNull();
+
+				array[0] = MessageFormat.format(
+						Messages.TestRunnerViewPart_TotalBytesAllocated,
+						info.getTotalBytesAllocated());
+				array[1] = MessageFormat.format(
+						Messages.TestRunnerViewPart_MaximumBytesInUse,
+						info.getMaxBytesInUse());
+				array[2] = MessageFormat.format(
+						Messages.TestRunnerViewPart_CallsToNew,
+						info.getCallsToNew());
+				array[3] = MessageFormat.format(
+						Messages.TestRunnerViewPart_CallsToDeleteNonNull,
+						info.getCallsToDelete());
+				array[4] = MessageFormat.format(
+						Messages.TestRunnerViewPart_CallsToArrayNew,
+						info.getCallsToArrayNew());
+				array[5] = MessageFormat.format(
+						Messages.TestRunnerViewPart_CallsToArrayDeleteNonNull,
+						info.getCallsToArrayDelete());
+				array[6] = MessageFormat.format(
+						Messages.TestRunnerViewPart_CallsToDeleteNull,
+						info.getCallsToDeleteNull());
 				return array;
 			}
 			else
+			{
 				return (Object[])inputElement;
+			}
 		}
 
 		public void dispose() { }
@@ -127,7 +154,9 @@ public class TestRunnerViewPart extends ViewPart
 				return mwl.getStackTrace();
 			}
 			else
+			{
 				return null;
+			}
 		}
 
 		public Object getParent(Object element)
@@ -174,10 +203,16 @@ public class TestRunnerViewPart extends ViewPart
 			else if(element instanceof IDerefereeLeak)
 			{
 				IDerefereeLeak leak = (IDerefereeLeak)element;
+
 				if(leak.getStackTrace() != null && leak.getStackTrace().length > 0)
-					return leak.toString() + ", allocated using:";
+				{
+					return leak.toString() +
+						Messages.TestRunnerViewPart_AllocatedUsingSuffix;
+				}
 				else
+				{
 					return leak.toString();
+				}
 			}
 			else if(element instanceof ICxxTestStackFrame)
 			{
@@ -185,7 +220,9 @@ public class TestRunnerViewPart extends ViewPart
 				return ste.toString();
 			}
 			else
+			{
 				return element.toString();
+			}
 		}
 		
 		public Image getImage(Object element)
@@ -223,17 +260,17 @@ public class TestRunnerViewPart extends ViewPart
 		}
 	}
 
-	private final Image testOkIcon= TestRunnerViewPart.createImage("obj16/testok.gif");
-	private final Image testWarnIcon= TestRunnerViewPart.createImage("obj16/testwarn.gif");
-	private final Image testFailureIcon= TestRunnerViewPart.createImage("obj16/testfail.gif");
-	private final Image testErrorIcon= TestRunnerViewPart.createImage("obj16/testerr.gif");
-	private final Image assertTraceIcon= TestRunnerViewPart.createImage("obj16/asserttrace.gif");
-	private final Image assertWarnIcon= TestRunnerViewPart.createImage("obj16/assertwarn.gif");
-	private final Image assertFailureIcon= TestRunnerViewPart.createImage("obj16/assertfail.gif");
-	private final Image assertErrorIcon= TestRunnerViewPart.createImage("obj16/asserterror.gif");
-	private final Image stackFrameIcon= TestRunnerViewPart.createImage("obj16/stkfrm_obj.gif");
+	private final Image testOkIcon = TestRunnerViewPart.createImage("obj16/testok.gif"); //$NON-NLS-1$
+	private final Image testWarnIcon = TestRunnerViewPart.createImage("obj16/testwarn.gif"); //$NON-NLS-1$
+	private final Image testFailureIcon = TestRunnerViewPart.createImage("obj16/testfail.gif"); //$NON-NLS-1$
+	private final Image testErrorIcon = TestRunnerViewPart.createImage("obj16/testerr.gif"); //$NON-NLS-1$
+	private final Image assertTraceIcon = TestRunnerViewPart.createImage("obj16/asserttrace.gif"); //$NON-NLS-1$
+	private final Image assertWarnIcon = TestRunnerViewPart.createImage("obj16/assertwarn.gif"); //$NON-NLS-1$
+	private final Image assertFailureIcon = TestRunnerViewPart.createImage("obj16/assertfail.gif"); //$NON-NLS-1$
+	private final Image assertErrorIcon = TestRunnerViewPart.createImage("obj16/asserterror.gif"); //$NON-NLS-1$
+	private final Image stackFrameIcon = TestRunnerViewPart.createImage("obj16/stkfrm_obj.gif"); //$NON-NLS-1$
 
-	public static final String ID = CxxTestPlugin.PLUGIN_ID + ".TestRunnerView";
+	public static final String ID = CxxTestPlugin.PLUGIN_ID + ".TestRunnerView"; //$NON-NLS-1$
 
 	private Composite parent;
 
@@ -274,12 +311,12 @@ public class TestRunnerViewPart extends ViewPart
 	{
 		public StopAction()
 		{
-			setText("Terminate");
-			setToolTipText("Terminate Test Runner");
+			setText(Messages.TestRunnerViewPart_TerminateLabel);
+			setToolTipText(Messages.TestRunnerViewPart_TerminateTooltip);
 			
-			setDisabledImageDescriptor(CxxTestPlugin.getImageDescriptor("dlcl16/stop.gif"));
-			setHoverImageDescriptor(CxxTestPlugin.getImageDescriptor("elcl16/stop.gif"));
-			setImageDescriptor(CxxTestPlugin.getImageDescriptor("elcl16/stop.gif"));
+			setDisabledImageDescriptor(CxxTestPlugin.getImageDescriptor("dlcl16/stop.gif")); //$NON-NLS-1$
+			setHoverImageDescriptor(CxxTestPlugin.getImageDescriptor("elcl16/stop.gif")); //$NON-NLS-1$
+			setImageDescriptor(CxxTestPlugin.getImageDescriptor("elcl16/stop.gif")); //$NON-NLS-1$
 		}
 
 		public void run()
@@ -294,22 +331,22 @@ public class TestRunnerViewPart extends ViewPart
 		
 		public ToggleOrientationAction(int orientation)
 		{
-			super("", AS_RADIO_BUTTON);
+			super("", AS_RADIO_BUTTON); //$NON-NLS-1$
 			
 			if(orientation == TestRunnerViewPart.VIEW_ORIENTATION_HORIZONTAL)
 			{
-				setText("&Horizontal View Orientation"); 
-				setImageDescriptor(CxxTestPlugin.getImageDescriptor("elcl16/th_horizontal.gif"));				
+				setText(Messages.TestRunnerViewPart_HorizontalViewLabel); 
+				setImageDescriptor(CxxTestPlugin.getImageDescriptor("elcl16/th_horizontal.gif")); //$NON-NLS-1$
 			}
 			else if(orientation == TestRunnerViewPart.VIEW_ORIENTATION_VERTICAL)
 			{
-				setText("&Vertical View Orientation"); 
-				setImageDescriptor(CxxTestPlugin.getImageDescriptor("elcl16/th_vertical.gif"));				
+				setText(Messages.TestRunnerViewPart_VerticalViewLabel); 
+				setImageDescriptor(CxxTestPlugin.getImageDescriptor("elcl16/th_vertical.gif")); //$NON-NLS-1$
 			}
 			else if(orientation == TestRunnerViewPart.VIEW_ORIENTATION_AUTOMATIC)
 			{
-				setText("&Automatic View Orientation");  
-				setImageDescriptor(CxxTestPlugin.getImageDescriptor("elcl16/th_automatic.gif"));				
+				setText(Messages.TestRunnerViewPart_AutomaticViewLabel);  
+				setImageDescriptor(CxxTestPlugin.getImageDescriptor("elcl16/th_automatic.gif")); //$NON-NLS-1$
 			}
 
 			actionOrientation = orientation;
@@ -341,7 +378,7 @@ public class TestRunnerViewPart extends ViewPart
 			}
 		});
 
-		setContentDescription("");
+		setContentDescription(""); //$NON-NLS-1$
 
 		clipboard = new Clipboard(Display.getCurrent());
 
@@ -369,7 +406,7 @@ public class TestRunnerViewPart extends ViewPart
 		
 		ViewForm bottom = new ViewForm(sashForm, SWT.NONE);
 		CLabel label = new CLabel(bottom, SWT.NONE);
-		label.setText("Details"); 
+		label.setText(Messages.TestRunnerViewPart_DetailsLabel); 
 		bottom.setTopLeft(label);
 
 		detailViewer = new TreeViewer(bottom, SWT.NONE);
@@ -560,7 +597,7 @@ public class TestRunnerViewPart extends ViewPart
 			currentLaunch = null;
 		}
 		
-		setContentDescription("");
+		setContentDescription(""); //$NON-NLS-1$
 		stopAction.setEnabled(false);
 	}
 
@@ -605,7 +642,7 @@ public class TestRunnerViewPart extends ViewPart
 		try
 		{
 			URL base = Platform.getBundle(CxxTestPlugin.PLUGIN_ID).
-				getEntry("/icons/full/");
+				getEntry("/icons/full/"); //$NON-NLS-1$
 			URL url = new URL(base, path);
 			
 			ImageDescriptor id= ImageDescriptor.createFromURL(url);
@@ -633,16 +670,17 @@ public class TestRunnerViewPart extends ViewPart
 
 		currentLaunch = launch;
 
-		String name = "";
+		String name = ""; //$NON-NLS-1$
 		try
 		{
 			name = launch.getLaunchConfiguration().getAttribute(
-					ICDTLaunchConfigurationConstants.ATTR_PROJECT_NAME, "");
+					ICDTLaunchConfigurationConstants.ATTR_PROJECT_NAME, ""); //$NON-NLS-1$
 		}
 		catch (CoreException e) { }
 
 		detailViewer.setInput(null);
-		setContentDescription("Running " + name + "...");
+		setContentDescription(MessageFormat.format(
+				Messages.TestRunnerViewPart_RunningMessage, name));
 
 		stopAction.setEnabled(true);
 	}

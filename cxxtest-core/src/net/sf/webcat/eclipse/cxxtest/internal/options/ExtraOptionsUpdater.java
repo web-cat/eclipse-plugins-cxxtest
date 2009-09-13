@@ -1,20 +1,24 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.internal.options;
 
 import java.io.File;
@@ -30,7 +34,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import net.sf.webcat.eclipse.cxxtest.CxxTestPlugin;
-import net.sf.webcat.eclipse.cxxtest.options.IExtraOptionsEnablement;
 import net.sf.webcat.eclipse.cxxtest.options.IExtraOptionsUpdater;
 
 import org.eclipse.cdt.managedbuilder.core.BuildException;
@@ -38,6 +41,10 @@ import org.eclipse.cdt.managedbuilder.core.IConfiguration;
 import org.eclipse.cdt.managedbuilder.core.IManagedBuildInfo;
 import org.eclipse.cdt.managedbuilder.core.ITool;
 import org.eclipse.cdt.managedbuilder.core.ManagedBuildManager;
+import org.eclipse.core.expressions.EvaluationContext;
+import org.eclipse.core.expressions.EvaluationResult;
+import org.eclipse.core.expressions.Expression;
+import org.eclipse.core.expressions.ExpressionConverter;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
@@ -47,7 +54,6 @@ import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.jface.preference.IPreferenceStore;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 
@@ -55,7 +61,9 @@ import org.osgi.framework.Version;
  * Maintains the table of extra options handlers defined by all plug-ins
  * currently loaded in Eclipse.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 {
@@ -67,10 +75,8 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	 */
 	public ExtraOptionsUpdater()
 	{
-		store = CxxTestPlugin.getDefault().getPreferenceStore();
-
-		isWindows = System.getProperty("os.name").toLowerCase().startsWith(
-			"windows ");
+		isWindows = System.getProperty("os.name").toLowerCase().startsWith( //$NON-NLS-1$
+			"windows "); //$NON-NLS-1$
 
 		optionSets =
 		        new HashMap<String, SortedMap<Version, IConfigurationElement>>();
@@ -87,8 +93,11 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 		// If there are a different number of option handlers loaded than there
 		// are in the properties file for the project, then something is
 		// mismatched and it needs an update.
+
 		if(versionProps.size() != optionSets.size())
+		{
 			return true;
+		}
 
 		for(String loadedId : optionSets.keySet())
 		{
@@ -97,7 +106,9 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 			        Version.parseVersion(versionProps.getProperty(loadedId));
 
 			if(projectVersion.compareTo(latestVersion) < 0)
+			{
 				return true;
+			}
 		}
 
 		return false;
@@ -113,8 +124,8 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 		{
 			if(versionProps.containsKey(loadedId))
 			{
-				Version version =
-				        Version.parseVersion(versionProps.getProperty(loadedId));
+				Version version = Version.parseVersion(
+						versionProps.getProperty(loadedId));
 				removeOptions(project, loadedId, version);
 			}
 
@@ -128,7 +139,8 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
-	public String[] getLatestCxxTestRunnerIncludes(IProject project)
+	// ------------------------------------------------------------------------
+	public String[] getLatestCxxTestRunnerIncludes(IConfiguration configuration)
 	{
 		ArrayList<String> includeList = new ArrayList<String>();
 
@@ -138,26 +150,42 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 		        optionSets.get(loadedId);
 
 			if(optionsForId == null)
+			{
 				break;
+			}
 	
 			Version latestVersion = getLatestVersion(loadedId);
 			if(latestVersion == null)
-				break;
-	
-			IConfigurationElement optionSet = optionsForId.get(latestVersion);
-	
-			IConfigurationElement[] includeElems =
-				optionSet.getChildren("runnerIncludes");
-
-			for(IConfigurationElement includeElem : includeElems)
 			{
-				IConfigurationElement[] pathElems =
-					includeElem.getChildren("includePath");
+				break;
+			}
+	
+			IConfigurationElement optionSets = optionsForId.get(latestVersion);
+			IConfigurationElement[] optionSetElems = optionSets.getChildren("optionSet"); //$NON-NLS-1$
+
+			for (IConfigurationElement optionSet : optionSetElems)
+			{
+				boolean enabled = evaluateOptionSetEnablement(
+						optionSet, configuration);
 				
-				for(IConfigurationElement pathElem : pathElems)
+				if (enabled)
 				{
-					String path = pathElem.getAttribute("path");
-					includeList.add(path);
+					// Add the runner include paths to the configuration.
+
+					IConfigurationElement[] includeElems =
+						optionSet.getChildren("runnerIncludes"); //$NON-NLS-1$
+
+					for(IConfigurationElement includeElem : includeElems)
+					{
+						IConfigurationElement[] pathElems =
+							includeElem.getChildren("includeFile"); //$NON-NLS-1$
+						
+						for(IConfigurationElement pathElem : pathElems)
+						{
+							String path = pathElem.getAttribute("path"); //$NON-NLS-1$
+							includeList.add(path);
+						}
+					}
 				}
 			}
 		}
@@ -175,8 +203,8 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 		{
 			if(versionProps.containsKey(loadedId))
 			{
-				Version version =
-				        Version.parseVersion(versionProps.getProperty(loadedId));
+				Version version = Version.parseVersion(
+						versionProps.getProperty(loadedId));
 				removeOptions(project, loadedId, version);
 			}
 		}
@@ -201,56 +229,102 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 
 
 	// ------------------------------------------------------------------------
+	private boolean evaluateOptionSetEnablement(IConfigurationElement optionSet,
+			IConfiguration configuration)
+	{
+		IConfigurationElement[] enablementElems =
+			optionSet.getChildren("enablement"); //$NON-NLS-1$
+
+		boolean enabled = true;
+
+		if (enablementElems != null && enablementElems.length > 0)
+		{
+			try 
+			{
+				Expression expression = ExpressionConverter.getDefault().perform(
+						enablementElems[0]);
+
+				EvaluationContext context = new EvaluationContext(
+						null, configuration);
+				
+				EvaluationResult result = expression.evaluate(context);
+				enabled = (result == EvaluationResult.TRUE);
+			}
+			catch (CoreException e)
+			{
+				enabled = false;
+			}
+		}
+		
+		return enabled;
+	}
+
+
+	// ------------------------------------------------------------------------
 	private void addLatestOptions(IProject project, String id)
 	{
 		SortedMap<Version, IConfigurationElement> optionsForId =
 		        optionSets.get(id);
+
 		if(optionsForId == null)
+		{
 			return;
+		}
 
 		Version latestVersion = getLatestVersion(id);
-		if(latestVersion == null)
-			return;
 
-		IConfigurationElement optionSet = optionsForId.get(latestVersion);
-		IConfigurationElement[] enablementElems = optionSet.getChildren("enablement");
+		if(latestVersion == null)
+		{
+			return;
+		}
+
+		IConfigurationElement optionSets = optionsForId.get(latestVersion);
+		IConfigurationElement[] optionSetElems = optionSets.getChildren("optionSet"); //$NON-NLS-1$
 
 		IManagedBuildInfo buildInfo = ManagedBuildManager.getBuildInfo(project);
 		IConfiguration[] configs =
 		        buildInfo.getManagedProject().getConfigurations();
 
-		for(IConfiguration config : configs)
+		for (IConfiguration config : configs)
 		{
-			IConfigurationElement[] includeElems =
-				optionSet.getChildren("runnerIncludes");
-			
-			for(IConfigurationElement includeElem : includeElems)
+			for (IConfigurationElement optionSet : optionSetElems)
 			{
-				String pluginId = includeElem.getAttribute("pluginId");
-				String path = includeElem.getAttribute("path");
-
-				if(pluginId == null)
-					pluginId = optionSet.getContributor().getName();
-
-				String includePath =
-					getBundleEntryPath(pluginId, path);
-
-				try
+				boolean enabled = evaluateOptionSetEnablement(
+						optionSet, config);
+				
+				if (enabled)
 				{
-					addCxxTestRunnerInclude(config, includePath);
-				}
-				catch (BuildException e)
-				{
-					e.printStackTrace();
-				}
-			}
+					// Add the runner include paths to the configuration.
 
-			for(IConfigurationElement enablementElem : enablementElems)
-			{
-				if(doesConfigurationMatch(project, config, enablementElem, false))
-				{
+					IConfigurationElement[] includeElems =
+						optionSet.getChildren("runnerIncludes"); //$NON-NLS-1$
+					
+					for(IConfigurationElement includeElem : includeElems)
+					{
+						String pluginId = includeElem.getAttribute("pluginId"); //$NON-NLS-1$
+						String path = includeElem.getAttribute("path"); //$NON-NLS-1$
+
+						if(pluginId == null)
+						{
+							pluginId = optionSet.getContributor().getName();
+						}
+
+						String includePath =
+							getBundleEntryPath(pluginId, path);
+
+						try
+						{
+							addCxxTestRunnerInclude(config, includePath);
+						}
+						catch (BuildException e)
+						{
+							e.printStackTrace();
+						}
+					}
+					
 					IConfigurationElement[] toolElems =
-					        enablementElem.getChildren("tool");
+				        optionSet.getChildren("tool"); //$NON-NLS-1$
+
 					for(IConfigurationElement toolElem : toolElems)
 					{
 						try
@@ -261,7 +335,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 						{
 							e.printStackTrace();
 						}
-					}
+					}					
 				}
 			}
 		}
@@ -270,10 +344,11 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
+	// ------------------------------------------------------------------------
 	private void addOptionsForTool(IConfiguration config,
 	        IConfigurationElement toolElem) throws BuildException
 	{
-		String superClassId = toolElem.getAttribute("superClassId");
+		String superClassId = toolElem.getAttribute("superClassId"); //$NON-NLS-1$
 		ITool[] tools = config.getToolsBySuperClassId(superClassId);
 		IConfigurationElement[] optionElems = toolElem.getChildren();
 
@@ -282,50 +357,50 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 			for(IConfigurationElement optionElem : optionElems)
 			{
 				String optionType = optionElem.getName();
-				String optionId = optionElem.getAttribute("id");
+				String optionId = optionElem.getAttribute("id"); //$NON-NLS-1$
 
-				if(optionType.equals("includesOption"))
+				if(optionType.equals("includesOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getPathsForOption(optionElem, true);
 					ProjectOptionsUtil.addToIncludes(tool, optionId, newEntries);
 				}
-				else if(optionType.equals("librariesOption"))
+				else if(optionType.equals("librariesOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getItemsForOption(optionElem);
 					ProjectOptionsUtil.addToLibraries(tool, optionId,
 					        newEntries);
 				}
-				else if(optionType.equals("definedSymbolsOption"))
+				else if(optionType.equals("definedSymbolsOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getItemsForOption(optionElem);
 					ProjectOptionsUtil.addToDefinedSymbols(tool, optionId,
 					        newEntries);
 				}
-				else if(optionType.equals("stringListOption"))
+				else if(optionType.equals("stringListOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getItemsForOption(optionElem);
 					ProjectOptionsUtil.addToStringList(tool, optionId,
 					        newEntries);
 				}
-				else if(optionType.equals("pathListOption"))
+				else if(optionType.equals("pathListOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getPathsForOption(optionElem, true);
 					ProjectOptionsUtil.addToStringList(tool, optionId,
 					        newEntries);
 				}
-				else if(optionType.equals("splitStringOption"))
+				else if(optionType.equals("splitStringOption")) //$NON-NLS-1$
 				{
 					String[] newEntries =
 					        getItemsAndPathsForOption(optionElem, true);
 					ProjectOptionsUtil.addToString(tool, optionId, newEntries);
 				}
-				else if(optionType.equals("booleanOption"))
+				else if(optionType.equals("booleanOption")) //$NON-NLS-1$
 				{
 					Boolean newValue =
-					        Boolean.parseBoolean(optionElem.getAttribute("value"));
+					        Boolean.parseBoolean(optionElem.getAttribute("value")); //$NON-NLS-1$
 					ProjectOptionsUtil.setBoolean(tool, optionId, newValue);
 				}
-				else if(optionType.equals("stringOption"))
+				else if(optionType.equals("stringOption")) //$NON-NLS-1$
 				{
 				}
 			}
@@ -333,17 +408,18 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
+	// ------------------------------------------------------------------------
 	private void addCxxTestRunnerInclude(IConfiguration config,
 			String path) throws BuildException
 	{
-		String superClassId = "cdt.managedbuild.tool.gnu.cpp.compiler";
+		String superClassId = "cdt.managedbuild.tool.gnu.cpp.compiler"; //$NON-NLS-1$
 		ITool[] tools = config.getToolsBySuperClassId(superClassId);
 
-		String optionId = "gnu.cpp.compiler.option.include.paths";
+		String optionId = "gnu.cpp.compiler.option.include.paths"; //$NON-NLS-1$
 
 		for(ITool tool : tools)
 		{
-			path = "\"" + path.replace('\\', '/') + "\"";
+			path = "\"" + path.replace('\\', '/') + "\""; //$NON-NLS-1$ //$NON-NLS-2$
 
 			String[] newEntries = new String[] { path };
 			ProjectOptionsUtil.addToIncludes(tool, optionId, newEntries);
@@ -351,10 +427,11 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
+	// ------------------------------------------------------------------------
 	private void removeOptionsForTool(IConfiguration config,
 	        IConfigurationElement toolElem) throws BuildException
 	{
-		String superClassId = toolElem.getAttribute("superClassId");
+		String superClassId = toolElem.getAttribute("superClassId"); //$NON-NLS-1$
 		ITool[] tools = config.getToolsBySuperClassId(superClassId);
 		IConfigurationElement[] optionElems = toolElem.getChildren();
 
@@ -363,33 +440,33 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 			for(IConfigurationElement optionElem : optionElems)
 			{
 				String optionType = optionElem.getName();
-				String optionId = optionElem.getAttribute("id");
+				String optionId = optionElem.getAttribute("id"); //$NON-NLS-1$
 
-				if(optionType.equals("includesOption"))
+				if(optionType.equals("includesOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getPathPatternsForOption(optionElem, true);
 					ProjectOptionsUtil.removeFromIncludesIf(tool, optionId,
 					        new RegexOptionPredicate(newEntries));
 				}
-				else if(optionType.equals("librariesOption"))
+				else if(optionType.equals("librariesOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getItemsForOption(optionElem);
 					ProjectOptionsUtil.removeFromLibrariesIf(tool, optionId,
 					        new ChoiceOptionPredicate(newEntries));
 				}
-				else if(optionType.equals("definedSymbolsOption"))
+				else if(optionType.equals("definedSymbolsOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getItemsForOption(optionElem);
 					ProjectOptionsUtil.removeFromDefinedSymbolsIf(tool,
 					        optionId, new ChoiceOptionPredicate(newEntries));
 				}
-				else if(optionType.equals("stringListOption"))
+				else if(optionType.equals("stringListOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getItemsForOption(optionElem);
 					ProjectOptionsUtil.removeFromStringListIf(tool, optionId,
 					        new ChoiceOptionPredicate(newEntries));
 				}
-				else if(optionType.equals("pathListOption"))
+				else if(optionType.equals("pathListOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getItemsForOption(optionElem);
 					ProjectOptionsUtil.removeFromStringListIf(tool, optionId,
@@ -399,17 +476,17 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 					ProjectOptionsUtil.removeFromStringListIf(tool, optionId,
 					        new RegexOptionPredicate(newEntries));
 				}
-				else if(optionType.equals("splitStringOption"))
+				else if(optionType.equals("splitStringOption")) //$NON-NLS-1$
 				{
 					String[] newEntries = getItemsForOption(optionElem);
 					ProjectOptionsUtil.removeFromStringIf(tool, optionId,
 					        new ChoiceOptionPredicate(newEntries));
 				}
-				else if(optionType.equals("booleanOption"))
+				else if(optionType.equals("booleanOption")) //$NON-NLS-1$
 				{
 					Boolean newValue =
-					        Boolean.parseBoolean(optionElem.getAttribute("value"));
-					String ignore = optionElem.getAttribute("ignoreOnRemove");
+					        Boolean.parseBoolean(optionElem.getAttribute("value")); //$NON-NLS-1$
+					String ignore = optionElem.getAttribute("ignoreOnRemove"); //$NON-NLS-1$
 					if(ignore != null && !Boolean.parseBoolean(ignore))
 						ProjectOptionsUtil.setBoolean(tool, optionId, !newValue);
 				}
@@ -418,13 +495,14 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
+	// ------------------------------------------------------------------------
 	private String[] getItemsForOption(IConfigurationElement optionElem)
 	{
-		IConfigurationElement[] itemElems = optionElem.getChildren("item");
+		IConfigurationElement[] itemElems = optionElem.getChildren("item"); //$NON-NLS-1$
 		ArrayList<String> items = new ArrayList<String>();
 
 		for(IConfigurationElement itemElem : itemElems)
-			items.add(itemElem.getAttribute("value"));
+			items.add(itemElem.getAttribute("value")); //$NON-NLS-1$
 
 		String[] itemArray = new String[items.size()];
 		items.toArray(itemArray);
@@ -432,6 +510,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
+	// ------------------------------------------------------------------------
 	private String[] getItemsAndPathsForOption(
 	        IConfigurationElement optionElem, boolean quoted)
 	{
@@ -440,11 +519,11 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 
 		for(IConfigurationElement itemElem : itemElems)
 		{
-			if(itemElem.getName().equals("item"))
+			if(itemElem.getName().equals("item")) //$NON-NLS-1$
 			{
-				items.add(itemElem.getAttribute("value"));
+				items.add(itemElem.getAttribute("value")); //$NON-NLS-1$
 			}
-			else if(itemElem.getName().equals("path"))
+			else if(itemElem.getName().equals("path")) //$NON-NLS-1$
 			{
 				String fullPath = getPathFromElement(itemElem, quoted);
 				if(fullPath != null)
@@ -458,6 +537,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
+	// ------------------------------------------------------------------------
 	private String getBundleEntryPath(String pluginId, String relativePath)
 	{
 		String path = null;
@@ -482,7 +562,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 			if(isWindows && path.charAt(2) == ':')
 			{
 				char letter = Character.toLowerCase(path.charAt(1));
-				path = "/cygdrive/" + letter + path.substring(3);
+				path = "/cygdrive/" + letter + path.substring(3); //$NON-NLS-1$
 			}
 
 			path = new Path(path).toOSString();
@@ -498,15 +578,16 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
+	// ------------------------------------------------------------------------
 	private String getPathFromElement(IConfigurationElement pathElem,
 	        boolean quoted)
 	{
-		String prefix = pathElem.getAttribute("prefix");
+		String prefix = pathElem.getAttribute("prefix"); //$NON-NLS-1$
 		if(prefix == null)
-			prefix = "";
+			prefix = ""; //$NON-NLS-1$
 
-		String pluginId = pathElem.getAttribute("pluginId");
-		String relPath = pathElem.getAttribute("relativePath");
+		String pluginId = pathElem.getAttribute("pluginId"); //$NON-NLS-1$
+		String relPath = pathElem.getAttribute("relativePath"); //$NON-NLS-1$
 
 		String fullPath;
 
@@ -520,7 +601,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 			fullPath = fullPath.replace('\\', '/');
 			
 			if(quoted)
-				return (prefix + "\"" + fullPath + "\"");
+				return (prefix + "\"" + fullPath + "\""); //$NON-NLS-1$ //$NON-NLS-2$
 			else
 				return (prefix + fullPath);
 		}
@@ -529,10 +610,11 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
+	// ------------------------------------------------------------------------
 	private String[] getPathsForOption(IConfigurationElement optionElem,
 	        boolean quoted)
 	{
-		IConfigurationElement[] pathElems = optionElem.getChildren("path");
+		IConfigurationElement[] pathElems = optionElem.getChildren("path"); //$NON-NLS-1$
 		ArrayList<String> paths = new ArrayList<String>();
 
 		for(IConfigurationElement pathElem : pathElems)
@@ -548,52 +630,15 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
+	// ------------------------------------------------------------------------
 	private String[] getPathPatternsForOption(IConfigurationElement optionElem,
 			boolean quoted)
 	{
-		IConfigurationElement[] pathElems = optionElem.getChildren("path");
+		IConfigurationElement[] pathElems = optionElem.getChildren("path"); //$NON-NLS-1$
 		ArrayList<String> patterns = new ArrayList<String>();
 
 		for(IConfigurationElement pathElem : pathElems)
 		{
-/*			String pluginId = pathElem.getAttribute("pluginId");
-			String relPath = pathElem.getAttribute("relativePath");
-
-			StringBuffer patternBuffer = new StringBuffer();
-			patternBuffer.append(".*");
-
-			if(pluginId != null)
-			{
-				for(int i = 0; i < pluginId.length(); i++)
-				{
-					char ch = pluginId.charAt(i);
-					
-					if (!Character.isLetterOrDigit(ch))
-					{
-						patternBuffer.append("\\");
-					}
-
-					patternBuffer.append(ch);
-				}
-	
-				patternBuffer.append("[^\\\\]*\\\\");
-			}
-
-			for(int i = 0; i < relPath.length(); i++)
-			{
-				char ch = relPath.charAt(i);
-
-				if (!Character.isLetterOrDigit(ch))
-				{
-					patternBuffer.append("\\");
-				}
-
-				patternBuffer.append(ch);
-			}
-
-			patternBuffer.append(".*");
-			patterns.add(patternBuffer.toString());
-*/
 			String fullPath = getPathFromElement(pathElem, quoted);
 			if(fullPath != null)
 			{
@@ -612,95 +657,41 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	}
 
 
-	private boolean doesConfigurationMatch(IProject project,
-	        IConfiguration config, IConfigurationElement enablementElem,
-	        boolean ignoreStackTracing)
-	{
-		boolean satisfiesFilter, satisfiesCondition;
-
-		String filter = enablementElem.getAttribute("configurationFilter");
-		if(filter == null)
-		{
-			satisfiesFilter = true;
-		}
-		else
-		{
-			satisfiesFilter = false;
-			String configName = config.getName();
-
-			String[] filters = filter.split(",");
-			for(String choice : filters)
-			{
-				if(choice.equals(configName))
-				{
-					satisfiesFilter = true;
-					break;
-				}
-			}
-		}
-
-		satisfiesCondition = true;
-		
-		boolean isForStackTrace = Boolean.valueOf(
-				enablementElem.getAttribute("isForStackTrace"));
-		boolean stackTraceEnabled = store.getBoolean(
-				CxxTestPlugin.CXXTEST_PREF_TRACE_STACK);
-
-		if (!ignoreStackTracing && isForStackTrace && !stackTraceEnabled)
-		{
-			satisfiesCondition = false;
-		}
-		else
-		{
-			try
-			{
-				Object condition =
-				        enablementElem.createExecutableExtension("conditionClass");
-	
-				if(condition instanceof IExtraOptionsEnablement)
-				{
-					IExtraOptionsEnablement cond =
-					        (IExtraOptionsEnablement)condition;
-					satisfiesCondition = cond.shouldProcessOptions(project, config);
-				}
-			}
-			catch(CoreException e)
-			{
-				// Do nothing, conditionClass is an optional property.
-			}
-		}
-
-		return (satisfiesFilter && satisfiesCondition);
-	}
-
-
 	// ------------------------------------------------------------------------
 	private void removeOptions(IProject project, String id, Version version)
 	{
 		SortedMap<Version, IConfigurationElement> optionsForId =
 		        optionSets.get(id);
 		if(optionsForId == null)
+		{
 			return;
+		}
 
 		Version latestVersion = getLatestVersion(id);
 		if(latestVersion == null)
+		{
 			return;
+		}
 
-		IConfigurationElement optionSet = optionsForId.get(latestVersion);
-		IConfigurationElement[] enablementElems = optionSet.getChildren("enablement");
+		IConfigurationElement optionSets = optionsForId.get(latestVersion);
+		IConfigurationElement[] optionSetElems = optionSets.getChildren("optionSet"); //$NON-NLS-1$
 
 		IManagedBuildInfo buildInfo = ManagedBuildManager.getBuildInfo(project);
 		IConfiguration[] configs =
 		        buildInfo.getManagedProject().getConfigurations();
 
-		for(IConfiguration config : configs)
+		for (IConfiguration config : configs)
 		{
-			for(IConfigurationElement enablementElem : enablementElems)
+			for (IConfigurationElement optionSet : optionSetElems)
 			{
-				if(doesConfigurationMatch(project, config, enablementElem, true))
+				boolean enabled = evaluateOptionSetEnablement(
+						optionSet, config);
+				
+				if (enabled)
 				{
 					IConfigurationElement[] toolElems =
-					        enablementElem.getChildren("tool");
+				        optionSet.getChildren("tool"); //$NON-NLS-1$
+					
 					for(IConfigurationElement toolElem : toolElems)
 					{
 						try
@@ -729,7 +720,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 		IExtensionRegistry registry = Platform.getExtensionRegistry();
 		IExtensionPoint extensionPoint =
 		        registry.getExtensionPoint(CxxTestPlugin.PLUGIN_ID
-		                + ".extraProjectOptions");
+		                + ".extraProjectOptions"); //$NON-NLS-1$
 
 		IConfigurationElement[] elements =
 		        extensionPoint.getConfigurationElements();
@@ -745,24 +736,26 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	 */
 	private void loadExtraProjectOptions(IConfigurationElement element)
 	{
-		String optionsId = element.getAttribute("id");
+		String optionsId = element.getAttribute("id"); //$NON-NLS-1$
 
-		IConfigurationElement[] optionSetElems =
-		        element.getChildren("optionSet");
+		IConfigurationElement[] optionSetsElems =
+		        element.getChildren("optionSets"); //$NON-NLS-1$
 
 		SortedMap<Version, IConfigurationElement> optionSetsForVersion =
 		        new TreeMap<Version, IConfigurationElement>();
 
-		for(IConfigurationElement optionSetElem : optionSetElems)
+		for(IConfigurationElement optionSetsElem : optionSetsElems)
 		{
 			Version version =
-			        new Version(optionSetElem.getAttribute("version"));
+			        new Version(optionSetsElem.getAttribute("version")); //$NON-NLS-1$
 
-			optionSetsForVersion.put(version, optionSetElem);
+			optionSetsForVersion.put(version, optionSetsElem);
 		}
 
 		if(optionSetsForVersion.size() != 0)
+		{
 			optionSets.put(optionsId, optionSetsForVersion);
+		}
 	}
 
 
@@ -811,13 +804,13 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	 * option handler's settings.
 	 */
 	private static final String PROPERTIES_FILE =
-	        ".cxxtest.versions.properties";
+	        ".cxxtest.versions.properties"; //$NON-NLS-1$
 
 	/**
 	 * A comment added to the top of the option version properties file.
 	 */
 	private static final String PROPERTIES_COMMENT =
-	        "Automatically generated file -- DO NOT MODIFY";
+	        "Automatically generated file -- DO NOT MODIFY"; //$NON-NLS-1$
 
 
 	// === Instance Variables =================================================
@@ -830,8 +823,6 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 	 * their version number.
 	 */
 	private Map<String, SortedMap<Version, IConfigurationElement>> optionSets;
-	
-	private IPreferenceStore store;
 	
 	private boolean isWindows;
 }

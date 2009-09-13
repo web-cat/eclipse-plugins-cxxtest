@@ -104,9 +104,9 @@ public class CxxTestSuiteGenerator
 							if(!(stubElements[j] instanceof ITranslationUnit))
 								jPrefix = stubElements[j].getElementName();
 							else
-								jPrefix = "_global";
+								jPrefix = "_global"; //$NON-NLS-1$
 							
-							stubNames[j] = jPrefix + "_" + stubNames[j];
+							stubNames[j] = jPrefix + "_" + stubNames[j]; //$NON-NLS-1$
 							
 							anotherPass = true;
 							fixIthName = true;
@@ -124,9 +124,9 @@ public class CxxTestSuiteGenerator
 						if(!(stubElements[i] instanceof ITranslationUnit))
 							iPrefix = stubElements[i].getElementName();
 						else
-							iPrefix = "_global";
+							iPrefix = "_global"; //$NON-NLS-1$
 		
-						stubNames[i] = iPrefix + "_" + stubNames[i];
+						stubNames[i] = iPrefix + "_" + stubNames[i]; //$NON-NLS-1$
 					}
 					
 					fixIthName = false;
@@ -147,7 +147,7 @@ public class CxxTestSuiteGenerator
         IWorkingCopy suiteWorkingCopy = createdSuite.getWorkingCopy();
 
         String suiteContent = constructHeaderFileContent(createdSuite,
-        		"", //suiteWorkingCopy.getBuffer().getContents(),
+        		"", //suiteWorkingCopy.getBuffer().getContents(), //$NON-NLS-1$
         		new SubProgressMonitor(monitor, 100));
         suiteWorkingCopy.getBuffer().setContents(suiteContent);
 
@@ -169,8 +169,7 @@ public class CxxTestSuiteGenerator
     		String oldContents, IProgressMonitor monitor)
     {
         monitor.beginTask(
-        		NewClassWizardMessages.
-        		NewClassCodeGeneration_createType_task_header, 100);
+        		NewClassWizardMessages.NewClassCodeGeneration_createType_task_header, 100); //$NON-NLS-1$
         
         if (oldContents != null && oldContents.length() == 0)
             oldContents = null;
@@ -198,11 +197,11 @@ public class CxxTestSuiteGenerator
     
     private void appendFilePrologue(StringBuffer text)
     {
-    	String guardSymbol = suiteName.toUpperCase() + "_H_";
-    	text.append("#ifndef " + guardSymbol + "\n");
-    	text.append("#define " + guardSymbol + "\n\n");
+    	String guardSymbol = suiteName.toUpperCase() + "_H_"; //$NON-NLS-1$
+    	text.append("#ifndef " + guardSymbol + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
+    	text.append("#define " + guardSymbol + "\n\n"); //$NON-NLS-1$ //$NON-NLS-2$
     	
-    	text.append("#include <cxxtest/TestSuite.h>\n\n");
+    	text.append("#include <cxxtest/TestSuite.h>\n\n"); //$NON-NLS-1$
     	
     	if(headerUnderTestPath != null)
     	{
@@ -211,31 +210,31 @@ public class CxxTestSuiteGenerator
     		int matchingSegs = headerAbsPath.matchingFirstSegments(suiteAbsPath);
     		IPath includePath = headerAbsPath.removeFirstSegments(matchingSegs);
 
-    		text.append("#include \"" + includePath.toOSString() + "\"\n\n");
+    		text.append("#include \"" + includePath.toOSString() + "\"\n\n"); //$NON-NLS-1$ //$NON-NLS-2$
     	}
     }
 
     private void appendClassPrologue(StringBuffer text)
     {
-    	text.append("class " + suiteName + " : public " + superClass + "\n");
-    	text.append("{\n");
-    	text.append("public:\n");
+    	text.append("class " + suiteName + " : public " + superClass + "\n"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+    	text.append("{\n"); //$NON-NLS-1$
+    	text.append("public:\n"); //$NON-NLS-1$
     }
 
     private void appendSetUp(StringBuffer text)
     {
-    	text.append("\tvoid setUp()\n");
-    	text.append("\t{\n");
-    	text.append("\t\t// TODO: Implement setUp() function.\n");
-    	text.append("\t}\n\n");
+    	text.append("\tvoid setUp()\n"); //$NON-NLS-1$
+    	text.append("\t{\n"); //$NON-NLS-1$
+    	text.append("\t\t// TODO: Implement setUp() function.\n"); //$NON-NLS-1$
+    	text.append("\t}\n\n"); //$NON-NLS-1$
     }
 
     private void appendTearDown(StringBuffer text)
     {
-    	text.append("\tvoid tearDown()\n");
-    	text.append("\t{\n");
-    	text.append("\t\t// TODO: Implement tearDown() function.\n");
-    	text.append("\t}\n\n");
+    	text.append("\tvoid tearDown()\n"); //$NON-NLS-1$
+    	text.append("\t{\n"); //$NON-NLS-1$
+    	text.append("\t\t// TODO: Implement tearDown() function.\n"); //$NON-NLS-1$
+    	text.append("\t}\n\n"); //$NON-NLS-1$
     }
 
     private void appendFunctionStubs(StringBuffer text)
@@ -244,24 +243,24 @@ public class CxxTestSuiteGenerator
     	{
     		String name = stubNames[i];
 
-    		name = "test" + Character.toUpperCase(name.charAt(0)) +
+    		name = "test" + Character.toUpperCase(name.charAt(0)) + //$NON-NLS-1$
     			name.substring(1);
     		
-        	text.append("\tvoid " + name + "()\n");
-        	text.append("\t{\n");
-        	text.append("\t\t// TODO: Implement " + name + "() function.\n");
-        	text.append("\t}\n\n");    		
+        	text.append("\tvoid " + name + "()\n"); //$NON-NLS-1$ //$NON-NLS-2$
+        	text.append("\t{\n"); //$NON-NLS-1$
+        	text.append("\t\t// TODO: Implement " + name + "() function.\n"); //$NON-NLS-1$ //$NON-NLS-2$
+        	text.append("\t}\n\n");    		 //$NON-NLS-1$
     	}
     }
 
     private void appendClassEpilogue(StringBuffer text)
     {
-    	text.append("};\n\n");
+    	text.append("};\n\n"); //$NON-NLS-1$
     }
 
     private void appendFileEpilogue(StringBuffer text)
     {
-    	String guardSymbol = suiteName.toUpperCase() + "_H_";
-    	text.append("#endif /*" + guardSymbol + "*/\n");
+    	String guardSymbol = suiteName.toUpperCase() + "_H_"; //$NON-NLS-1$
+    	text.append("#endif /*" + guardSymbol + "*/\n"); //$NON-NLS-1$ //$NON-NLS-2$
     }
 }

@@ -1,3 +1,24 @@
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.bfd;
 
 import java.io.BufferedReader;
@@ -6,6 +27,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 
+//------------------------------------------------------------------------
+/**
+ * TODO: real description
+ *  
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
+ */
 public class ProcessClosure
 {
 	protected static class ReaderThread extends Thread
@@ -17,7 +46,7 @@ public class ProcessClosure
 			outputStream = out;
 			inputStream = in;
 			setDaemon(true);
-			lineSeparator = System.getProperty("line.separator");
+			lineSeparator = System.getProperty("line.separator"); //$NON-NLS-1$
 		}
 		
 		@Override
@@ -132,13 +161,13 @@ public class ProcessClosure
 	
 	public void runNonBlocking()
 	{
-		ThreadGroup group = new ThreadGroup("CBuilder" + counter++);
+		ThreadGroup group = new ThreadGroup("CBuilder" + counter++); //$NON-NLS-1$
 		
 		InputStream stdout = process.getInputStream();
 		InputStream stderr = process.getErrorStream();
 		
-		outputReader = new ReaderThread(group, "OutputReader", stdout, output);
-		errorReader = new ReaderThread(group, "ErrorReader", stderr, error);
+		outputReader = new ReaderThread(group, "OutputReader", stdout, output); //$NON-NLS-1$
+		errorReader = new ReaderThread(group, "ErrorReader", stderr, error); //$NON-NLS-1$
 		
 		outputReader.start();
 		errorReader.start();

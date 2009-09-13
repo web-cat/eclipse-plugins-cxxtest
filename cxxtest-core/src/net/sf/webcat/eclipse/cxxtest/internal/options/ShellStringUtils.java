@@ -1,20 +1,24 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.internal.options;
 
 import java.util.ArrayList;
@@ -26,7 +30,9 @@ import java.util.regex.Matcher;
  * are handled properly, rather than simply splitting across any delimiting
  * whitespace.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class ShellStringUtils
 {
@@ -200,11 +206,11 @@ public class ShellStringUtils
 	 */
 	public static String quoteIfNecessary(String str)
 	{
-		str = str.replaceAll("\"", Matcher.quoteReplacement("\\\""));
+		str = str.replaceAll("\"", Matcher.quoteReplacement("\\\"")); //$NON-NLS-1$ //$NON-NLS-2$
 
 		if (str.indexOf(' ') != -1)
 		{
-			return "\"" + str + "\"";
+			return "\"" + str + "\""; //$NON-NLS-1$ //$NON-NLS-2$
 		}
 		else
 		{
@@ -238,7 +244,7 @@ public class ShellStringUtils
 		// safe, we'll just escape anything that isn't a character, digit,
 		// underscore, hyphen, or forward slash (common path characters).
 		
-		if (path.endsWith("/"))
+		if (path.endsWith("/")) //$NON-NLS-1$
 		{
 			path = path.substring(0, path.length() - 1);
 		}
@@ -260,14 +266,13 @@ public class ShellStringUtils
 		
 		if (isDirectory)
 		{
-			buffer.append("/?");
+			buffer.append("/?"); //$NON-NLS-1$
 		}
 
 		String escapedPath = buffer.toString();
 
-		String versionRegex = "_[^.]+\\.[^.]+\\.[^./]+(\\.[^/]+)?/";
-		return escapedPath.replaceFirst(versionRegex,
-				Matcher.quoteReplacement(versionRegex));
+		return escapedPath.replaceFirst(VERSION_REGEX,
+				Matcher.quoteReplacement(VERSION_REGEX));
 	}
 
 
@@ -289,4 +294,7 @@ public class ShellStringUtils
 	private static final int STATE_SQUOTE = 5;
 
 	private static final int STATE_ESCAPE_IN_SQUOTE = 6;
+	
+	private static final String VERSION_REGEX =
+		"_[^.]+\\.[^.]+\\.[^./]+(\\.[^/]+)?/"; //$NON-NLS-1$ 
 }

@@ -1,26 +1,32 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.Map;
 
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 import net.sf.webcat.eclipse.cxxtest.internal.MutableBoolean;
 import net.sf.webcat.eclipse.cxxtest.internal.generator.TestCaseVisitor;
 import net.sf.webcat.eclipse.cxxtest.internal.generator.TestRunnerGenerator;
@@ -29,6 +35,7 @@ import net.sf.webcat.eclipse.cxxtest.options.IExtraOptionsUpdater;
 
 import org.eclipse.cdt.core.CCorePlugin;
 import org.eclipse.cdt.core.model.ICProject;
+import org.eclipse.cdt.managedbuilder.core.IConfiguration;
 import org.eclipse.cdt.managedbuilder.core.IManagedBuildInfo;
 import org.eclipse.cdt.managedbuilder.core.ManagedBuildManager;
 import org.eclipse.core.resources.IFile;
@@ -45,16 +52,22 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.swt.widgets.Display;
 
+//------------------------------------------------------------------------
 /**
  * This builder iterates through the classes in the C++ project, determines
  * which ones represent CxxTest test suites, and generates the test runner
  * source file.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
- * @author Stephen Edwards  (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  Stephen Edwards  (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 {
+	//~ Methods ...............................................................
+
+	// ----------------------------------------------------------
 	/**
 	 * Called by the IDE when the project is built. This method traverses the
 	 * project DOM, collects the test cases, and builds the test runner source
@@ -81,8 +94,10 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 				public void run()
                 {
 					boolean result = MessageDialog.openQuestion(null,
-							"Upgrade Project Settings",
-							"This project was created with an older version of CxxTest. Would you like to upgrade its settings to the current version?\n\nIf you choose \"No\", the project will likely not compile properly.");
+							Messages.CxxTestDriverBuilder_UpgradeProjectSettingsTitle,
+							MessageFormat.format(
+									Messages.CxxTestDriverBuilder_UpgradeProjectSettingsMessage,
+									project.getName()));
 
 					if(result)
 					{
@@ -100,7 +115,7 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 			return null;
 		}
 
-		monitor.beginTask("Generating CxxTest Driver", 3);
+		monitor.beginTask(Messages.CxxTestDriverBuilder_GeneratingDriverTaskDescription, 3);
 
 		// Delete the existing test runner source file.
 		String outputFile = getDriverFileName();
@@ -121,7 +136,7 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		{
 			// Generate the .cpp file that will run all the tests.
 			File projectDir = getProject().getLocation().toFile();
-			String fullPath = projectDir.toString() + "/" + outputFile;
+			String fullPath = projectDir.toString() + "/" + outputFile; //$NON-NLS-1$
 
 			//IPath exePath = getExecutableFile().getProjectRelativePath();
 
@@ -132,8 +147,11 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 			boolean traceStack = store.getBoolean(
 					CxxTestPlugin.CXXTEST_PREF_TRACE_STACK);
 
+			IManagedBuildInfo buildInfo = ManagedBuildManager.getBuildInfo(project);
+			IConfiguration config = buildInfo.getDefaultConfiguration();
+
 			String[] extraIncludes = CxxTestPlugin.getDefault().
-				getExtraOptionsUpdater().getLatestCxxTestRunnerIncludes(project);
+				getExtraOptionsUpdater().getLatestCxxTestRunnerIncludes(config);
 
 			TestRunnerGenerator generator = new TestRunnerGenerator(
 					cproject, fullPath, suites, null);
@@ -149,8 +167,9 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		catch(IOException e)
 		{
 			setProblemMarker(ICxxTestConstants.MARKER_INVOCATION_PROBLEM,
-					"An error occurred when generating the test runner " +
-					"source file: " + e.getMessage());
+					MessageFormat.format(
+							Messages.CxxTestDriverBuilder_ErrorGeneratingDriver,
+							e.getMessage()));
 		}
 
 		monitor.worked(1);
@@ -165,7 +184,10 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		return null;
 	}
 
-/*	private IFile getExecutableFile()
+
+	// ----------------------------------------------------------
+	@SuppressWarnings("unused")
+	private IFile getExecutableFile()
 	{
 		IProject project = getProject();
 
@@ -179,12 +201,14 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		String exeExtension = buildInfo.getBuildArtifactExtension();
 
 		if(exeExtension.length() > 0)
-			exeName += "." + exeExtension;
+			exeName += "." + exeExtension; //$NON-NLS-1$
 
-		IFile file = project.getFile(configuration.getName() + "/" + exeName);
+		IFile file = project.getFile(configuration.getName() + "/" + exeName); //$NON-NLS-1$
 		return file;
-	}*/
+	}
 
+
+	// ----------------------------------------------------------
 	public boolean checkForRebuild()
 	{
 		IProject project = getProject();
@@ -223,13 +247,13 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 				IResource resource = children[i].getResource();
 				String fileExt = resource.getFileExtension();
 				boolean isStackDump = (fileExt != null && fileExt
-						.endsWith("stackdump"))
+						.endsWith("stackdump")) //$NON-NLS-1$
 						|| (resource.getType() == IResource.FILE && resource
-								.getName().startsWith("core"));
+								.getName().startsWith("core")); //$NON-NLS-1$
 				boolean notInConfigBuildDir = j == configurations.length;
 
 				// Finally, ignore dot-files.
-				boolean isDotFile = resource.getName().startsWith(".");
+				boolean isDotFile = resource.getName().startsWith("."); //$NON-NLS-1$
 
 				// If the child isn't in any of the configuration-based
 				// binary build directories in the project and isn't a
@@ -245,6 +269,8 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		return changeRequiresRebuild;
 	}
 
+
+	// ----------------------------------------------------------
 	/**
 	 * Gets the name of the test runner source file as specified in the
 	 * workbench preferences.
@@ -262,11 +288,13 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 			outputFile = outputFile.trim();
 	
 		if (outputFile == null || outputFile.length() == 0)
-			outputFile = "runAllTests.cpp";
+			outputFile = ICxxTestConstants.DEFAULT_DRIVER_FILENAME;
 		
 		return outputFile;
 	}
 
+
+	// ----------------------------------------------------------
 	/**
 	 * Creates a generic problem marker in the project with the specified
 	 * id and message.
@@ -284,6 +312,8 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 		marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
 	}
 
+
+	// ----------------------------------------------------------
 	/**
 	 * Called when the user cleans the project. Here we want to delete any
 	 * markers that may have been generated by the test runner. 

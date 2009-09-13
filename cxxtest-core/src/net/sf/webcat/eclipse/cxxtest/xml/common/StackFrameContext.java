@@ -1,36 +1,46 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
-package net.sf.webcat.eclipse.cxxtest.xml.common;
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
 
-import org.xml.sax.Attributes;
+package net.sf.webcat.eclipse.cxxtest.xml.common;
 
 import net.sf.webcat.eclipse.cxxtest.internal.model.CxxTestStackFrame;
 import net.sf.webcat.eclipse.cxxtest.xml.ElementContext;
 
+import org.xml.sax.Attributes;
+
+/**
+ * 
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
+ */
 public class StackFrameContext extends ElementContext
 {
 	public StackFrameContext(IStackFrameConsumer frameConsumer, Attributes attributes)
 	{
-		String function = attributes.getValue("function");
+		String function = attributes.getValue(ATTR_FUNCTION); //$NON-NLS-1$
 		String file = null;
 		int lineNumber = 0;
 		
-		String fileLine = attributes.getValue("location");
+		String fileLine = attributes.getValue(ATTR_LOCATION); //$NON-NLS-1$
 		if(fileLine != null)
 		{
 			int colonPos = fileLine.lastIndexOf(':');
@@ -58,4 +68,8 @@ public class StackFrameContext extends ElementContext
 		CxxTestStackFrame frame = new CxxTestStackFrame(function, file, lineNumber);
 		frameConsumer.addStackFrame(frame);
 	}
+	
+	
+	private static final String ATTR_FUNCTION = "function"; //$NON-NLS-1$
+	private static final String ATTR_LOCATION = "location"; //$NON-NLS-1$
 }

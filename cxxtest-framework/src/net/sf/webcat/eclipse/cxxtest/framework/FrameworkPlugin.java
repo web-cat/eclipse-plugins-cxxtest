@@ -69,7 +69,7 @@ public class FrameworkPlugin extends Plugin {
 
 		try
 		{
-			URL entry = FileLocator.find(getBundle(), new Path("/cxxtest"), null);
+			URL entry = FileLocator.find(getBundle(), new Path("/cxxtest"), null); //$NON-NLS-1$
 			URL url = FileLocator.resolve(entry);
 			path = url.getFile();
 

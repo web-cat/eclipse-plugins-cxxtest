@@ -1,24 +1,29 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.internal.model;
 
 import java.text.MessageFormat;
 
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestAssertion;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestStackFrame;
@@ -29,7 +34,9 @@ import org.xml.sax.Attributes;
  * Creates an appropriate object of type ICxxTestAssertion based on the tag
  * type and attributes from the XML results file.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class CxxTestAssertionFactory
 {
@@ -45,7 +52,8 @@ public class CxxTestAssertionFactory
 		
 		private int lineNumber;
 
-		public Assertion(CxxTestMethod parent, int lineNumber, int status, String message, String[] args)
+		public Assertion(CxxTestMethod parent, int lineNumber, int status,
+				String message, String[] args)
 		{
 			this.parent = parent;
 			this.status = status;
@@ -61,11 +69,17 @@ public class CxxTestAssertionFactory
 			String[] realArgs = args.clone();
 
 			if(includeLine)
-				realArgs[0] = " (line " + realArgs[0] + ")";
+			{
+				realArgs[0] = MessageFormat.format(
+						Messages.CxxTestAssertionFactory_LineNumber,
+						realArgs[0]);
+			}
 			else
-				realArgs[0] = "";
+			{
+				realArgs[0] = ""; //$NON-NLS-1$
+			}
 
-			return MessageFormat.format(message, (Object[])realArgs);
+			return MessageFormat.format(message, (Object[]) realArgs);
 		}
 
 		public ICxxTestBase getParent()
@@ -89,201 +103,296 @@ public class CxxTestAssertionFactory
 		}
 	}
 
-	private static final String MSG_TRACE = "Trace{0}: {1}";
+	private static final String MSG_TRACE =
+		Messages.CxxTestAssertionFactory_TraceMsg;
 
 	private static final String MSG_FAILED_ASSERT =
-		"Failed assertion{0}: expected {1} == true, but found false";
+		Messages.CxxTestAssertionFactory_FailedAssertMsg;
 
 	private static final String MSG_FAILED_ASSERT_EQ =
-		"Failed assertion{0}: expected {1} == {2}, but found {3} != {4}";
+		Messages.CxxTestAssertionFactory_FailedAssertEq;
 
 	private static final String MSG_FAILED_ASSERT_SAME_DATA =
-		"Failed assertion{0}: expected {5} ({6}) bytes equal at {1} and {2}, but found {3} differs from {4}";
+		Messages.CxxTestAssertionFactory_FailedAssertSameData;
 
 	private static final String MSG_FAILED_ASSERT_DELTA =
-		"Failed assertion{0}: expected {1} == {2} to within {5} ({6}), but found {3} != {4}";
+		Messages.CxxTestAssertionFactory_FailedAssertDelta;
 
 	private static final String MSG_FAILED_ASSERT_NE =
-		"Failed assertion{0}: expected {1} != {2}, but found both equal {3}";
+		Messages.CxxTestAssertionFactory_FailedAssertNe;
 
 	private static final String MSG_FAILED_ASSERT_LT =
-		"Failed assertion{0}: expected {1} < {2}, but found {3} >= {4}";
+		Messages.CxxTestAssertionFactory_FailedAssertLt;
 
 	private static final String MSG_FAILED_ASSERT_LE = 
-		"Failed assertion{0}: expected {1} <= {2}, but found {3} > {4}";
+		Messages.CxxTestAssertionFactory_FailedAssertLe;
 
 	private static final String MSG_FAILED_ASSERT_RELATION =
-		"Failed assertion{0}: expected {5}({1}, {2}) == true, but found {5}({3}, {4}) == false";
+		Messages.CxxTestAssertionFactory_FailedAssertRelation;
 
 	private static final String MSG_FAILED_ASSERT_PREDICATE =
-		"Failed assertion{0}: expected {3}({1}) == true, but found {3}({2}) == false";
+		Messages.CxxTestAssertionFactory_FailedAssertPredicate;
 
 	private static final String MSG_FAILED_ASSERT_THROWS = 
-		"Failed assertion{0}: expected \"{1}\" to throw \"{2}\", but {3}";
+		Messages.CxxTestAssertionFactory_FailedAssertThrows;
 
 	private static final String MSG_FAILED_ASSERT_NOTHROW =
-		"Failed assertion{0}: expected \"{1}\" not to throw an exception, but it did";
+		Messages.CxxTestAssertionFactory_FailedAssertNoThrow;
 
-	static public ICxxTestAssertion create(CxxTestMethod parent, String type, Attributes attributes)
+	static public ICxxTestAssertion create(CxxTestMethod parent, String type,
+			Attributes attributes)
 	{
-		if("trace".equals(type))
+		if(ICxxTestXml.TAG_TRACE.equals(type))
+		{
 			return createTrace(parent, attributes);
-		else if("warning".equals(type))
+		}
+		else if(ICxxTestXml.TAG_WARNING.equals(type))
+		{
 			return createWarning(parent, attributes);
-		else if("failed-test".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_TEST.equals(type))
+		{
 			return createFailedTest(parent, attributes);
-		else if("failed-assert".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT.equals(type))
+		{
 			return createFailedAssert(parent, attributes);
-		else if("failed-assert-eq".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT_EQ.equals(type))
+		{
 			return createFailedAssertEq(parent, attributes);
-		else if("failed-assert-same-data".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT_SAME_DATA.equals(type))
+		{
 			return createFailedAssertSameData(parent, attributes);
-		else if("failed-assert-delta".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT_DELTA.equals(type))
+		{
 			return createFailedAssertDelta(parent, attributes);
-		else if("failed-assert-ne".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT_NE.equals(type))
+		{
 			return createFailedAssertNe(parent, attributes);
-		else if("failed-assert-lt".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT_LT.equals(type))
+		{
 			return createFailedAssertLt(parent, attributes);
-		else if("failed-assert-le".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT_LE.equals(type))
+		{
 			return createFailedAssertLe(parent, attributes);
-		else if("failed-assert-relation".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT_RELATION.equals(type))
+		{
 			return createFailedAssertRelation(parent, attributes);
-		else if("failed-assert-predicate".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT_PREDICATE.equals(type))
+		{
 			return createFailedAssertPredicate(parent, attributes);
-		else if("failed-assert-throws".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT_THROWS.equals(type))
+		{
 			return createFailedAssertThrows(parent, attributes);
-		else if("failed-assert-nothrow".equals(type))
+		}
+		else if(ICxxTestXml.TAG_FAILED_ASSERT_NOTHROW.equals(type))
+		{
 			return createFailedAssertNoThrow(parent, attributes);
+		}
 		else
+		{
 			return null;
+		}
 	}
 
-	private static String[] getAttributeValues(Attributes attributes, String[] attrNames)
+	private static String[] getAttributeValues(Attributes attributes,
+			String... attrNames)
 	{
 		String[] values = new String[attrNames.length];
 		
 		for(int i = 0; i < attrNames.length; i++)
+		{
 			values[i] = attributes.getValue(attrNames[i]);
+		}
 		
 		return values;
 	}
 
 	private static int getLineNumber(Attributes attributes)
 	{
-		String value = attributes.getValue("line");
+		String value = attributes.getValue(ICxxTestXml.ATTR_LINE);
 		return Integer.parseInt(value);
 	}
 
-	private static ICxxTestAssertion createTrace(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createTrace(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] { "line", "message" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE, ICxxTestXml.ATTR_MESSAGE);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_OK, MSG_TRACE, values);
+		return new Assertion(parent, line, ICxxTestBase.STATUS_OK,
+				MSG_TRACE, values);
 	}
 
-	private static ICxxTestAssertion createWarning(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createWarning(
+			CxxTestMethod parent, Attributes node)
 	{
 		int line = getLineNumber(node);
-		return new StackTraceAssertion(parent, line, ICxxTestBase.STATUS_WARNING);
+		return new StackTraceAssertion(parent, line,
+				ICxxTestBase.STATUS_WARNING);
 	}
 
-	private static ICxxTestAssertion createFailedTest(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedTest(
+			CxxTestMethod parent, Attributes node)
 	{
 		int line = getLineNumber(node);
-		return new StackTraceAssertion(parent, line, ICxxTestBase.STATUS_ERROR);
+		return new StackTraceAssertion(parent, line,
+				ICxxTestBase.STATUS_ERROR);
 	}
 
-	private static ICxxTestAssertion createFailedAssert(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssert(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] { "line", "expression" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE, ICxxTestXml.ATTR_EXPRESSION);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT, values);
 	}
 
-	private static ICxxTestAssertion createFailedAssertEq(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssertEq(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] {
-				"line", "lhs-desc", "rhs-desc", "lhs-value", "rhs-value" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE,
+				ICxxTestXml.ATTR_LHS_DESC, ICxxTestXml.ATTR_RHS_DESC,
+				ICxxTestXml.ATTR_LHS_VALUE, ICxxTestXml.ATTR_RHS_VALUE);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_EQ, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_EQ, values);
 	}
 
-	private static ICxxTestAssertion createFailedAssertSameData(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssertSameData(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] {
-				"line", "lhs-desc", "rhs-desc", "lhs-value", "rhs-value", "size-desc", "size-value" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE,
+				ICxxTestXml.ATTR_LHS_DESC, ICxxTestXml.ATTR_RHS_DESC,
+				ICxxTestXml.ATTR_LHS_VALUE, ICxxTestXml.ATTR_RHS_VALUE,
+				ICxxTestXml.ATTR_SIZE_DESC, ICxxTestXml.ATTR_SIZE_VALUE);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_SAME_DATA, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_SAME_DATA,
+				values);
 	}
 
-	private static ICxxTestAssertion createFailedAssertDelta(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssertDelta(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] {
-				"line", "lhs-desc", "rhs-desc", "lhs-value", "rhs-value", "delta-desc", "delta-value" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE,
+				ICxxTestXml.ATTR_LHS_DESC, ICxxTestXml.ATTR_RHS_DESC,
+				ICxxTestXml.ATTR_LHS_VALUE, ICxxTestXml.ATTR_RHS_VALUE,
+				ICxxTestXml.ATTR_DELTA_DESC, ICxxTestXml.ATTR_DELTA_VALUE);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_DELTA, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_DELTA, values);
 	}
 
-	private static ICxxTestAssertion createFailedAssertNe(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssertNe(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] {
-				"line", "lhs-desc", "rhs-desc", "value" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE,
+				ICxxTestXml.ATTR_LHS_DESC, ICxxTestXml.ATTR_RHS_DESC,
+				ICxxTestXml.ATTR_VALUE);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_NE, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_NE, values);
 	}
 
-	private static ICxxTestAssertion createFailedAssertLt(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssertLt(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] {
-				"line", "lhs-desc", "rhs-desc", "lhs-value", "rhs-value" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE,
+				ICxxTestXml.ATTR_LHS_DESC, ICxxTestXml.ATTR_RHS_DESC,
+				ICxxTestXml.ATTR_LHS_VALUE, ICxxTestXml.ATTR_RHS_VALUE);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_LT, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_LT, values);
 	}
 
-	private static ICxxTestAssertion createFailedAssertLe(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssertLe(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] {
-				"line", "lhs-desc", "rhs-desc", "lhs-value", "rhs-value" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE,
+				ICxxTestXml.ATTR_LHS_DESC, ICxxTestXml.ATTR_RHS_DESC,
+				ICxxTestXml.ATTR_LHS_VALUE, ICxxTestXml.ATTR_RHS_VALUE);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_LE, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_LE, values);
 	}
 
-	private static ICxxTestAssertion createFailedAssertRelation(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssertRelation(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] {
-				"line", "lhs-desc", "rhs-desc", "lhs-value", "rhs-value", "relation" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE,
+				ICxxTestXml.ATTR_LHS_DESC, ICxxTestXml.ATTR_RHS_DESC,
+				ICxxTestXml.ATTR_LHS_VALUE, ICxxTestXml.ATTR_RHS_VALUE,
+				ICxxTestXml.ATTR_RELATION);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_RELATION, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_RELATION,
+				values);
 	}
 
-	private static ICxxTestAssertion createFailedAssertPredicate(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssertPredicate(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] {
-				"line", "arg-desc", "arg-desc", "predicate" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE,
+				ICxxTestXml.ATTR_ARG_DESC, ICxxTestXml.ATTR_ARG_VALUE,
+				ICxxTestXml.ATTR_PREDICATE);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_PREDICATE, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_PREDICATE,
+				values);
 	}
 
-	private static ICxxTestAssertion createFailedAssertThrows(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssertThrows(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] {
-				"line", "expression", "type", "threw" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE, ICxxTestXml.ATTR_EXPRESSION,
+				ICxxTestXml.ATTR_TYPE, ICxxTestXml.ATTR_THREW);
 		
 		int line = getLineNumber(node);
 
-		if(values[3].equals("other"))
-			values[3] = "it threw a different type";
+		if(values[3].equals(
+				Messages.CxxTestAssertionFactory_AssertThrowsOtherValue))
+		{
+			values[3] =
+				Messages.CxxTestAssertionFactory_AssertThrewDifferentTypeMsg;
+		}
 		else
-			values[3] = "it threw nothing";
+		{
+			values[3] =
+				Messages.CxxTestAssertionFactory_AssertThrewNothingMsg;
+		}
 
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_THROWS, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_THROWS, values);
 	}
 
-	private static ICxxTestAssertion createFailedAssertNoThrow(CxxTestMethod parent, Attributes node)
+	private static ICxxTestAssertion createFailedAssertNoThrow(
+			CxxTestMethod parent, Attributes node)
 	{
-		String[] values = getAttributeValues(node, new String[] {
-				"line", "expression" });
+		String[] values = getAttributeValues(node,
+				ICxxTestXml.ATTR_LINE, ICxxTestXml.ATTR_EXPRESSION);
 		int line = getLineNumber(node);
-		return new Assertion(parent, line, ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_NOTHROW, values);
+		return new Assertion(parent, line,
+				ICxxTestBase.STATUS_FAILED, MSG_FAILED_ASSERT_NOTHROW, values);
 	}
 }

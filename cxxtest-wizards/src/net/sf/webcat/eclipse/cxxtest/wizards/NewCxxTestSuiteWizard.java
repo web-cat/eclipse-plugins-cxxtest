@@ -21,6 +21,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import net.sf.webcat.eclipse.cxxtest.wizards.i18n.Messages;
+
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
@@ -52,7 +54,7 @@ public class NewCxxTestSuiteWizard extends Wizard implements INewWizard
 	public NewCxxTestSuiteWizard()
 	{
 		setNeedsProgressMonitor(true);
-		setWindowTitle("New CxxTest Suite");
+		setWindowTitle(Messages.NewCxxTestSuiteWizard_WizardTitle);
 		initializeDefaultPageImageDescriptor();
 	}
 
@@ -68,7 +70,7 @@ public class NewCxxTestSuiteWizard extends Wizard implements INewWizard
 		{
 			ImageDescriptor id = ImageDescriptor.createFromURL(
 					new URL(Platform.getBundle(CxxTestWizardsPlugin.PLUGIN_ID).
-							getEntry("/icons/"), "newtest_wiz.gif"));
+							getEntry("/icons/"), "newtest_wiz.gif")); //$NON-NLS-1$ //$NON-NLS-2$
 			setDefaultPageImageDescriptor(id);
 		}
 		catch (MalformedURLException e)
@@ -92,7 +94,7 @@ public class NewCxxTestSuiteWizard extends Wizard implements INewWizard
 
 		IPath suitePath = Path.fromPortableString(
 				pageOne.getSourceFolder().toPortableString());
-		suitePath = suitePath.append(pageOne.getSuiteName() + ".h");
+		suitePath = suitePath.append(pageOne.getSuiteName() + ".h"); //$NON-NLS-1$
 		IFunctionDeclaration[] functionStubs = pageTwo.getCheckedFunctions();
 
 		final CxxTestSuiteGenerator generator = new CxxTestSuiteGenerator(

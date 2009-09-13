@@ -1,27 +1,33 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest.ui;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.MessageFormat;
 
 import net.sf.webcat.eclipse.cxxtest.ICxxTestConstants;
+import net.sf.webcat.eclipse.cxxtest.i18n.Messages;
 import net.sf.webcat.eclipse.cxxtest.model.ICxxTestBase;
 import net.sf.webcat.eclipse.cxxtest.model.IDerefereeSummary;
 import net.sf.webcat.eclipse.cxxtest.model.IDerefereeLeak;
@@ -76,11 +82,12 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * A tab that displays a summary of memory allocation and leaks that occurred
  * during the program execution. 
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 @SuppressWarnings("restriction")
-public class TestMemoryTab extends TestRunTab
-	implements ISelectionProvider
+public class TestMemoryTab extends TestRunTab implements ISelectionProvider
 {
 	private TreeViewer viewer;
 
@@ -94,9 +101,12 @@ public class TestMemoryTab extends TestRunTab
 	
 	private TestRunnerViewPart testRunnerView;
 	
-	private final Image leakNoArrayIcon = TestRunnerViewPart.createImage("obj16/leak_noarray.gif");
-	private final Image leakArrayIcon = TestRunnerViewPart.createImage("obj16/leak_array.gif");
-	private final Image memoryTabIcon = TestRunnerViewPart.createImage("obj16/memory.gif");
+	private final Image leakNoArrayIcon =
+		TestRunnerViewPart.createImage("obj16/leak_noarray.gif"); //$NON-NLS-1$
+	private final Image leakArrayIcon =
+		TestRunnerViewPart.createImage("obj16/leak_array.gif"); //$NON-NLS-1$
+	private final Image memoryTabIcon =
+		TestRunnerViewPart.createImage("obj16/memory.gif"); //$NON-NLS-1$
 
 	private StackLayout stackLayout;
 
@@ -166,12 +176,15 @@ public class TestMemoryTab extends TestRunTab
 
 				if(leaksShown != actualLeaks)
 				{
-					msg = "" + actualLeaks + " memory leaks found (" +
-						leaksShown + " shown)";
+					msg = MessageFormat.format(
+							Messages.TestMemoryTab_NumMemoryLeaksElided,
+							actualLeaks, leaksShown);
 				}
 				else
 				{
-					msg = "" + leaksShown + " memory leaks found";
+					msg = MessageFormat.format(
+							Messages.TestMemoryTab_NumMemoryLeaks,
+							actualLeaks);
 				}
 
 				return msg;
@@ -222,7 +235,7 @@ public class TestMemoryTab extends TestRunTab
 		testTreePanel.setLayoutData(gridData);
 		
 		memoryTab.setControl(testTreePanel);
-		memoryTab.setToolTipText("Memory Usage"); 
+		memoryTab.setToolTipText(Messages.TestMemoryTab_MemoryUsageTooltip); 
 		
 		viewer = new TreeViewer(testTreePanel, SWT.V_SCROLL | SWT.SINGLE);
 		gridData= new GridData(GridData.FILL_BOTH |
@@ -245,8 +258,8 @@ public class TestMemoryTab extends TestRunTab
 		toolkit = new FormToolkit(display);
 		errorMsgField = new ScrolledFormText(testTreePanel, true);
 		errorMsgField.setBackground(toolkit.getColors().getBackground());
-		errorMsgField.getFormText().setColor("error",
-				toolkit.getColors().createColor("error", 255, 0, 0));
+		errorMsgField.getFormText().setColor(ERROR_COLOR_KEY,
+				toolkit.getColors().createColor(ERROR_COLOR_KEY, 255, 0, 0));
 
 		errorMsgField.getFormText().addHyperlinkListener(new HyperlinkAdapter()
 		{
@@ -264,16 +277,17 @@ public class TestMemoryTab extends TestRunTab
 
 	private void openLink(String link)
 	{
-		if(link.startsWith("memusage.log"))
+		if(link.startsWith(ICxxTestConstants.DEREFEREE_RESULTS_FILE))
 		{
-			String[] parts = link.split(":");
+			String[] parts = link.split(":"); //$NON-NLS-1$
 			int lineNumber = 1;
 
 			if(parts.length == 2)
 				lineNumber = Integer.parseInt(parts[1]);
 			
 			ICProject project = testRunnerView.getLaunchedProject();
-			IFile file = project.getProject().getFile(ICxxTestConstants.MEMWATCH_RESULTS_FILE);
+			IFile file = project.getProject().getFile(
+					ICxxTestConstants.DEREFEREE_RESULTS_FILE);
 			
 			try
 			{
@@ -317,8 +331,9 @@ public class TestMemoryTab extends TestRunTab
 			return sel.getFirstElement();
 	}
 
-	public String getName() {
-		return "Memory"; 
+	public String getName()
+	{
+		return Messages.TestMemoryTab_TabName; 
 	}
 	
 	public void setSelectedTest(ICxxTestBase testObject)
@@ -358,7 +373,7 @@ public class TestMemoryTab extends TestRunTab
 		viewer.setInput(new MemWatchInfoInput(mwInfo));
 		viewer.expandAll();
 
-		errorMsgField.setText("");
+		errorMsgField.setText(""); //$NON-NLS-1$
 		stackLayout.topControl = viewer.getControl();
 		viewer.getControl().getParent().layout();
 	}
@@ -409,11 +424,11 @@ public class TestMemoryTab extends TestRunTab
 			
 			switch(ch)
 			{
-				case '&':  buf.append("&amp;"); break; 
-				case '\'': buf.append("&apos;"); break; 
-				case '"':  buf.append("&quot;"); break; 
-				case '<':  buf.append("&lt;"); break; 
-				case '>':  buf.append("&gt;"); break;
+				case '&':  buf.append("&amp;"); break;  //$NON-NLS-1$
+				case '\'': buf.append("&apos;"); break;  //$NON-NLS-1$
+				case '"':  buf.append("&quot;"); break;  //$NON-NLS-1$
+				case '<':  buf.append("&lt;"); break;  //$NON-NLS-1$
+				case '>':  buf.append("&gt;"); break; //$NON-NLS-1$
 				default:   buf.append(ch); break;
 			}
 		}
@@ -424,31 +439,29 @@ public class TestMemoryTab extends TestRunTab
 	private void setParseError(Exception e)
 	{
 		StringBuffer msg = new StringBuffer();
-		msg.append("<form>");
+		msg.append("<form>"); //$NON-NLS-1$
 
-		msg.append("<p><b>Error:</b></p>");
+		msg.append("<p><b>"); //$NON-NLS-1$
+		msg.append(Messages.TestMemoryTab_ErrorTitle);
+		msg.append("</b></p>"); //$NON-NLS-1$
 
 		if(e instanceof SAXParseException)
 		{
-			SAXParseException spe = (SAXParseException)e;
-			msg.append("<p>An unexpected error occurred while processing the ");
-			msg.append("<a href=\"memusage.log:" + spe.getLineNumber() +
-					"\">memory usage log</a>");
-			msg.append(", line " + spe.getLineNumber() + ".</p>");
-			msg.append("<p><span color=\"error\">");
-			msg.append(escapeXMLString(e.getMessage()));
-			msg.append("</span></p>");
+			SAXParseException spe = (SAXParseException) e;
+			msg.append(MessageFormat.format(
+					Messages.TestMemoryTab_ErrorDescriptionWithLineNumber,
+					ICxxTestConstants.DEREFEREE_RESULTS_FILE,
+					spe.getLineNumber(), escapeXMLString(e.getMessage())));
 		}
 		else
 		{
-			msg.append("<p>An unexpected error occurred while processing the ");
-			msg.append("<a href=\"memusage.log\">memory usage log</a>.</p>");
-			msg.append("<p><span color=\"error\">");
-			msg.append(escapeXMLString(e.getMessage()));
-			msg.append("</span></p>");
+			msg.append(MessageFormat.format(
+					Messages.TestMemoryTab_ErrorDescription,
+					ICxxTestConstants.DEREFEREE_RESULTS_FILE,
+					escapeXMLString(e.getMessage())));
 		}
 
-		msg.append("</form>");
+		msg.append("</form>"); //$NON-NLS-1$
 
 		errorMsgField.setText(msg.toString());
 
@@ -468,7 +481,7 @@ public class TestMemoryTab extends TestRunTab
 		try
 		{
 			IFile resultsFile = project.getProject().getFile(
-					ICxxTestConstants.MEMWATCH_RESULTS_FILE);
+					ICxxTestConstants.DEREFEREE_RESULTS_FILE);
 			File resultsPath = resultsFile.getLocation().toFile();
 	
 			// When the CxxTest results file is generated, Eclipse
@@ -509,4 +522,7 @@ public class TestMemoryTab extends TestRunTab
 		}
 		catch(IOException e) { }
 	}
+	
+	
+	private static final String ERROR_COLOR_KEY = "error"; //$NON-NLS-1$
 }

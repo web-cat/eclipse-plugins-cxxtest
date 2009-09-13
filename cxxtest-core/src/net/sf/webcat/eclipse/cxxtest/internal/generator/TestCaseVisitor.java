@@ -1,28 +1,24 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
 
-/*
- * Change log:
- * 
- * 1.1.1:  Fixed a small bug that caused the test visitor to "forget" that a
- *         main() function was encountered. (aallowat)
- * 1.1.0:  Initial public release.
- */
 package net.sf.webcat.eclipse.cxxtest.internal.generator;
 
 import java.util.HashSet;
@@ -46,7 +42,9 @@ import org.eclipse.core.runtime.IPath;
  * information about the CxxTest test suites that are implemented in the
  * project.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class TestCaseVisitor implements ICElementVisitor
 {
@@ -193,7 +191,7 @@ public class TestCaseVisitor implements ICElementVisitor
 	 */
 	private void checkForStandardLibrary(IUsing element)
 	{
-		if("std".equals(element.getElementName()))
+		if("std".equals(element.getElementName())) //$NON-NLS-1$
 			usesStandardLibrary = true;
 	}
 
@@ -269,9 +267,9 @@ public class TestCaseVisitor implements ICElementVisitor
 		}
 		catch(CModelException e) { }
 
-		if(name.startsWith("Test") || name.startsWith("test"))
+		if(name.startsWith("Test") || name.startsWith("test")) //$NON-NLS-1$ //$NON-NLS-2$
 		{
-			if("void".equals(element.getReturnType())
+			if("void".equals(element.getReturnType()) //$NON-NLS-1$
 					&& isMethodParameterless(element))
 			{
 				currentSuite.addTestCase(
@@ -279,20 +277,20 @@ public class TestCaseVisitor implements ICElementVisitor
 								getLineNumber(element)));
 			}
 		}
-		else if(name.equals("createSuite"))
+		else if(name.equals("createSuite")) //$NON-NLS-1$
 		{
 			if(isStatic &&
 					element.getReturnType().indexOf('*') >= 0 &&
 					isMethodParameterless(element))
 				currentSuite.setCreateLineNumber(lineNum);
 		}
-		else if(name.equals("destroySuite"))
+		else if(name.equals("destroySuite")) //$NON-NLS-1$
 		{
 			String[] params = element.getParameterTypes();
 			
 			if(isStatic && params.length == 1 &&
 					params[0].indexOf('*') >= 0 &&
-					"void".equals(element.getReturnType()))
+					"void".equals(element.getReturnType())) //$NON-NLS-1$
 				currentSuite.setDestroyLineNumber(lineNum);
 		}
 	}
@@ -304,7 +302,7 @@ public class TestCaseVisitor implements ICElementVisitor
 	 */
 	private void checkForMain(IFunctionDeclaration element)
 	{
-		if("main".equals(element.getElementName()))
+		if("main".equals(element.getElementName())) //$NON-NLS-1$
 			suites.setDoesMainFunctionExist(true);
 	}
 	
@@ -321,7 +319,7 @@ public class TestCaseVisitor implements ICElementVisitor
 	{
 		return (element.getNumberOfParameters() == 0 ||
 				(element.getNumberOfParameters() == 1 &&
-						"void".equals(element.getParameterTypes()[0])));
+						"void".equals(element.getParameterTypes()[0]))); //$NON-NLS-1$
 	}
 	
 	/**
@@ -371,10 +369,10 @@ public class TestCaseVisitor implements ICElementVisitor
 	 * TestSuite, CxxTest::TestSuite, or ::CxxTest::TestSuite.
 	 */
 	private Pattern superclassPattern =
-		Pattern.compile("((::)?\\s*CxxTest\\s*::\\s*)?TestSuite");
+		Pattern.compile("((::)?\\s*CxxTest\\s*::\\s*)?TestSuite"); //$NON-NLS-1$
 
 	private Pattern includePattern =
-		Pattern.compile("\\s*#\\s*include\\s+<cxxtest/TestSuite.h>");
+		Pattern.compile("\\s*#\\s*include\\s+<cxxtest/TestSuite.h>"); //$NON-NLS-1$
 
 	/*
 	 * Keeps track of whether a "using namespace std" directive was

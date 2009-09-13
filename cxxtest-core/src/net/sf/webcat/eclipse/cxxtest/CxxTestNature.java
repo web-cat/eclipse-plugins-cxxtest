@@ -1,20 +1,24 @@
-/*
- *	This file is part of Web-CAT Eclipse Plugins.
- *
- *	Web-CAT is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
- *
- *	Web-CAT is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with Web-CAT; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+/*==========================================================================*\
+ |  $Id$
+ |*-------------------------------------------------------------------------*|
+ |  Copyright (C) 2006-2009 Virginia Tech 
+ |
+ |	This file is part of Web-CAT Eclipse Plugins.
+ |
+ |	Web-CAT is free software; you can redistribute it and/or modify
+ |	it under the terms of the GNU General Public License as published by
+ |	the Free Software Foundation; either version 2 of the License, or
+ |	(at your option) any later version.
+ |
+ |	Web-CAT is distributed in the hope that it will be useful,
+ |	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ |	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ |	GNU General Public License for more details.
+ |
+ |	You should have received a copy of the GNU General Public License
+ |	along with Web-CAT; if not, see <http://www.gnu.org/licenses/>.
+\*==========================================================================*/
+
 package net.sf.webcat.eclipse.cxxtest;
 
 import net.sf.webcat.eclipse.cxxtest.options.IExtraOptionsUpdater;
@@ -28,32 +32,26 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.QualifiedName;
 import org.eclipse.jface.preference.IPreferenceStore;
 
+//------------------------------------------------------------------------
 /**
  * The project nature attached to CxxTest projects.
  * 
- * @author Tony Allevato (Virginia Tech Computer Science)
+ * @author  Tony Allevato (Virginia Tech Computer Science)
+ * @author  latest changes by: $Author$
+ * @version $Revision$ $Date$
  */
 public class CxxTestNature implements IProjectNature
 {
-	private IProject project;
+	//~ Methods ...............................................................
 
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.core.resources.IProjectNature#configure()
-	 */
+	// ----------------------------------------------------------
 	public void configure() throws CoreException
 	{
 		addBuilders(getProject());
 	}
 
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.core.resources.IProjectNature#deconfigure()
-	 */
+	// ----------------------------------------------------------
 	public void deconfigure() throws CoreException
 	{
 		removeBuilder(getProject(), CxxTestPlugin.CXXTEST_BUILDER);
@@ -61,28 +59,21 @@ public class CxxTestNature implements IProjectNature
 	}
 
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.core.resources.IProjectNature#getProject()
-	 */
+	// ----------------------------------------------------------
 	public IProject getProject()
 	{
 		return project;
 	}
 
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.core.resources.IProjectNature#setProject(org.eclipse.core.resources.IProject)
-	 */
+	// ----------------------------------------------------------
 	public void setProject(IProject project)
 	{
 		this.project = project;
 	}
 
 
+	// ----------------------------------------------------------
 	public static boolean hasNature(IProject project) throws CoreException
 	{
 		String natureId = CxxTestPlugin.CXXTEST_NATURE;
@@ -102,6 +93,7 @@ public class CxxTestNature implements IProjectNature
 	}
 
 
+	// ----------------------------------------------------------
 	public static boolean addNature(IProject project, IProgressMonitor monitor)
 	        throws CoreException
 	{
@@ -159,6 +151,7 @@ public class CxxTestNature implements IProjectNature
 	}
 
 
+	// ----------------------------------------------------------
 	public static void addBuilders(IProject project) throws CoreException
 	{
 		IProjectDescription description = project.getDescription();
@@ -188,6 +181,7 @@ public class CxxTestNature implements IProjectNature
 	}
 
 
+	// ----------------------------------------------------------
 	public static boolean removeNature(IProject project) throws CoreException
 	{
 		IExtraOptionsUpdater updater =
@@ -231,6 +225,7 @@ public class CxxTestNature implements IProjectNature
 	}
 
 
+	// ----------------------------------------------------------
 	protected static boolean removeBuilder(IProject project, String builderId)
 	        throws CoreException
 	{
@@ -256,4 +251,10 @@ public class CxxTestNature implements IProjectNature
 
 		return false;
 	}
+
+
+	//~ Static/instance variables .............................................
+	
+	/* The project that the nature is being added to/removed from. */
+	private IProject project;
 }

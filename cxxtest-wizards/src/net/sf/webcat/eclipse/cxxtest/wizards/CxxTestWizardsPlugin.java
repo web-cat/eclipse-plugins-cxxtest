@@ -30,7 +30,7 @@ import org.osgi.framework.BundleContext;
 public class CxxTestWizardsPlugin extends AbstractUIPlugin
 {
 	public static final String PLUGIN_ID =
-		"net.sf.webcat.eclipse.cxxtest.wizards";
+		"net.sf.webcat.eclipse.cxxtest.wizards"; //$NON-NLS-1$
 
 	//The shared instance.
 	private static CxxTestWizardsPlugin plugin;
@@ -87,7 +87,7 @@ public class CxxTestWizardsPlugin extends AbstractUIPlugin
 	public ResourceBundle getResourceBundle() {
 		try {
 			if (resourceBundle == null)
-				resourceBundle = ResourceBundle.getBundle("net.sf.webcat.eclipse.cxxtest.ui.CxxTestUIPluginResources");
+				resourceBundle = ResourceBundle.getBundle("net.sf.webcat.eclipse.cxxtest.ui.CxxTestUIPluginResources"); //$NON-NLS-1$
 		} catch (MissingResourceException x) {
 			resourceBundle = null;
 		}
@@ -102,6 +102,6 @@ public class CxxTestWizardsPlugin extends AbstractUIPlugin
 	 * @return the image descriptor
 	 */
 	public static ImageDescriptor getImageDescriptor(String path) {
-		return AbstractUIPlugin.imageDescriptorFromPlugin("net.sf.webcat.eclipse.cxxtest.ui", path);
+		return AbstractUIPlugin.imageDescriptorFromPlugin("net.sf.webcat.eclipse.cxxtest.ui", path); //$NON-NLS-1$
 	}
 }
