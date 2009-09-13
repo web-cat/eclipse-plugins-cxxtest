@@ -62,17 +62,18 @@ struct backtrace_frame
 	void *call_site;
 };
 
-// If CxxTest is in use, use its stack-top variable since the
-// signal handlers need to unwind the stack trace upon failure.
-#ifdef CXXTEST_TRAP_SIGNALS
-#	define MAX_BACKTRACE_SIZE CxxTest::__cxxtest_jmpmax
-#	define back_trace_index CxxTest::__cxxtest_stackTop
-#else
-	static const size_t MAX_BACKTRACE_SIZE = 256;
-	static uint32_t back_trace_index = 0;
-#endif
+static const size_t MAX_BACKTRACE_SIZE = 256;
 
+static uint32_t back_trace_index = 0;
 static backtrace_frame back_trace[MAX_BACKTRACE_SIZE];
+
+struct saved_back_trace
+{
+	saved_back_trace* prev;
+	int index;
+};
+
+static saved_back_trace* saved_back_trace_top = NULL;
 
 struct stabInfo
 {
@@ -129,16 +130,27 @@ namespace DerefereeSupport
 class gcc_macosx_platform : public Dereferee::platform
 {
 public:
+	// -----------------------------------------------------------------------
 	gcc_macosx_platform(const Dereferee::option* options);
 
+	// -----------------------------------------------------------------------
 	~gcc_macosx_platform();
 
+	// -----------------------------------------------------------------------
 	void** get_backtrace(void* instr_ptr, void* frame_ptr);
 
+	// -----------------------------------------------------------------------
 	void free_backtrace(void** backtrace);
 
+	// -----------------------------------------------------------------------
 	bool get_backtrace_frame_info(void* frame, char* function,
 		char* filename, int* line_number);
+
+	// -----------------------------------------------------------------------
+	void save_current_context();
+
+	// -----------------------------------------------------------------------
+	void restore_current_context();
 };
 
 // ---------------------------------------------------------------------------
@@ -214,6 +226,28 @@ bool gcc_macosx_platform::get_backtrace_frame_info(void* frame, char* function,
 	}
 
 	return false;
+}
+
+// ---------------------------------------------------------------------------
+void gcc_macosx_platform::save_current_context()
+{
+	saved_back_trace* new_top =
+		(saved_back_trace*) calloc(1, sizeof(saved_back_trace));
+	new_top->prev = saved_back_trace_top;
+	new_top->index = back_trace_index;
+	saved_back_trace_top = new_top;
+}
+
+// ---------------------------------------------------------------------------
+void gcc_macosx_platform::restore_current_context()
+{
+	if (saved_back_trace_top)
+	{
+		saved_back_trace* new_top = saved_back_trace_top->prev;
+		back_trace_index = saved_back_trace_top->index;
+		free(saved_back_trace_top);
+		saved_back_trace_top = new_top;
+	}
 }
 
 } // end namespace DerefereeSupport

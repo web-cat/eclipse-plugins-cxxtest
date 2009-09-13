@@ -22,6 +22,7 @@
 package net.sf.webcat.eclipse.cxxtest.internal;
 
 import net.sf.webcat.eclipse.cxxtest.CxxTestPlugin;
+import net.sf.webcat.eclipse.cxxtest.options.IExtraOptionsUpdater;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -64,6 +65,9 @@ public class CxxTestPreferencesChangeListener implements
 		String driverFile = store.getString(
 				CxxTestPlugin.CXXTEST_PREF_DRIVER_FILENAME);
 
+		IExtraOptionsUpdater updater =
+			CxxTestPlugin.getDefault().getExtraOptionsUpdater();
+
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		IProject[] projects = workspace.getRoot().getProjects();
 		
@@ -84,6 +88,8 @@ public class CxxTestPreferencesChangeListener implements
 					{
 						driver.delete(true, null);
 					}
+					
+					updater.updateOptions(project);
 				}
 			}
 			catch (CoreException e)

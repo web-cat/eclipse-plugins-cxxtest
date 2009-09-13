@@ -428,7 +428,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 
 
 	// ------------------------------------------------------------------------
-	private void removeOptionsForTool(IConfiguration config,
+	private void removeOptionsForTool(IProject project, IConfiguration config,
 	        IConfigurationElement toolElem) throws BuildException
 	{
 		String superClassId = toolElem.getAttribute("superClassId"); //$NON-NLS-1$
@@ -490,6 +490,8 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 					if(ignore != null && !Boolean.parseBoolean(ignore))
 						ProjectOptionsUtil.setBoolean(tool, optionId, !newValue);
 				}
+				
+				ManagedBuildManager.saveBuildInfo(project, true);
 			}
 		}
 	}
@@ -684,8 +686,12 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 		{
 			for (IConfigurationElement optionSet : optionSetElems)
 			{
-				boolean enabled = evaluateOptionSetEnablement(
-						optionSet, config);
+				// TODO this needs to be fixed; we need to remember the
+				// preferences that were previously enabled and use THAT
+				// information to remove the correct options, somehow
+				
+				boolean enabled = true; //evaluateOptionSetEnablement(
+						//optionSet, config);
 				
 				if (enabled)
 				{
@@ -696,7 +702,7 @@ public class ExtraOptionsUpdater implements IExtraOptionsUpdater
 					{
 						try
 						{
-							removeOptionsForTool(config, toolElem);
+							removeOptionsForTool(project, config, toolElem);
 						}
 						catch(BuildException e)
 						{

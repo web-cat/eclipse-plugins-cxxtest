@@ -20,7 +20,6 @@
 #include <cstdio>
 #include <cstdarg>
 #include <cstring>
-#include <bfd.h>
 #include <dereferee/platform.h>
 
 
