@@ -20,6 +20,7 @@
 #define DEREFEREE_LISTENER_H
 
 #include <cstdarg>
+#include <climits>
 #include <memory>
 #include <typeinfo>
 

@@ -13,11 +13,8 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cxxtest/Descriptions.h>
-
-#ifdef CXXTEST_TRACE_STACK
-#   include <cxxtest/Signals.h>
-#   include <dereferee.h>
-#endif
+#include <cxxtest/Signals.h>
+#include <dereferee.h>
 
 namespace CxxTest
 {
