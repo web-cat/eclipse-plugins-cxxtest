@@ -110,20 +110,37 @@ public class StaticLibraryManager
 
 	public void checkForDependencies(IProgressMonitor monitor)
 	{
-		monitor.beginTask(Messages.StaticLibraryManager_CheckingLibraryReqs, 5);
+		monitor.beginTask(Messages.StaticLibraryManager_CheckingLibraryReqs, 6);
+
+		// First make an attempt to just build with bfd.  We might not need to
+		// consider any other dependencies.
+		
+		monitor.subTask(Messages.StaticLibraryManager_LookingForBfd);
+		hasBfd = tryToCompile("check-libbfd.c", "bfd"); //$NON-NLS-1$
+		monitor.worked(1);
+
+		if (hasBfd)
+		{
+			hasIntl = true;
+			needsLinkToIntl = false;
+			hasIberty = true;
+			needsLinkToIberty = false;
+
+			monitor.done();
+			return;
+		}
 
 		// Check for libintl functions, first without explicitly linking
 		// (in case they're part of glibc), and then by linking directly.
 
 		monitor.subTask(Messages.StaticLibraryManager_LookingForIntlBuiltIn);
-		boolean hasIntlBuiltIn = tryToCompile("check-libintl.c", null); //$NON-NLS-1$
+		boolean hasIntlBuiltIn = tryToCompile("check-libintl.c"); //$NON-NLS-1$
 		monitor.worked(1);
 
 		if (!hasIntlBuiltIn)
 		{
 			monitor.subTask(Messages.StaticLibraryManager_LookingForIntlSeparate);
-			hasIntl = tryToCompile("check-libintl.c", //$NON-NLS-1$
-					new String[] { "intl" }); //$NON-NLS-1$
+			hasIntl = tryToCompile("check-libintl.c", "intl"); //$NON-NLS-1$ //$NON-NLS-2$
 			needsLinkToIntl = true;
 		}
 		else
@@ -138,14 +155,13 @@ public class StaticLibraryManager
 		// (in case they're part of glibc), and then by linking directly.
 
 		monitor.subTask(Messages.StaticLibraryManager_LookingForIbertyBuiltIn);
-		boolean hasIbertyBuiltIn = tryToCompile("check-libiberty.c", null); //$NON-NLS-1$
+		boolean hasIbertyBuiltIn = tryToCompile("check-libiberty.c"); //$NON-NLS-1$
 		monitor.worked(1);
 
 		if (!hasIbertyBuiltIn)
 		{
 			monitor.subTask(Messages.StaticLibraryManager_LookingForIbertySeparate);
-			hasIberty = tryToCompile("check-libiberty.c", //$NON-NLS-1$
-					new String[] { "iberty" }); //$NON-NLS-1$
+			hasIberty = tryToCompile("check-libiberty.c", "iberty"); //$NON-NLS-1$ //$NON-NLS-2$
 			needsLinkToIberty = true;
 		}
 		else
@@ -205,30 +221,40 @@ public class StaticLibraryManager
 			envMap = new TreeMap<String, String>();
 		}
 		
-		IEnvironmentVariableManager mngr = CCorePlugin.getDefault().getBuildEnvironmentManager();
+		IEnvironmentVariableManager mngr =
+			CCorePlugin.getDefault().getBuildEnvironmentManager();
 		IEnvironmentVariable[] vars = mngr.getVariables(null, true);
-		for(int i = 0; i < vars.length; i++)
+		
+		if (vars != null)
 		{
-			envMap.put(vars[i].getName(), vars[i].getValue());
+			for(int i = 0; i < vars.length; i++)
+			{
+				envMap.put(vars[i].getName(), vars[i].getValue());
+			}
 		}
 
 		GnuCygwinConfigurationEnvironmentSupplier gnu =
 			new GnuCygwinConfigurationEnvironmentSupplier();
 		vars = gnu.getVariables(null, null);
-		for(int i = 0; i < vars.length; i++)
+		
+		if (vars != null)
 		{
-			String oldValue = envMap.get(vars[i].getName());
-			
-			if (oldValue != null)
+			for(int i = 0; i < vars.length; i++)
 			{
-				oldValue = vars[i].getValue() + vars[i].getDelimiter() + oldValue;
+				String oldValue = envMap.get(vars[i].getName());
+				
+				if (oldValue != null)
+				{
+					oldValue = vars[i].getValue() + vars[i].getDelimiter() +
+						oldValue;
+				}
+				else
+				{
+					oldValue = vars[i].getValue();
+				}
+	
+				envMap.put(vars[i].getName(), oldValue);
 			}
-			else
-			{
-				oldValue = vars[i].getValue();
-			}
-
-			envMap.put(vars[i].getName(), oldValue);
 		}
 
 		List<String> strings = new ArrayList<String>(envMap.size());
@@ -241,7 +267,7 @@ public class StaticLibraryManager
 	}
 
 
-	private boolean tryToCompile(String sourceFile, String[] linkLibraries)
+	private boolean tryToCompile(String sourceFile, String... linkLibraries)
 	{
 		String[] envp = calculateEnvironment();
 		sourceFile = getLibraryCheckPath(sourceFile);
@@ -284,7 +310,7 @@ public class StaticLibraryManager
 			}
 		}
 		
-		argList.add("\"" + cmdLine + "\""); //$NON-NLS-1$ //$NON-NLS-2$
+		argList.add(cmdLine);
 
 		String[] args = argList.toArray(new String[argList.size()]);
 
@@ -295,6 +321,8 @@ public class StaticLibraryManager
 		{
 			proc = ProcessFactory.getFactory().exec(args, envp);
 			ProcessClosure closure = new ProcessClosure(proc);
+//					new NonClosingOutputStreamWrapper(System.out),
+//					new NonClosingOutputStreamWrapper(System.out));
 			closure.runBlocking();
 
 			success = (proc.exitValue() == 0);
