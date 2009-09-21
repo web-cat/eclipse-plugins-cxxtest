@@ -287,30 +287,42 @@ public class StaticLibraryManager
 		argList.add("sh"); //$NON-NLS-1$
 		argList.add("-c"); //$NON-NLS-1$
 
-		String cmdLine = "gcc -o "; //$NON-NLS-1$
+		StringBuffer cmdLine = new StringBuffer();
+		
+		cmdLine.append("gcc -o "); //$NON-NLS-1$
 		
 		if (isWindows)
 		{
-			cmdLine += tempOut.getAbsolutePath().replace(File.separatorChar, '/');
-			cmdLine += " "; //$NON-NLS-1$
-			cmdLine += sourceFile.replace(File.separatorChar, '/');
+			cmdLine.append('"');
+			cmdLine.append(tempOut.getAbsolutePath().replace(
+					File.separatorChar, '/'));
+			cmdLine.append('"');
+			cmdLine.append(" "); //$NON-NLS-1$
+			cmdLine.append('"');
+			cmdLine.append(sourceFile.replace(File.separatorChar, '/'));
+			cmdLine.append('"');
 		}
 		else
 		{
-			cmdLine += tempOut.getAbsolutePath();
-			cmdLine += " "; //$NON-NLS-1$
-			cmdLine += sourceFile;
+			cmdLine.append('"');
+			cmdLine.append(tempOut.getAbsolutePath());
+			cmdLine.append('"');
+			cmdLine.append(" "); //$NON-NLS-1$
+			cmdLine.append('"');
+			cmdLine.append(sourceFile);
+			cmdLine.append('"');
 		}
 
 		if (linkLibraries != null)
 		{
 			for (String lib : linkLibraries)
 			{
-				cmdLine += " -l" + lib; //$NON-NLS-1$
+				cmdLine.append(" -l"); //$NON-NLS-1$
+				cmdLine.append(lib);
 			}
 		}
 		
-		argList.add(cmdLine);
+		argList.add(cmdLine.toString());
 
 		String[] args = argList.toArray(new String[argList.size()]);
 
@@ -319,6 +331,7 @@ public class StaticLibraryManager
 		Process proc;
 		try
 		{
+//			System.out.println(Arrays.toString(args));
 			proc = ProcessFactory.getFactory().exec(args, envp);
 			ProcessClosure closure = new ProcessClosure(proc);
 //					new NonClosingOutputStreamWrapper(System.out),
