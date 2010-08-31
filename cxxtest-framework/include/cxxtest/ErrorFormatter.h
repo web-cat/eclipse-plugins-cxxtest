@@ -279,7 +279,11 @@ namespace CxxTest
         {
             newLine();
             reportTest();
-            return (*_o) << file << _preLine << line << _postLine << ": ";
+
+            if (line != 0 && file != 0 && *file != 0)
+            	return (*_o) << file << _preLine << line << _postLine << ": ";
+
+            return (*_o);
         }
 
 
@@ -340,8 +344,11 @@ namespace CxxTest
 
 
         // ------------------------------------------------------
-        bool visitBacktraceFrame(int index, void* frame, const char* function,
-                                 const char* filename, int lineNumber)
+        bool visitBacktraceFrame(int /* index */,
+                                 void* /* frame */,
+                                 const char* function,
+                                 const char* filename,
+                                 int lineNumber)
         {
             (*_o) << "        at ";
             (*_o) << function;

@@ -476,6 +476,7 @@ public class TestMemoryTab extends TestRunTab implements ISelectionProvider
 		setMemWatchInfo(null);
 	}
 
+	@SuppressWarnings("deprecation")
 	public void testRunEnded()
 	{
 		try

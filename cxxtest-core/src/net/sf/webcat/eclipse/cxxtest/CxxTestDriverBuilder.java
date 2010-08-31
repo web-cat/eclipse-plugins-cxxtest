@@ -73,7 +73,7 @@ public class CxxTestDriverBuilder extends IncrementalProjectBuilder
 	 * project DOM, collects the test cases, and builds the test runner source
 	 * file.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	protected IProject[] build(int kind, Map args, IProgressMonitor monitor)
 			throws CoreException
 	{

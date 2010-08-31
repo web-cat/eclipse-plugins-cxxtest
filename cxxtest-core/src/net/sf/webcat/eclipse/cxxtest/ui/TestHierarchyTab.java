@@ -577,6 +577,7 @@ public class TestHierarchyTab extends TestRunTab
 		setSuites(null);
 	}
 
+	@SuppressWarnings("deprecation")
 	public void testRunEnded()
 	{
 		try
